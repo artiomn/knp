@@ -37,6 +37,7 @@ jobs:
         os: [ubuntu-latest]
         build_type: [Debug]
         c_compiler: [gcc, clang]
+        arch: [linux/amd64, linux/arm64]
         include:
           - os: ubuntu-latest
             c_compiler: gcc
@@ -56,7 +57,7 @@ jobs:
 
       - name: Configure
         run: >
-          docker run --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          docker run --platform=${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
@@ -64,29 +65,29 @@ jobs:
           -S .
 
       - name: Build
-        run: docker run --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel 8
+        run: docker run --platform=${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel 8
         timeout-minutes: 180
 
       - name: Test
-        run: docker run --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests kasperskydh/knp-build-image ctest -V
+        run: docker run --platform=${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests kasperskydh/knp-build-image ctest -V
         timeout-minutes: 180
 
       - name: Create deb packages
-        run: docker run --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }} kasperskydh/knp-build-image cpack -G DEB
+        run: docker run --platform=${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }} kasperskydh/knp-build-image cpack -G DEB
         timeout-minutes: 180
 
       - name: Upload deb packages
         if: matrix.c_compiler == 'gcc'
         uses: actions/upload-artifact@v4
         with:
-          name: pkg-deb
+          name: pkg-deb-${{ matrix.arch }}
           path: ${{ steps.strings.outputs.build-output-dir }}/_packages/
 
       - name: Upload Python wheel
         if: matrix.c_compiler == 'gcc'
         uses: actions/upload-artifact@v4
         with:
-          name: pkg-python
+          name: pkg-python-${{ matrix.arch }}
           path: ${{ steps.strings.outputs.build-output-dir }}/knp_python_framework/dist/knp-*.whl
 
   non_linux_build:
