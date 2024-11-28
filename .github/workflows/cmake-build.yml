@@ -60,7 +60,7 @@ jobs:
       #            linux/386, linux/arm/v7, linux/arm/v6
       - name: Set-up Docker ARM emulation
         if: matrix.arch == 'linux/arm64'
-        run: >
+        run: |
           sudo apt-get update -q -y
           sudo apt-get -qq install -y qemu qemu-user-static
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
