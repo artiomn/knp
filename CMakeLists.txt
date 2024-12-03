@@ -305,11 +305,14 @@ add_third_party("gh:p-ranav/csv2@0.1"
                     "CSV2_TEST OFF"
                     "CSV2_SAMPLES OFF")
 
-add_third_party("gh:intel/pcm"
-                GIT_TAG 2f9b0c2
-                OPTIONS
-                    "NO_STATIC_MSVC_RUNTIME_LIBRARY ON"
-                    "NO_ASAN ON")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^x86.*")
+    add_third_party("gh:intel/pcm"
+                    GIT_TAG 2f9b0c2
+                    OPTIONS
+                        "NO_STATIC_MSVC_RUNTIME_LIBRARY ON"
+                        "NO_ASAN ON")
+    include_directories("${CPM_PACKAGE_pcm_SOURCE_DIR}/src")
+endif()
 
 add_third_party("gh:gabime/spdlog@1.13.0"
                 OPTIONS
@@ -330,7 +333,7 @@ add_third_party("gh:Tencent/rapidjson#7c73dd7"
                     "RAPIDJSON_BUILD_TESTS OFF"
                     "RAPIDJSON_HAS_STDSTRING ON")
 
-include_directories("${CPM_PACKAGE_pcm_SOURCE_DIR}/src" "${CPM_PACKAGE_rapidjson_SOURCE_DIR}/include")
+include_directories("${CPM_PACKAGE_rapidjson_SOURCE_DIR}/include")
 
 if (KNP_BUILD_TESTS)
     add_compile_definitions(SPDLOG_ACTIVE_LEVEL=0)

@@ -35,13 +35,16 @@ set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/devices")
 
 file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
 
-source_group(source REGULAR_EXPRESSION "impl/.*")
-source_group(headers REGULAR_EXPRESSION "include/.*")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86.*")
+    set(${PROJECT_NAME}_CPU_SOURCE impl/x86_cpu.cpp impl/x86_cpu_power.cpp impl/x86_cpu_power.h)
+else()
+    set(${PROJECT_NAME}_CPU_SOURCE impl/arm_cpu.cpp)
+endif()
 
 knp_add_library("${PROJECT_NAME}-cpu"
     STATIC
-    impl/cpu.cpp impl/cpu_power.cpp impl/cpu_power.h
 
+    ${CPU_LIBRARY_SOURCE}
     ${${PROJECT_NAME}_headers}
 
     LINK_PRIVATE

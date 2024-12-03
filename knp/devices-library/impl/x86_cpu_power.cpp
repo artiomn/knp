@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#include "cpu_power.h"
+#include "x86_cpu_power.h"
 
 #include <spdlog/spdlog.h>
 #include <utils.h>

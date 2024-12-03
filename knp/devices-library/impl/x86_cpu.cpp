@@ -38,7 +38,7 @@
 
 #include <boost/uuid/name_generator.hpp>
 
-#include "cpu_power.h"
+#include "x86_cpu_power.h"
 
 
 namespace knp::devices::cpu
