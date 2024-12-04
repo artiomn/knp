@@ -36,6 +36,7 @@ set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/devices")
 if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86.*")
     set(${PROJECT_NAME}_CPU_SOURCE impl/x86_cpu.cpp impl/x86_cpu_power.cpp impl/x86_cpu_power.h)
 else()
+    message(WARNING "This CPU is unknown and not totally supported.")
     set(${PROJECT_NAME}_CPU_SOURCE impl/unknown_cpu.cpp)
 endif()
 
