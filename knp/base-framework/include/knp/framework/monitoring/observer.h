@@ -44,7 +44,7 @@ namespace knp::framework::monitoring
  * @tparam Message type of messages the functor processes.
  */
 template <class Message>
-using MessageProcessor = std::function<void(const std::vector<Message>)>;
+using MessageProcessor = std::function<void(const std::vector<Message> &)>;
 
 
 /**

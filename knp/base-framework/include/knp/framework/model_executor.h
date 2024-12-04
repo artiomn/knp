@@ -24,6 +24,7 @@
 #include <knp/core/impexp.h>
 #include <knp/framework/backend_loader.h>
 #include <knp/framework/io/input_converter.h>
+#include <knp/framework/message_handlers.h>
 #include <knp/framework/model.h>
 #include <knp/framework/model_loader.h>
 #include <knp/framework/monitoring/observer.h>
@@ -54,11 +55,12 @@ public:
      * @param i_map input channel map.
      */
     ModelExecutor(
-        knp::framework::Model &model, std::shared_ptr<core::Backend> backend, ModelLoader::InputChannelMap i_map)
-        : loader_(backend, i_map)
-    {
-        loader_.load(model);
-    }
+        knp::framework::Model &model, std::shared_ptr<core::Backend> backend, ModelLoader::InputChannelMap i_map);
+
+    /**
+     * @brief ModelExecutor destructor.
+     */
+    ~ModelExecutor();
 
 public:
     /**
@@ -94,6 +96,23 @@ public:
     }
 
     /**
+     * @brief Function type for message handlers.
+     */
+    using SpikeHandlerFunction =
+        std::function<knp::core::messaging::SpikeData(std::vector<knp::core::messaging::SpikeMessage> &)>;
+
+    /**
+     * @brief Add spike message handler to executor.
+     * @param message_handler_function functor to process received messages.
+     * @param senders list of entities sending messages to the handler.
+     * @param receivers list of entities receiving messages from handler.
+     * @param uid handler uid.
+     */
+    void add_spike_message_handler(
+        SpikeHandlerFunction &&message_handler_function, const std::vector<core::UID> &senders,
+        const std::vector<core::UID> &receivers, const knp::core::UID &uid = knp::core::UID{});
+
+    /**
      * @brief Unlock synapse weights.
      */
     void start_learning() { get_backend()->start_learning(); }
@@ -116,9 +135,12 @@ public:
     auto &get_loader() { return loader_; }
 
 private:
+    class SpikeMessageHandler;
+
     knp::core::BaseData base_;
     ModelLoader loader_;
 
     std::vector<monitoring::AnyObserverVariant> observers_;
+    std::vector<std::unique_ptr<SpikeMessageHandler>> message_handlers_;
 };
 }  // namespace knp::framework

@@ -59,6 +59,7 @@ knp_add_library("${PROJECT_NAME}-core"
     impl/model.cpp
     impl/model_executor.cpp
     impl/model_loader.cpp
+    impl/message_handlers.cpp
     impl/input_converter.cpp
     impl/output_channel.cpp
     impl/synchronization.cpp
