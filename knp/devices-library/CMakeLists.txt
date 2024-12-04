@@ -43,7 +43,7 @@ endif()
 knp_add_library("${PROJECT_NAME}-cpu"
     STATIC
 
-    ${CPU_LIBRARY_SOURCE}
+    ${${PROJECT_NAME}_CPU_SOURCE}
     include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/cpu.h
 
     LINK_PRIVATE
