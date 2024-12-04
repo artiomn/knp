@@ -33,19 +33,17 @@ include(knp-functions)
 
 set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/devices")
 
-file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
-
 if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86.*")
     set(${PROJECT_NAME}_CPU_SOURCE impl/x86_cpu.cpp impl/x86_cpu_power.cpp impl/x86_cpu_power.h)
 else()
-    set(${PROJECT_NAME}_CPU_SOURCE impl/arm_cpu.cpp)
+    set(${PROJECT_NAME}_CPU_SOURCE impl/unknown_cpu.cpp)
 endif()
 
 knp_add_library("${PROJECT_NAME}-cpu"
     STATIC
 
     ${CPU_LIBRARY_SOURCE}
-    ${${PROJECT_NAME}_headers}
+    include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/cpu.h
 
     LINK_PRIVATE
         spdlog::spdlog PCM_STATIC
