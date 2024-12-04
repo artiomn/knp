@@ -27,10 +27,22 @@
 
 #include <boost/uuid/name_generator.hpp>
 
+
 namespace knp::devices::cpu
 {
 
 static constexpr const char* ns_uid = "0000-0000-0000-0000";
+
+
+/**
+ * @brief Fake power meter for unknown CPU.
+ */
+class KNP_DECLSPEC CpuPower
+{
+public:
+    explicit CpuPower(uint32_t /*cpu_sock_no*/) {}
+    float get_power() const { return 0.0; }
+};
 
 
 CPU::CPU(uint32_t cpu_num) : cpu_num_(cpu_num), power_meter_{std::make_unique<CpuPower>(cpu_num)}
@@ -80,7 +92,9 @@ float CPU::get_power() const
 
 KNP_DECLSPEC std::vector<CPU> list_processors()
 {
-    std::vector<CPU> result(1);
+    std::vector<CPU> result;
+
+    result.push_back(CPU(0));
 
     return result;
 }
