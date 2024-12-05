@@ -36,7 +36,7 @@ std::vector<knp::core::messaging::SpikeMessage> convert_node_time_arrays_to_mess
 {
     if (nodes.size() != timestamps.size()) throw std::runtime_error("Different array sizes: nodes and timestamps.");
     using Message = knp::core::messaging::SpikeMessage;
-    std::unordered_map<size_t, Message> message_map;  // This is a result buffer.
+    std::unordered_map<knp::core::Step, Message> message_map;  // This is a result buffer.
     for (size_t i = 0; i < timestamps.size(); ++i)
     {
         auto step = static_cast<knp::core::Step>(timestamps[i] / time_per_step);
