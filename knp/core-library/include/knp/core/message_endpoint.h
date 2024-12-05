@@ -118,7 +118,7 @@ public:
     /**
      * @brief Avoid copy assignment of an endpoint.
      */
-    MessageEndpoint &operator=(MessageEndpoint &) = delete;
+    MessageEndpoint &operator=(const MessageEndpoint &) = delete;
 
     /**
      * @brief Message endpoint destructor.
