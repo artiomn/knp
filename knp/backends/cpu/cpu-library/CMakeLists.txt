@@ -49,7 +49,7 @@ source_group(headers REGULAR_EXPRESSION "impl/.*")
 target_include_directories("${PROJECT_NAME}" INTERFACE ${Boost_INCLUDE_DIRS})
 target_include_directories("${PROJECT_NAME}" INTERFACE "impl")
 
-target_link_libraries("${PROJECT_NAME}" INTERFACE Boost::headers spdlog::spdlog)
+target_link_libraries("${PROJECT_NAME}" INTERFACE Boost::headers spdlog::spdlog_header_only)
 target_link_libraries("${PROJECT_NAME}" INTERFACE KNP::Core KNP::Devices::CPU)
 
 # Internal library, used by backends.

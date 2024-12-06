@@ -219,9 +219,9 @@ include(print-variables)
 # Build third-party.
 #
 
-if (MSVC)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif()
+#if (MSVC)
+#    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+#endif()
 
 if (KNP_BUILD_AUTONOMOUS)
     if (NOT CPM_SOURCE_CACHE_DEFAULT)
