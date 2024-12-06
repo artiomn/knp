@@ -48,7 +48,7 @@ source_group(headers FILES ${${PROJECT_NAME}_headers} REGULAR_EXPRESSION "includ
 
 target_include_directories("${PROJECT_NAME}" PRIVATE ${Boost_INCLUDE_DIRS})
 
-target_link_libraries("${PROJECT_NAME}" PRIVATE Boost::headers spdlog::spdlog)
+target_link_libraries("${PROJECT_NAME}" PRIVATE Boost::headers spdlog::spdlog_header_only)
 
 # Internal library, used by backends.
 # This doesn't require installation.

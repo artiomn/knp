@@ -48,7 +48,7 @@ knp_add_library("${PROJECT_NAME}-cpu"
     include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/cpu.h
 
     LINK_PRIVATE
-        spdlog::spdlog ${${PROJECT_NAME}_ADD_LINK_LIBRARIES}
+        spdlog::spdlog_header_only ${${PROJECT_NAME}_ADD_LINK_LIBRARIES}
         KNP::Core
     ALIAS KNP::Devices::CPU
 )
@@ -66,7 +66,7 @@ knp_add_library("${PROJECT_NAME}-altai"
     include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/altai.h
 
     LINK_PRIVATE
-        spdlog::spdlog PCM_STATIC
+        spdlog::spdlog_header_only
         KNP::Core
     ALIAS KNP::Devices::AltAI
 )
