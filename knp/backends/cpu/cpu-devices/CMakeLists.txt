@@ -59,36 +59,12 @@ set_target_properties(
         VERSION "${CMAKE_PROJECT_VERSION}"
         SOVERSION "${CMAKE_PROJECT_VERSION_MAJOR}")
 
-knp_add_library("${PROJECT_NAME}-altai"
-    STATIC
-    impl/altai.cpp
-
-    include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/altai.h
-
-    LINK_PRIVATE
-        spdlog::spdlog_header_only
-        KNP::Core
-    ALIAS KNP::Devices::AltAI
-)
-
-set_target_properties(
-    "${PROJECT_NAME}-altai"
-    PROPERTIES
-    VERSION "${CMAKE_PROJECT_VERSION}"
-    SOVERSION "${CMAKE_PROJECT_VERSION_MAJOR}"
-)
 
 if (KNP_INSTALL)
     set(COMPONENT_NAME "cpp-framework")
 
     install(TARGETS "${PROJECT_NAME}-cpu"
             EXPORT "${PROJECT_NAME}-cpu"
-            COMPONENT "${COMPONENT_NAME}-dev"
-            ARCHIVE)
-
-    # Install for AltAI
-    install(TARGETS "${PROJECT_NAME}-altai"
-            EXPORT "${PROJECT_NAME}-altai"
             COMPONENT "${COMPONENT_NAME}-dev"
             ARCHIVE)
 
