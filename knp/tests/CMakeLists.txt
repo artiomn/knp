@@ -59,7 +59,7 @@ target_include_directories("${PROJECT_NAME}"
 
 target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::BaseFramework::CoreStatic KNP::Backends::CPUSingleThreaded KNP::Backends::CPUMultiThreaded
                                                 KNP::Backends::CPU::ThreadPool)
-target_link_libraries("${PROJECT_NAME}" PRIVATE gtest gtest_main spdlog::spdlog) #  HighFive
+target_link_libraries("${PROJECT_NAME}" PRIVATE gtest gtest_main spdlog::spdlog_header_only) #  HighFive
 
 add_dependencies("${PROJECT_NAME}" knp-base-framework-core_static)
 
