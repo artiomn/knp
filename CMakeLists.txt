@@ -310,7 +310,7 @@ add_third_party("gh:p-ranav/csv2@0.1"
                     "CSV2_TEST OFF"
                     "CSV2_SAMPLES OFF")
 
-if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^x86.*")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(x86.*)|(X86.*)|(amd64)|(AMD64)")
     add_third_party("gh:intel/pcm"
                     GIT_TAG 2f9b0c2
                     OPTIONS
@@ -323,7 +323,7 @@ add_third_party("gh:zeromq/cppzmq@4.10.0"
                 OPTIONS
                     "CPPZMQ_BUILD_TESTS OFF")
 
-add_third_party("gh:Tencent/rapidjson#7c73dd7"
+add_third_party("gh:Tencent/rapidjson#ebd87cb"
                 OPTIONS
                     "RAPIDJSON_BUILD_DOC OFF"
                     "RAPIDJSON_BUILD_ASAN OFF"

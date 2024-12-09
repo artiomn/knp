@@ -33,7 +33,7 @@ include(knp-functions)
 
 set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/devices")
 
-if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86.*")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(x86.*)|(X86.*)|(amd64)|(AMD64)")
     set(${PROJECT_NAME}_CPU_SOURCE impl/x86_cpu.cpp impl/x86_cpu_power.cpp impl/x86_cpu_power.h)
     set(${PROJECT_NAME}_ADD_LINK_LIBRARIES PCM_STATIC)
 else()
