@@ -1,23 +1,20 @@
 //
 // Created by an_vartenkov on 30.08.24.
 //
-#include <knp/core/population.h>
 #include <knp/core/projection.h>
 #include <knp/framework/model.h>
 #include <knp/framework/model_executor.h>
 #include <knp/framework/monitoring/observer.h>
 #include <knp/framework/network.h>
-#include <knp/framework/projection/connectors.h>
 #include <knp/framework/sonata/network_io.h>
-#include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include <chrono>
+#include <ctime>
 #include <filesystem>
 #include <functional>
 #include <iostream>
-#include <limits>
 #include <optional>
-#include <sstream>
 
 #include "construct_network.h"
 #include "mnist-learn.h"
@@ -454,11 +451,10 @@ int Target::Finalize(enum criterion cri, std::string strPredictionFile) const
 
 std::string get_time_string()
 {
-    char buf[3000];
-    auto curr_time = time(nullptr);
-    ctime_r(&curr_time, buf);
-    buf[strlen(buf) - 1] = '\0';
-    return buf;
+    auto time_now = std::chrono::system_clock::now();
+    std::time_t c_time = std::chrono::system_clock::to_time_t(time_now);
+    std::string result(std::ctime(&c_time));
+    return result;
 }
 
 
