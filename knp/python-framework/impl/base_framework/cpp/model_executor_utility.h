@@ -28,12 +28,35 @@
 #include <vector>
 
 
-auto create_model_executor(
-    knp::framework::Model &model, std::shared_ptr<knp::core::Backend> &backend,
-    const knp::framework::ModelLoader::InputChannelMap &i_map)
+struct ChannelFunction
 {
+public:
+    explicit ChannelFunction(py::object func) : channel_func_(std::move(func)) {}
+    knp::core::messaging::SpikeData operator()(const knp::core::Step &step)
+    {
+        return boost::python::call<knp::core::messaging::SpikeData>(channel_func_.ptr(), step);
+    }
+
+private:
+    py::object channel_func_;
+};
+
+
+std::shared_ptr<knp::framework::ModelExecutor> create_model_executor(
+    knp::framework::Model &model, std::shared_ptr<knp::core::Backend> &backend, py::dict &input_map)
+{
+    knp::framework::ModelLoader::InputChannelMap i_map;
+    py::list keys = input_map.keys();
+    for (int64_t i = 0; i < py::len(keys); ++i)
+    {
+        knp::core::UID uid = py::extract<knp::core::UID>(keys[i]);
+        py::object value = input_map.get(keys[i]);
+        ChannelFunction channel_function{value};
+        i_map.insert({uid, channel_function});
+    }
     return std::make_shared<knp::framework::ModelExecutor>(model, backend, i_map);
 }
+
 
 void start_model_executor(knp::framework::ModelExecutor &self)
 {

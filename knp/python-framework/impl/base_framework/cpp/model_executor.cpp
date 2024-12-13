@@ -28,7 +28,7 @@ py::class_<knp::framework::ModelExecutor, boost::noncopyable>(
     "ModelExecutor",
     "The ModelExecutor class is a definition of an executor that runs the uploaded model on the specified backend.",
     py::no_init)
-    .def("__init__", &create_model_executor, "Construct model executor.")
+    .def("__init__", py::make_constructor(&create_model_executor), "Construct model executor.")
     .def("start", &start_model_executor, "Start model execution.")
     .def("start", &start_model_executor_predicate, "Start model execution with a predicate.")
     .def("stop", &knp::framework::ModelExecutor::stop, "Stop model execution.")
