@@ -275,7 +275,7 @@ void renormalize_resource(
             continue;
         }
 
-        if (abs(neuron.free_synaptic_resource_) < neuron.synaptic_resource_threshold_)
+        if (std::fabs(neuron.free_synaptic_resource_) < neuron.synaptic_resource_threshold_)
         {
             continue;
         }
@@ -339,7 +339,7 @@ void do_dopamine_plasticity(
                 const double dopamine_constant = 2.0;
                 const double difference = step - neuron.first_isi_spike_ - neuron.isi_max_;
                 neuron.stability_ += neuron.stability_change_parameter_ * neuron.dopamine_value_ *
-                                     std::max(dopamine_constant - abs(difference) / neuron.isi_max_, -1.0);
+                                     std::max(dopamine_constant - std::fabs(difference) / neuron.isi_max_, -1.0);
             }
             recalculate_synapse_weights(synapse_params);
         }

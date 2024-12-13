@@ -57,7 +57,7 @@ void calculate_delta_synapse_projection(
  */
 template <class DeltaLikeSynapse>
 void calculate_projection_part(
-    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<size_t, size_t> &message_in_data,
+    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<knp::core::Step, size_t> &message_in_data,
     MessageQueue &future_messages, uint64_t step_n, size_t part_start, size_t part_size, std::mutex &mutex)
 {
     calculate_projection_part_impl(projection, message_in_data, future_messages, step_n, part_start, part_size, mutex);

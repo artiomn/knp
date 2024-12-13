@@ -3,10 +3,10 @@
 
 @tableofcontents
 
-The Kaspersky Neuromorphic Platform ("KNP" or "platform") is a software platform for developing, training and executing spiking neural networks on a variety of computers. 
+The Kaspersky Neuromorphic Platform ("KNP" or "platform") is a software platform for developing, training and executing spiking neural networks on a variety of computers.
 You can use Kaspersky Neuromorphic Platform to do the following:
-@li Create spiking neural networks and train these on various types of input data, such as telemetry, events, images, 3D data, audio, and tactile data.
-@li Convert artificial neural networks (ANN) into spiking networks and train these.
+@li Create spiking neural networks (SNNs) and train these on various types of input data, such as telemetry, events, images, 3D data, audio, and tactile data.
+@li Convert artificial neural networks (ANNs) into spiking networks and train these.
 @li Optimize the structure of the loaded neural networks.
 @li Conduct applied research in the field of input data classification and other application domains of neural networks.
 @li Develop new neural network topologies, for example, impulse analogs of convolutional neural networks that involve convolution in space and time.
@@ -31,6 +31,7 @@ Information about third-party code is contained in the `NOTICE.txt` file located
 
 Registered trademarks and service marks are the property of their respective owners.
 
+Apache is either a registered trademark or a trademark of the Apache Software Foundation.\n
 Ubuntu and LTS are registered trademarks of Canonical Ltd.\n
 Docker and the Docker logo are trademarks or registered trademarks of Docker, Inc. in the United States and/or other countries. Docker, Inc. and other parties may also have trademark rights in other terms used herein.\n
 TensorFlow and any associated designations are trademarks of Google LLC.\n

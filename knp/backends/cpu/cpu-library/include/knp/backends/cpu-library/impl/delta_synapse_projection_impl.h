@@ -49,7 +49,7 @@ using MessageQueue = std::unordered_map<uint64_t, knp::core::messaging::Synaptic
 
 template <class DeltaLikeSynapse>
 void calculate_projection_part_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<size_t, size_t> &message_in_data,
+    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<knp::core::Step, size_t> &message_in_data,
     MessageQueue &future_messages, uint64_t step_n, size_t part_start, size_t part_size, std::mutex &mutex);
 
 
@@ -129,7 +129,7 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
 
 template <class DeltaLikeSynapse>
 void calculate_projection_part_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<size_t, size_t> &message_in_data,
+    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<knp::core::Step, size_t> &message_in_data,
     MessageQueue &future_messages, uint64_t step_n, size_t part_start, size_t part_size, std::mutex &mutex)
 {
     size_t part_end = std::min(part_start + part_size, projection.size());
@@ -191,7 +191,7 @@ void calculate_projection_part_impl(
  */
 inline std::unordered_map<uint64_t, size_t> convert_spikes(const core::messaging::SpikeMessage &message)
 {
-    std::unordered_map<size_t, size_t> result;
+    std::unordered_map<knp::core::Step, size_t> result;
     for (auto neuron_idx : message.neuron_indexes_)
     {
         auto iter = result.find(neuron_idx);

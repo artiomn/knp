@@ -69,6 +69,11 @@ public:
     }
 
     /**
+     * @brief Avoid copy assignment of MessageObserver.
+     */
+    MessageObserver& operator=(const MessageObserver&) = delete;
+    
+    /**
      * @brief Move constructor for observer.
      * @param other other observer.
      */

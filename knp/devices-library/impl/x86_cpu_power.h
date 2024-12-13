@@ -1,5 +1,5 @@
 /**
- * @file cpu_power.h
+ * @file x86_cpu_power.h
  * @brief CPU power consumption received via Intel PCM library.
  * @kaspersky_support Artiom N.
  * @date 20.02.2023
