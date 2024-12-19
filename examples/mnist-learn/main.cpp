@@ -21,7 +21,6 @@
 
 namespace fs = std::filesystem;
 
-// Большая простыня с краткими обозначениями. Без неё дальше в коде будет слишком много букв.
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
@@ -458,11 +457,28 @@ std::string get_time_string()
 }
 
 
+std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, knp::framework::ModelExecutor &executor)
+{
+    std::vector<size_t> borders;
+    std::vector<knp::core::UID> result;
+    for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
+    for (const auto &senders_receivers : network.data_.wta_data)
+    {
+        knp::core::UID handler_uid;
+        executor.add_spike_message_handler(
+            knp::framework::modifier::GroupWtaRandomHandler{borders}, senders_receivers.first,
+            senders_receivers.second);
+        result.push_back(handler_uid);
+    }
+    return result;
+}
+
+
 AnnotatedNetwork train_mnist_network(
     const fs::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const fs::path &log_path = "")
 {
-    AnnotatedNetwork example_network = create_example_network(numSubNetworks);
+    AnnotatedNetwork example_network = create_example_network_new(numSubNetworks);
     std::filesystem::create_directory("mnist_network");
     knp::framework::sonata::save_network(example_network.network_, "mnist_network");
     knp::framework::Model model(std::move(example_network.network_));
@@ -490,8 +506,9 @@ AnnotatedNetwork train_mnist_network(
 
     // Add all spikes observer.
     // These variables should have the same lifetime as model_executor, or else UB.
-    std::ofstream log_stream, weight_stream;
+    std::ofstream log_stream, weight_stream, all_spikes_stream;
     std::map<std::string, size_t> spike_accumulator;
+    // cppcheck-suppress variableScope
     size_t current_index = 0;
 
     // All loggers go here
@@ -516,10 +533,20 @@ AnnotatedNetwork train_mnist_network(
         }
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
+        std::vector<knp::core::UID> wta_uids = add_wta_handlers(example_network, model_executor);
+        all_spikes_stream.open(log_path / "all_spikes_training.log", std::ofstream::out);
+        if (all_spikes_stream.is_open())
+        {
+            auto all_senders = all_populations_uids;
+            all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
+            model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+                make_log_observer_function(all_spikes_stream, example_network.data_.population_names), all_senders);
+        }
     }
 
     // Start model.
     std::cout << get_time_string() << ": learning started\n";
+
     model_executor.start(
         [](size_t step)
         {
@@ -568,7 +595,8 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     std::ofstream log_stream;
     // These two variables should have the same lifetime as model_executor, or else UB.
     std::map<std::string, size_t> spike_accumulator;
-    size_t current_index = 0;
+    // cppcheck-suppress variableScope
+    size_t current_index = 0;  // !NO
 
     // All loggers go here
     if (!log_path.empty())
