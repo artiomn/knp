@@ -20,7 +20,7 @@
  */
 #pragma once
 
-
+#include <knp/core/impexp.h>
 #include <knp/core/message_endpoint.h>
 #include <knp/core/messaging/messaging.h>
 
@@ -38,7 +38,7 @@ namespace knp::framework::modifier
  * @brief A modifier functor to process spikes and select random K spikes out of the whole set.
  * @note Only processes a single message.
  */
-class KWtaRandomHandler
+class KNP_DECLSPEC KWtaRandomHandler
 {
 public:
     /**
@@ -72,7 +72,7 @@ private:
  * @note Group is considered to be winning if it is in the top K groups sorted by number of spikes in descending order.
  * @note If last place in the top K is shared between groups, the functor selects random ones among the sharing groups.
  */
-class GroupWtaRandomHandler
+class KNP_DECLSPEC GroupWtaRandomHandler
 {
 public:
     /**
@@ -106,7 +106,7 @@ private:
 /**
  * @brief Spike handler functor. An output vector has a spike if that spike was present in at least one input message.
  */
-class SpikeUnionHandler
+class KNP_DECLSPEC SpikeUnionHandler
 {
 public:
     /**
