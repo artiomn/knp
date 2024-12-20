@@ -538,7 +538,7 @@ AnnotatedNetwork train_mnist_network(
         if (all_spikes_stream.is_open())
         {
             auto all_senders = all_populations_uids;
-            all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
+            // all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_log_observer_function(all_spikes_stream, example_network.data_.population_names), all_senders);
         }
