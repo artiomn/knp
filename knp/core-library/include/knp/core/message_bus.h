@@ -65,7 +65,7 @@ public:
      * @brief Create a message bus with default implementation.
      * @return message bus.
      */
-    static MessageBus construct_bus() { return construct_zmq_bus(); }
+    static MessageBus construct_bus() { return construct_cpu_bus(); }
 
     /**
      * @brief Default message bus constructor is deleted.

@@ -26,8 +26,8 @@ using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::Synap
 
 constexpr int numSubNetworks = 1;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 1200000;
-constexpr int TestingPeriod = 200000;
+constexpr int LearningPeriod = 7000;  // 1200000;
+constexpr int TestingPeriod = 2000;   // 200000;
 
 constexpr int logging_aggregation_period = 4000;
 
@@ -595,8 +595,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     std::ofstream log_stream;
     // These two variables should have the same lifetime as model_executor, or else UB.
     std::map<std::string, size_t> spike_accumulator;
-    // cppcheck-suppress variableScope
-    size_t current_index = 0;  // !NO
+    size_t current_index = 0;
 
     // All loggers go here
     if (!log_path.empty())
@@ -618,6 +617,28 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
                 log_stream, logging_aggregation_period, described_network.data_.population_names, spike_accumulator,
                 current_index),
             all_populations_uids);
+    }
+    // Add all spikes observer
+    std::vector<knp::core::UID> all_populations_uids;
+    for (const auto &pop : model.get_network().get_populations())
+    {
+        knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
+        all_populations_uids.push_back(pop_uid);
+    }
+
+    auto wta_uids = add_wta_handlers(described_network, model_executor);
+
+    log_stream.open(log_path / "all_spikes_inference.log", std::ofstream::out);
+    if (log_stream.is_open())
+    {
+        std::vector<knp::core::UID> all_uids = all_populations_uids;
+        all_uids.insert(all_uids.end(), wta_uids.begin(), wta_uids.end());
+        write_aggregated_log_header(log_stream, described_network.data_.population_names);
+        model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+            make_aggregate_observer(
+                log_stream, logging_aggregation_period, described_network.data_.population_names, spike_accumulator,
+                current_index),
+            wta_uids);
     }
 
     // Start model.

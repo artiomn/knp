@@ -423,7 +423,8 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         result.data_.wta_data[i].second.push_back(projection_2.get_uid());
 
         // Дофаминовая проекция
-        const DeltaSynapseData default_dopamine_synapse{0.042F, 1, knp::synapse_traits::OutputType::DOPAMINE};
+        // const DeltaSynapseData default_dopamine_synapse{0.042F, 1, knp::synapse_traits::OutputType::DOPAMINE};
+        const DeltaSynapseData default_dopamine_synapse{20.042F, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3{
             population_uids[DOPAMINE], population_uids[INPUT],
             make_aligned_generator(pop_data[DOPAMINE].pd.size_, pop_data[INPUT].pd.size_, default_dopamine_synapse),
