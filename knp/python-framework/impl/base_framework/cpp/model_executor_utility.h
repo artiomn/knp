@@ -28,17 +28,16 @@
 #include <vector>
 
 
-struct ChannelFunction
+template <class DataOut, class DataIn>
+struct BinaryFunction
 {
 public:
-    explicit ChannelFunction(py::object func) : channel_func_(std::move(func)) {}
-    knp::core::messaging::SpikeData operator()(const knp::core::Step &step)
-    {
-        return boost::python::call<knp::core::messaging::SpikeData>(channel_func_.ptr(), step);
-    }
+    explicit BinaryFunction(py::object func) : func_(std::move(func)) {}
+    //knp::core::messaging::SpikeData operator()(const knp::core::Step &step)
+    DataOut operator()(const DataIn &input) { return boost::python::call<DataOut>(func_.ptr(), input); }
 
 private:
-    py::object channel_func_;
+    py::object func_;
 };
 
 
@@ -51,7 +50,7 @@ std::shared_ptr<knp::framework::ModelExecutor> create_model_executor(
     {
         knp::core::UID uid = py::extract<knp::core::UID>(keys[i]);
         py::object value = input_map.get(keys[i]);
-        ChannelFunction channel_function{value};
+        BinaryFunction<knp::core::messaging::SpikeData, knp::core::Step> channel_function{value};
         i_map.insert({uid, channel_function});
     }
     return std::make_shared<knp::framework::ModelExecutor>(model, backend, i_map);
@@ -64,26 +63,25 @@ void start_model_executor(knp::framework::ModelExecutor &self)
 }
 
 
-void start_model_executor_predicate(
-    knp::framework::ModelExecutor &self, const knp::core::Backend::RunPredicate &predicate)
+void start_model_executor_predicate(knp::framework::ModelExecutor &self, const py::object &function)
 {
+    BinaryFunction<bool, knp::core::Step> predicate{function};
     self.start(predicate);
 }
 
 
 void add_executor_spike_observer(
-    knp::framework::ModelExecutor &self,
-    knp::framework::monitoring::MessageProcessor<knp::core::messaging::SpikeMessage> &message_processor,
-    const std::vector<knp::core::UID> &senders)
+    knp::framework::ModelExecutor &self, const py::object &message_proc, const std::vector<knp::core::UID> &senders)
 {
-    self.add_observer(std::move(message_processor), senders);
+    self.add_observer(
+        std::function{BinaryFunction<void, std::vector<knp::core::messaging::SpikeMessage>>{message_proc}}, senders);
 }
 
 
 void add_executor_impact_observer(
-    knp::framework::ModelExecutor &self,
-    knp::framework::monitoring::MessageProcessor<knp::core::messaging::SynapticImpactMessage> &message_processor,
-    const std::vector<knp::core::UID> &senders)
+    knp::framework::ModelExecutor &self, const py::object &impact_proc, const std::vector<knp::core::UID> &senders)
 {
-    self.add_observer(std::move(message_processor), senders);
+    self.add_observer(
+        std::function{BinaryFunction<void, std::vector<knp::core::messaging::SynapticImpactMessage>>{impact_proc}},
+        senders);
 }
