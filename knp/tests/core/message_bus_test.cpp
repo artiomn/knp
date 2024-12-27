@@ -100,7 +100,7 @@ TEST(MessageBusSuite, CreateBusAndEndpointCPU)
 
     ep1.send_message(msg);
     // Message ID and message data.
-    EXPECT_EQ(bus.route_messages(), 2);
+    EXPECT_EQ(bus.route_messages(), 1);
     ep2.receive_all_messages();
 
     const auto &msgs = subscription.get_messages();

@@ -60,7 +60,9 @@ std::pair<size_t, UID> MessageEndpoint::get_subscription_key(const MessageEndpoi
 
 
 MessageEndpoint::MessageEndpoint(MessageEndpoint &&endpoint) noexcept
-    : impl_(std::move(endpoint.impl_)), subscriptions_(std::move(endpoint.subscriptions_))
+    : impl_(std::move(endpoint.impl_)),
+      subscriptions_(std::move(endpoint.subscriptions_)),
+      senders_(std::move(endpoint.senders_))
 {
 }
 
@@ -77,12 +79,16 @@ Subscription<MessageType> &MessageEndpoint::subscribe(const UID &receiver, const
 
     auto iter = subscriptions_.find(std::make_pair(index, receiver));
 
+    if (!senders_) senders_ = std::make_shared<std::unordered_set<knp::core::UID, knp::core::uid_hash>>();
+    senders_->insert(senders.begin(), senders.end());
+
     if (iter != subscriptions_.end())
     {
         auto &sub = std::get<index>(iter->second);
         sub.add_senders(senders);
         return sub;
     }
+
 
     auto sub_variant = SubscriptionVariant{Subscription<MessageType>{receiver, senders}};
     auto insert_res = subscriptions_.emplace(std::make_pair(index, receiver), sub_variant);
@@ -102,6 +108,7 @@ bool MessageEndpoint::unsubscribe(const UID &receiver)
         subscriptions_.erase(iter);
         return true;
     }
+    update_senders();
     return false;
 }
 
@@ -117,6 +124,7 @@ void MessageEndpoint::remove_receiver(const UID &receiver)
             subscriptions_.erase(sub_iter);
         }
     }
+    update_senders();
 }
 
 
@@ -209,6 +217,20 @@ std::vector<MessageType> MessageEndpoint::unload_messages(const knp::core::UID &
     subscription.clear_messages();
 
     return result;
+}
+
+
+void MessageEndpoint::update_senders()
+{
+    if (!senders_) senders_ = std::make_shared<std::unordered_set<knp::core::UID, knp::core::uid_hash>>();
+
+    std::unordered_set<knp::core::UID, knp::core::uid_hash> new_senders;
+    new_senders.reserve(senders_->size());
+    for (const auto &sub : subscriptions_)
+    {
+        auto sub_senders = std::visit([](auto &sub_var) { return sub_var.get_senders(); }, sub.second);
+        new_senders.insert(sub_senders.begin(), sub_senders.end());
+    }
 }
 
 

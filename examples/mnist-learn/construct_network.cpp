@@ -344,6 +344,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         OUTPUT = 2,
         GATE = 3,
     };
+    constexpr float dopamine_value = 0.042F;
     result.data_.wta_data.resize(num_compound_networks);
     for (int i = 0; i < num_compound_networks; ++i)
     {
@@ -352,7 +353,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         default_neuron.activation_threshold_ = 8.571;
         ResourceNeuronData L_neuron = default_neuron;
         L_neuron.potential_decay_ = 1 - 1 / 3.;
-        L_neuron.d_h_ = -0.042F;
+        L_neuron.d_h_ = -dopamine_value;
         L_neuron.dopamine_plasticity_time_ = 10;
         // L_neuron.w_min_ = -0.7F;
         // L_neuron.w_max_ = 0.864249F;
@@ -423,8 +424,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         result.data_.wta_data[i].second.push_back(projection_2.get_uid());
 
         // Дофаминовая проекция
-        // const DeltaSynapseData default_dopamine_synapse{0.042F, 1, knp::synapse_traits::OutputType::DOPAMINE};
-        const DeltaSynapseData default_dopamine_synapse{20.042F, 1, knp::synapse_traits::OutputType::DOPAMINE};
+        const DeltaSynapseData default_dopamine_synapse{dopamine_value, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3{
             population_uids[DOPAMINE], population_uids[INPUT],
             make_aligned_generator(pop_data[DOPAMINE].pd.size_, pop_data[INPUT].pd.size_, default_dopamine_synapse),

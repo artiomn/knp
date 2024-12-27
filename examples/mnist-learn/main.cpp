@@ -26,8 +26,8 @@ using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::Synap
 
 constexpr int numSubNetworks = 1;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 7000;  // 1200000;
-constexpr int TestingPeriod = 2000;   // 200000;
+constexpr int LearningPeriod = 1200000;
+constexpr int TestingPeriod = 200000;
 
 constexpr int logging_aggregation_period = 4000;
 

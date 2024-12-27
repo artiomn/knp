@@ -35,26 +35,6 @@ class MessageEndpointCPU : public MessageEndpoint
 {
 public:
     explicit MessageEndpointCPU(std::shared_ptr<MessageEndpointCPUImpl> &&ptr) { impl_ = std::move(ptr); }
-
-    void add_received_messages(const std::vector<knp::core::messaging::MessageVariant> &incoming_messages)
-    {
-        dynamic_cast<MessageEndpointCPUImpl *>(impl_.get())->add_received_messages(incoming_messages);
-    }
-
-    void add_received_message(knp::core::messaging::MessageVariant &&incoming)
-    {
-        dynamic_cast<MessageEndpointCPUImpl *>(impl_.get())->add_received_message(incoming);
-    }
-
-    void add_received_message(const knp::core::messaging::MessageVariant &incoming)
-    {
-        dynamic_cast<MessageEndpointCPUImpl *>(impl_.get())->add_received_message(incoming);
-    }
-
-    std::vector<knp::core::messaging::MessageVariant> unload_sent_messages()
-    {
-        return dynamic_cast<MessageEndpointCPUImpl *>(impl_.get())->unload_sent_messages();
-    }
 };
 
 
@@ -62,14 +42,14 @@ void MessageBusCPUImpl::update()
 {
     std::lock_guard lock(mutex_);
     // This function is called before routing messages.
-    auto iter = endpoint_messages_.begin();
-    while (iter != endpoint_messages_.end())
+    auto iter = endpoint_data_.begin();
+    while (iter != endpoint_data_.end())
     {
         auto send_container_ptr = std::get<0>(*iter).lock();
         // Clear up all pointers to expired endpoints.
         if (!send_container_ptr)
         {
-            endpoint_messages_.erase(iter++);
+            endpoint_data_.erase(iter++);
             continue;
         }
 
@@ -89,18 +69,22 @@ size_t MessageBusCPUImpl::step()
     if (messages_to_route_.empty()) return 0;  // No more messages left for endpoints to receive.
     // Sending a message to every endpoint.
     auto message = std::move(messages_to_route_.back());
-    size_t message_counter = 0;
-    for (auto endpoint_message_containers : endpoint_messages_)
-    {
-        auto recv_ptr = std::get<1>(endpoint_message_containers).lock();
-        // Skip all endpoints deleted after previous update(). They will be deleted at the next update().
-        if (!recv_ptr) continue;
-        recv_ptr->emplace_back(message);
-        ++message_counter;
-    }
     // Remove message from container.
     messages_to_route_.pop_back();
-    return message_counter;
+    const knp::core::UID sender_uid = std::visit([](const auto &msg) { return msg.header_.sender_uid_; }, message);
+    for (auto endpoint_data_containers : endpoint_data_)
+    {
+        auto recv_ptr = std::get<1>(endpoint_data_containers).lock();
+        auto allowed_senders_ptr = std::get<2>(endpoint_data_containers).lock();
+        // Skip all endpoints deleted after previous update(). They will be deleted at the next update().
+        if ((!recv_ptr) || (!allowed_senders_ptr)) continue;
+        if (allowed_senders_ptr->find(sender_uid) != allowed_senders_ptr->end())
+        {
+            recv_ptr->emplace_back(message);
+        }
+    }
+
+    return 1;
 }
 
 
@@ -113,10 +97,8 @@ core::MessageEndpoint MessageBusCPUImpl::create_endpoint()
     auto messages_to_send_v{std::make_shared<VT>()};
     auto recv_messages_v{std::make_shared<VT>()};
 
-    endpoint_messages_.emplace_back(messages_to_send_v, recv_messages_v);
-
     auto endpoint = MessageEndpointCPU(std::make_shared<MessageEndpointCPUImpl>(messages_to_send_v, recv_messages_v));
-
+    endpoint_data_.emplace_back(messages_to_send_v, recv_messages_v, endpoint.get_senders_ptr());
     return std::move(endpoint);
 }
 
