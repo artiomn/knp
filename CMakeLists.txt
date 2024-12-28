@@ -219,10 +219,6 @@ include(print-variables)
 # Build third-party.
 #
 
-if (MSVC)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-endif()
-
 if (KNP_BUILD_AUTONOMOUS)
     if (NOT CPM_SOURCE_CACHE_DEFAULT)
         set(CPM_SOURCE_CACHE_DEFAULT "${CMAKE_CURRENT_SOURCE_DIR}/third-party")
@@ -241,6 +237,15 @@ if (MSVC AND CMAKE_GENERATOR STREQUAL "Ninja")
     set(ZMQ_ENABLE_PRECOMPS OFF)
 else()
     set(ZMQ_ENABLE_PRECOMPS ON)
+endif()
+
+add_third_party("gh:gabime/spdlog@1.13.0"
+                OPTIONS
+                    "SPDLOG_BUILD_PIC ON"
+                    "SPDLOG_BUILD_SHARED OFF")
+
+if (MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
 add_third_party(NAME "libzmq"
@@ -305,7 +310,7 @@ add_third_party("gh:p-ranav/csv2@0.1"
                     "CSV2_TEST OFF"
                     "CSV2_SAMPLES OFF")
 
-if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^x86.*")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(x86.*)|(X86.*)|(amd64)|(AMD64)")
     add_third_party("gh:intel/pcm"
                     GIT_TAG 2f9b0c2
                     OPTIONS
@@ -314,16 +319,11 @@ if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^x86.*")
     include_directories("${CPM_PACKAGE_pcm_SOURCE_DIR}/src")
 endif()
 
-add_third_party("gh:gabime/spdlog@1.13.0"
-                OPTIONS
-                    "SPDLOG_BUILD_PIC ON"
-                    "SPDLOG_BUILD_SHARED OFF")
-
 add_third_party("gh:zeromq/cppzmq@4.10.0"
                 OPTIONS
                     "CPPZMQ_BUILD_TESTS OFF")
 
-add_third_party("gh:Tencent/rapidjson#7c73dd7"
+add_third_party("gh:Tencent/rapidjson#ebd87cb"
                 OPTIONS
                     "RAPIDJSON_BUILD_DOC OFF"
                     "RAPIDJSON_BUILD_ASAN OFF"
