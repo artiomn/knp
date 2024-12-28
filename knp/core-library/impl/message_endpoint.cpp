@@ -89,7 +89,6 @@ Subscription<MessageType> &MessageEndpoint::subscribe(const UID &receiver, const
         return sub;
     }
 
-
     auto sub_variant = SubscriptionVariant{Subscription<MessageType>{receiver, senders}};
     auto insert_res = subscriptions_.emplace(std::make_pair(index, receiver), sub_variant);
     auto &sub = std::get<index>(insert_res.first->second);

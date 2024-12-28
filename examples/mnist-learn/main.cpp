@@ -466,8 +466,26 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
     {
         knp::core::UID handler_uid;
         executor.add_spike_message_handler(
-            knp::framework::modifier::GroupWtaRandomHandler{borders}, senders_receivers.first,
-            senders_receivers.second);
+            knp::framework::modifier::KWtaPerGroup{borders}, senders_receivers.first, senders_receivers.second,
+            handler_uid);
+        result.push_back(handler_uid);
+    }
+    return result;
+}
+
+
+std::vector<knp::core::UID> add_wta_handlers_inference(
+    const AnnotatedNetwork &network, knp::framework::ModelExecutor &executor)
+{
+    std::vector<size_t> borders;
+    std::vector<knp::core::UID> result;
+    for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
+    for (const auto &senders_receivers : network.data_.wta_data)
+    {
+        knp::core::UID handler_uid;
+        executor.add_spike_message_handler(
+            knp::framework::modifier::GroupWtaRandomHandler{borders}, senders_receivers.first, senders_receivers.second,
+            handler_uid);
         result.push_back(handler_uid);
     }
     return result;
@@ -510,7 +528,7 @@ AnnotatedNetwork train_mnist_network(
     std::map<std::string, size_t> spike_accumulator;
     // cppcheck-suppress variableScope
     size_t current_index = 0;
-
+    std::vector<knp::core::UID> wta_uids = add_wta_handlers(example_network, model_executor);
     // All loggers go here
     if (!log_path.empty())
     {
@@ -521,10 +539,12 @@ AnnotatedNetwork train_mnist_network(
             all_populations_uids.push_back(pop_uid);
         }
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
+        auto all_names = example_network.data_.population_names;
+        for (const auto &uid : wta_uids) all_names.insert({uid, "WTA"});
 
         if (log_stream.is_open())
         {
-            write_aggregated_log_header(log_stream, example_network.data_.population_names);
+            write_aggregated_log_header(log_stream, all_names);
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_aggregate_observer(
                     log_stream, logging_aggregation_period, example_network.data_.population_names, spike_accumulator,
@@ -533,12 +553,11 @@ AnnotatedNetwork train_mnist_network(
         }
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
-        std::vector<knp::core::UID> wta_uids = add_wta_handlers(example_network, model_executor);
         all_spikes_stream.open(log_path / "all_spikes_training.log", std::ofstream::out);
         if (all_spikes_stream.is_open())
         {
             auto all_senders = all_populations_uids;
-            // all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
+            all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_log_observer_function(all_spikes_stream, example_network.data_.population_names), all_senders);
         }
@@ -595,7 +614,14 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     std::ofstream log_stream;
     // These two variables should have the same lifetime as model_executor, or else UB.
     std::map<std::string, size_t> spike_accumulator;
+    // cppcheck-suppress variableScope
     size_t current_index = 0;
+    auto wta_uids = add_wta_handlers_inference(described_network, model_executor);
+    auto all_senders_names = described_network.data_.population_names;
+    for (const auto &uid : wta_uids)
+    {
+        all_senders_names.insert({uid, "WTA"});
+    }
 
     // All loggers go here
     if (!log_path.empty())
@@ -605,18 +631,18 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     }
     if (log_stream.is_open())
     {
-        std::vector<knp::core::UID> all_populations_uids;
+        std::vector<knp::core::UID> all_senders_uids;
         for (const auto &pop : model.get_network().get_populations())
         {
             knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
-            all_populations_uids.push_back(pop_uid);
+            all_senders_uids.push_back(pop_uid);
         }
-        write_aggregated_log_header(log_stream, described_network.data_.population_names);
+        write_aggregated_log_header(log_stream, all_senders_names);
         model_executor.add_observer<knp::core::messaging::SpikeMessage>(
             make_aggregate_observer(
                 log_stream, logging_aggregation_period, described_network.data_.population_names, spike_accumulator,
                 current_index),
-            all_populations_uids);
+            all_senders_uids);
     }
     // Add all spikes observer
     std::vector<knp::core::UID> all_populations_uids;
@@ -626,19 +652,14 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
         all_populations_uids.push_back(pop_uid);
     }
 
-    auto wta_uids = add_wta_handlers(described_network, model_executor);
-
-    log_stream.open(log_path / "all_spikes_inference.log", std::ofstream::out);
-    if (log_stream.is_open())
+    std::ofstream all_spikes_stream;
+    all_spikes_stream.open(log_path / "all_spikes_inference.log", std::ofstream::out);
+    if (all_spikes_stream.is_open())
     {
-        std::vector<knp::core::UID> all_uids = all_populations_uids;
-        all_uids.insert(all_uids.end(), wta_uids.begin(), wta_uids.end());
-        write_aggregated_log_header(log_stream, described_network.data_.population_names);
+        auto all_senders = all_populations_uids;
+        all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
         model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-            make_aggregate_observer(
-                log_stream, logging_aggregation_period, described_network.data_.population_names, spike_accumulator,
-                current_index),
-            wta_uids);
+            make_log_observer_function(all_spikes_stream, all_senders_names), all_senders);
     }
 
     // Start model.

@@ -92,11 +92,10 @@ void SingleThreadedCPUBackend::_step()
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
     // Calculate populations. This is the same as inference.
-    // std::vector<std::optional<knp::core::messaging::SpikeMessage>> messages;
     for (auto &population : populations_)
     {
         std::visit(
-            [this /*&messages*/](auto &arg)
+            [this](auto &arg)
             {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (
@@ -107,7 +106,6 @@ void SingleThreadedCPUBackend::_step()
                         "Population is not supported by the single-threaded CPU backend.");
                 }
                 auto message_opt = calculate_population(arg);
-                // messages.push_back(std::move(message_opt));
             },
             population);
     }
