@@ -140,7 +140,7 @@ bool is_json_has_magic(const rapidjson::Document &doc)  // cppcheck-suppress con
     bool has_magic = false;
     for (auto group_iter = attributes.Begin(); group_iter != attributes.End(); ++group_iter)
     {
-        const auto &group = group_iter->GetObject();
+        const auto &group = *group_iter;
         if (group.HasMember("name") && group["name"].GetString() == magic)
         {
             if (group.HasMember("value") && group["value"].GetInt() != MAGIC_NUMBER) break;
@@ -163,7 +163,7 @@ bool is_correct_version(const rapidjson::Document &doc)  // cppcheck-suppress co
 
     for (auto group_iter = attributes.Begin(); group_iter != attributes.End(); ++group_iter)
     {
-        const auto &group = group_iter->GetObject();
+        const auto &group = *group_iter;
 
         if (!group.HasMember("name") || group["name"].GetString() != version_str) continue;
         if (!group.HasMember("value") || !group["value"].IsArray()) return false;
@@ -191,7 +191,7 @@ auto read_nodes(const rapidjson::Document::Object &spikes_group)
     // Reading node IDs.
     if (!spikes_group.HasMember("node_ids") || !spikes_group["node_ids"].IsObject())
         throw std::runtime_error("No \"node_ids\" array in \"spikes\" group.");
-    const auto &nodes_ids = spikes_group["node_ids"].GetObject();
+    const auto &nodes_ids = spikes_group["node_ids"];
 
     if (!nodes_ids.HasMember("value") || !nodes_ids["value"].IsArray())
         throw std::runtime_error("Missing node data in JSON data file.");
@@ -253,7 +253,7 @@ KNP_DECLSPEC std::vector<core::messaging::SpikeMessage> load_messages_from_json(
 
     if (!doc.HasMember("spikes") || !doc["spikes"].IsObject())
         throw std::runtime_error("Unable to find \"spikes\" group in data file.");
-    const auto &spikes_group = doc["spikes"].GetObject();
+    const auto &spikes_group = doc["spikes"].GetObj();
 
     auto nodes = read_nodes(spikes_group);
     auto timestamps = read_timestamps(spikes_group);
