@@ -106,7 +106,7 @@ knp_add_library("${PROJECT_NAME}"
     ${${PROJECT_NAME}_headers}
     # PRECOMP impl/common_precomp.h
     LINK_PRIVATE
-        Boost::headers spdlog::spdlog ${CPP_ZMQ} flatbuffers "${PROJECT_NAME}_messaging"
+        Boost::headers spdlog::spdlog_header_only ${CPP_ZMQ} flatbuffers "${PROJECT_NAME}_messaging"
     LINK_PUBLIC
         # This is used in the library for message parameters.
         KNP::Neuron::Traits KNP::Synapse::Traits

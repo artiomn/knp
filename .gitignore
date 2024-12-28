@@ -94,3 +94,7 @@ gmon.out
 # QtCreator
 
 CMakeLists.txt.user
+
+# MSVS.
+
+/.vs
