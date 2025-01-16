@@ -26,8 +26,8 @@ using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::Synap
 
 constexpr int numSubNetworks = 1;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 1200000;
-constexpr int TestingPeriod = 200000;
+constexpr int LearningPeriod = 200000;  // 1200000;
+constexpr int TestingPeriod = 2000;     // 200000;
 
 constexpr int logging_aggregation_period = 4000;
 
@@ -52,15 +52,20 @@ auto make_input_generator(const std::vector<std::vector<bool>> &spike_frames, si
 }
 
 
-void read_classes(
-    std::string classes_file, std::vector<std::vector<bool>> &spike_classes, std::vector<int> &classes_for_testing)
+std::vector<int> read_classes(std::string classes_file, std::vector<std::vector<bool>> &spike_classes, int offset = 0)
 {
     std::ifstream file_stream(classes_file);
+    std::vector<int> classes_for_testing;
     int cla;
     while (file_stream.good())
     {
         std::string str;
         if (!std::getline(file_stream, str).good()) break;
+        if (offset > 0)
+        {
+            --offset;
+            continue;
+        }
         std::stringstream ss(str);
         ss >> cla;
         std::vector<bool> buffer(input_size, false);
@@ -68,6 +73,7 @@ void read_classes(
         if (spike_classes.size() >= TestingPeriod) classes_for_testing.push_back(cla);
         for (int i = 0; i < frames_per_image; ++i) spike_classes.push_back(buffer);
     }
+    return classes_for_testing;
 }
 
 
@@ -138,6 +144,8 @@ auto make_projection_observer_function(
         if (!weights_log.good()) return;
         size_t step = model_executor.get_backend()->get_step();
         if (step % frequency != 0) return;
+        // Output weights for every step that is a full square
+        // if (std::pow(size_t(std::sqrt(step)), 2) != step) return;
         weights_log << "Step: " << step << std::endl;
         const auto ranges = model_executor.get_backend()->get_network_data();
         for (auto &iter = *ranges.projection_range.first; iter != *ranges.projection_range.second; ++iter)
@@ -512,7 +520,7 @@ AnnotatedNetwork train_mnist_network(
     knp::framework::ModelLoader::InputChannelMap channel_map;
 
     channel_map.insert({input_image_channel_raster, make_input_generator(spike_frames, 0)});
-    channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 0)});
+    channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 20)});
 
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(model, backend_loader.load(path_to_backend), std::move(channel_map));
@@ -560,6 +568,14 @@ AnnotatedNetwork train_mnist_network(
             all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_log_observer_function(all_spikes_stream, example_network.data_.population_names), all_senders);
+        }
+        weight_stream.open(log_path / "weights.log", std::ofstream::out);
+        if (weight_stream.is_open())
+        {
+            model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+                make_projection_observer_function(
+                    weight_stream, 500, model_executor, example_network.data_.projections_from_raster[0]),
+                {});
         }
     }
 
@@ -717,8 +733,7 @@ int main(int argc, char **argv)
         std::filesystem::path(argv[0]).parent_path() / "knp-cpu-single-threaded-backend";
     auto spike_frames = read_spike_frames(argv[1]);
     std::vector<std::vector<bool>> spike_classes;
-    std::vector<int> classes_for_testing;
-    read_classes(argv[2], spike_classes, classes_for_testing);
+    std::vector<int> classes_for_testing = read_classes(argv[2], spike_classes);
     AnnotatedNetwork trained_network = train_mnist_network(path_to_backend, spike_frames, spike_classes, log_path);
 
     auto spikes = run_mnist_inference(path_to_backend, trained_network, spike_frames, log_path);

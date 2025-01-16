@@ -321,7 +321,7 @@ void do_dopamine_plasticity(
                 {
                     // Change synapse resource.
                     float d_r = neuron.dopamine_value_ *
-                                std::min(static_cast<float>(std::pow(2, -neuron.stability_)), 1.F) / 1000.F;
+                                std::min(static_cast<float>(std::pow(2, -neuron.stability_)), 1.F);  // / 1000.F;
                     synapse->rule_.synaptic_resource_ += d_r;
                     neuron.free_synaptic_resource_ -= d_r;
                 }
