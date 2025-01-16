@@ -49,8 +49,9 @@ using MessageQueue = std::unordered_map<uint64_t, knp::core::messaging::Synaptic
 
 template <class DeltaLikeSynapse>
 void calculate_projection_part_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<knp::core::Step, size_t> &message_in_data,
-    MessageQueue &future_messages, uint64_t step_n, size_t part_start, size_t part_size, std::mutex &mutex);
+    knp::core::Projection<DeltaLikeSynapse> &projection,
+    const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
+    size_t part_start, size_t part_size, std::mutex &mutex);
 
 
 template <class DeltaLikeSynapse>
@@ -112,11 +113,8 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
                 else
                 {
                     knp::core::messaging::SynapticImpactMessage message_out{
-                        {projection.get_uid(), step_n},
-                        projection.get_postsynaptic(),
-                        projection.get_presynaptic(),
-                        is_forcing<ProjectionType>(),
-                        {impact}};
+                        {projection.get_uid(), step_n}, projection.get_presynaptic(), projection.get_postsynaptic(),
+                        projection.get_presynaptic(),   is_forcing<ProjectionType>(), {impact}};
                     future_messages.insert(std::make_pair(future_step, message_out));
                 }
             }
@@ -129,8 +127,9 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
 
 template <class DeltaLikeSynapse>
 void calculate_projection_part_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection, const std::unordered_map<knp::core::Step, size_t> &message_in_data,
-    MessageQueue &future_messages, uint64_t step_n, size_t part_start, size_t part_size, std::mutex &mutex)
+    knp::core::Projection<DeltaLikeSynapse> &projection,
+    const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
+    size_t part_start, size_t part_size, std::mutex &mutex)
 {
     size_t part_end = std::min(part_start + part_size, projection.size());
     std::vector<std::pair<uint64_t, knp::core::messaging::SynapticImpact>> container;

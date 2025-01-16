@@ -31,6 +31,22 @@
 namespace knp::framework::modifier
 {
 
+knp::core::messaging::SpikeData select_random_n(
+    knp::core::messaging::SpikeData &input, size_t n, std::mt19937 &random_engine)
+{
+    if (input.size() <= n) return input;
+    std::uniform_int_distribution<size_t> distribution;
+    knp::core::messaging::SpikeData result;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const size_t index = distribution(random_engine) % (input.size() - i);
+        result.push_back(input[index]);
+        std::swap(input[index], input[input.size() - 1 - i]);
+    }
+    return result;
+}
+
+
 knp::core::messaging::SpikeData KWtaRandomHandler::operator()(std::vector<knp::core::messaging::SpikeMessage> &messages)
 {
     if (messages.empty())
@@ -44,13 +60,7 @@ knp::core::messaging::SpikeData KWtaRandomHandler::operator()(std::vector<knp::c
         return msg.neuron_indexes_;
     }
 
-    knp::core::messaging::SpikeData out_spikes;
-    for (size_t i = 0; i < num_winners_; ++i)
-    {
-        const size_t index = distribution_(random_engine_) % (msg.neuron_indexes_.size() - i);
-        out_spikes.push_back(msg.neuron_indexes_[index]);
-        std::swap(msg.neuron_indexes_[index], msg.neuron_indexes_[msg.neuron_indexes_.size() - 1 - i]);
-    }
+    knp::core::messaging::SpikeData out_spikes = select_random_n(msg.neuron_indexes_, num_winners_, random_engine_);
 
     return out_spikes;
 }
@@ -106,6 +116,33 @@ knp::core::messaging::SpikeData GroupWtaRandomHandler::operator()(
         {
             result.push_back(spike);
         }
+    }
+    return result;
+}
+
+
+knp::core::messaging::SpikeData KWtaPerGroup::operator()(
+    const std::vector<knp::core::messaging::SpikeMessage> &messages)
+{
+    if (messages.empty()) return {};
+
+    auto spikes = messages[0].neuron_indexes_;
+    if (spikes.empty()) return {};
+
+    std::vector<knp::core::messaging::SpikeData> spikes_per_group(group_borders_.size() + 1);
+    for (const auto &spike : spikes)
+    {
+        const size_t group_index =
+            std::upper_bound(group_borders_.begin(), group_borders_.end(), spike) - group_borders_.begin();
+        spikes_per_group[group_index].push_back(spike);
+    }
+
+    knp::core::messaging::SpikeData result;
+    result.reserve(group_borders_.size() * winners_per_group_);
+    for (auto &spike_group : spikes_per_group)
+    {
+        knp::core::messaging::SpikeData result_buf = select_random_n(spike_group, winners_per_group_, random_engine_);
+        result.insert(result.end(), result_buf.begin(), result_buf.end());
     }
     return result;
 }

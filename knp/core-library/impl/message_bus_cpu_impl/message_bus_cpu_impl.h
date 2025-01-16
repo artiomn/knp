@@ -28,6 +28,7 @@
 #include <memory>
 #include <mutex>
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 
@@ -43,15 +44,21 @@ class MessageBusCPUImpl : public MessageBusImpl
 public:
     void update() override;
     size_t step() override;
+    template <typename MessageType>
+    Subscription<MessageType> &subscribe(const UID &receiver, const std::vector<UID> &senders);
     [[nodiscard]] core::MessageEndpoint create_endpoint() override;
 
 private:
-    // cppcheck-suppress unusedStructMember
     std::vector<knp::core::messaging::MessageVariant> messages_to_route_;
+
+    // This is a list of endpoint data:
+    // First vector is a pointer to a set of messages the endpoint is sending.
+    // Second vector is a set of messages endpoint is receiving.
+    // Third set contains message senders, and is kept updated by endpoints when they add or remove them.
     std::list<std::tuple<
-        std::weak_ptr<std::vector<messaging::MessageVariant>>, std::weak_ptr<std::vector<messaging::MessageVariant>>>>
-        // cppcheck-suppress unusedStructMember
-        endpoint_messages_;
+        std::weak_ptr<std::vector<messaging::MessageVariant>>, std::weak_ptr<std::vector<messaging::MessageVariant>>,
+        std::weak_ptr<std::unordered_set<knp::core::UID, knp::core::uid_hash>>>>
+        endpoint_data_;
     std::mutex mutex_;
 };
 }  // namespace knp::core::messaging::impl

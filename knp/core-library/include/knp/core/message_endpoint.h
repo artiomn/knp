@@ -33,6 +33,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -195,6 +196,15 @@ public:
      */
     const SubscriptionContainer &get_endpoint_subscriptions() const { return subscriptions_; }
 
+    /**
+     * @brief Get weak ptr to senders list.
+     */
+    auto get_senders_ptr()
+    {
+        std::weak_ptr<std::unordered_set<knp::core::UID, knp::core::uid_hash>> result{senders_};
+        return result;
+    }
+
 protected:
     /**
      * @brief Message endpoint implementation.
@@ -212,6 +222,17 @@ private:
      * @brief Container that stores all the subscriptions for the current endpoint.
      */
     SubscriptionContainer subscriptions_;
+
+    /**
+     * @brief A set that contains all senders that this endpoint receives messages from.
+     */
+    std::shared_ptr<std::unordered_set<knp::core::UID, knp::core::uid_hash>> senders_ =
+        std::make_shared<std::unordered_set<knp::core::UID, knp::core::uid_hash>>();
+
+    /**
+     * @brief Update list of senders.
+     */
+    void update_senders();
 };
 
 }  // namespace knp::core
