@@ -198,6 +198,7 @@ public:
 
     /**
      * @brief Get weak ptr to senders list.
+     * @return weak pointer to unordered set of sender UIDs.
      */
     auto get_senders_ptr()
     {
