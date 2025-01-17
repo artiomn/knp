@@ -31,7 +31,7 @@
 #include <tests_common.h>
 
 
-TEST(MessageHandlerSuite, MessageHandlerWTA)
+TEST(MessageHandlerSuite, KWTA)
 {
     std::random_device rd;
     int seed = rd();
@@ -51,7 +51,7 @@ TEST(MessageHandlerSuite, MessageHandlerWTA)
 }
 
 
-TEST(MessageHandlerSuite, MessageHandlerGroupWTASingle)
+TEST(MessageHandlerSuite, GroupWTASingle)
 {
     std::random_device rd;
     int seed = rd();
@@ -73,6 +73,28 @@ TEST(MessageHandlerSuite, MessageHandlerGroupWTASingle)
     // Either group 1 or group 3 is selected.
     ASSERT_TRUE(out_data[0] + out_data[1] == 8 || out_data[0] + out_data[1] == 19);
     SPDLOG_DEBUG("Selected values are {} and {}.", out_data[0], out_data[1]);
+}
+
+
+TEST(MessageHandlerSuite, KWtaPerGroup)
+{
+    size_t seed = std::random_device{}();
+    SPDLOG_DEBUG("Seed is {}", seed);
+    // the intervals are [0, 1, 2, 3], [4, 5, 6, 7], [8, ...].
+    knp::framework::modifier::KWtaPerGroup handler({4, 8}, 1, seed);
+
+    // All neurons are activated.
+    const knp::core::messaging::SpikeMessage empty_message({{knp::core::UID{}}, {}});
+    knp::core::messaging::SpikeData result = handler({empty_message});
+    ASSERT_EQ(result.size(), 0);
+    const knp::core::messaging::SpikeMessage message({{knp::core::UID{}}, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}});
+    result = handler({message});
+    ASSERT_EQ(result.size(), 3);
+    ASSERT_GE(result[0], 0);
+    ASSERT_LT(result[0], 4);
+    ASSERT_GE(result[1], 4);
+    ASSERT_LT(result[1], 8);
+    ASSERT_GE(result[2], 8);
 }
 
 

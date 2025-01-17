@@ -53,7 +53,7 @@ public:
     /**
      * @brief Internal container for UIDs.
      */
-    using UidSet = std::unordered_set<::boost::uuids::uuid, boost::hash<boost::uuids::uuid>>;
+    using UidSet = std::unordered_set<knp::core::UID, knp::core::uid_hash>;
     // Subscription(const Subscription &) = delete;
 
 public:
@@ -82,7 +82,7 @@ public:
      * @param uid sender UID.
      * @return number of senders deleted from subscription.
      */
-    size_t remove_sender(const UID &uid) { return senders_.erase(static_cast<boost::uuids::uuid>(uid)); }
+    size_t remove_sender(const UID &uid) { return senders_.erase(uid); }
 
     /**
      * @brief Add a sender with the given UID to the subscription.
@@ -90,7 +90,7 @@ public:
      * @param uid UID of the new sender.
      * @return number of senders added.
      */
-    size_t add_sender(const UID &uid) { return senders_.insert(static_cast<boost::uuids::uuid>(uid)).second; }
+    size_t add_sender(const UID &uid) { return senders_.insert(uid).second; }
 
     /**
      * @brief Add several senders to the subscription.
@@ -109,10 +109,7 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] bool has_sender(const UID &uid) const
-    {
-        return senders_.find(static_cast<boost::uuids::uuid>(uid)) != senders_.end();
-    }
+    [[nodiscard]] bool has_sender(const UID &uid) const { return senders_.find(uid) != senders_.end(); }
 
 public:
     /**
@@ -151,7 +148,7 @@ private:
     /**
      * @brief Set of sender UIDs.
      */
-    std::unordered_set<::boost::uuids::uuid, boost::hash<boost::uuids::uuid>> senders_;
+    std::unordered_set<knp::core::UID, knp::core::uid_hash> senders_;
     /**
      * @brief Message storage.
      */

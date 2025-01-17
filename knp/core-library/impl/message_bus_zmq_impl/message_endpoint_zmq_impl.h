@@ -53,6 +53,7 @@ public:
         auto message = knp::core::messaging::extract_from_envelope(message_var->data());
         return message;
     }
+
     void send_message(const knp::core::messaging::MessageVariant &message) override
     {
         auto packed_msg = knp::core::messaging::pack_to_envelope(message);

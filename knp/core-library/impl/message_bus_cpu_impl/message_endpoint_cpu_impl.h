@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <memory>
 #include <mutex>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -59,42 +60,6 @@ public:
 
     ~MessageEndpointCPUImpl() override = default;
 
-    /**
-     * @brief Read all the messages queued to be sent, then clear message container.
-     * @return vector of messages to be sent to other endpoints.
-     */
-    [[nodiscard]] std::vector<knp::core::messaging::MessageVariant> unload_sent_messages()
-    {
-        const std::lock_guard lock(mutex_);
-        auto result = std::move(*messages_to_send_);
-
-        messages_to_send_->clear();
-        return result;
-    }
-
-    // TODO: Embarrassingly inefficient: all endpoints basically receive all messages by copying them. It needs to be
-    // optimized.
-    void add_received_messages(const std::vector<knp::core::messaging::MessageVariant> &incoming_messages)
-    {
-        const std::lock_guard lock(mutex_);
-
-        received_messages_->insert(received_messages_->end(), incoming_messages.begin(), incoming_messages.end());
-    }
-
-    void add_received_message(knp::core::messaging::MessageVariant &&incoming)
-    {
-        const std::lock_guard lock(mutex_);
-
-        received_messages_->emplace_back(incoming);
-    }
-
-    void add_received_message(const knp::core::messaging::MessageVariant &incoming)
-    {
-        const std::lock_guard lock(mutex_);
-
-        received_messages_->push_back(incoming);
-    }
-
     std::optional<knp::core::messaging::MessageVariant> receive_message() override
     {
         const std::lock_guard lock(mutex_);
@@ -112,6 +77,7 @@ public:
 private:
     std::shared_ptr<std::vector<messaging::MessageVariant>> messages_to_send_;
     std::shared_ptr<std::vector<messaging::MessageVariant>> received_messages_;
+    std::unordered_set<knp::core::UID, knp::core::uid_hash> senders_;
     std::mutex mutex_;
 };
 
