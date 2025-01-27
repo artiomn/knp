@@ -20,7 +20,7 @@
  */
 #pragma once
 
-
+#include <knp/core/impexp.h>
 #include <knp/core/message_endpoint.h>
 #include <knp/core/messaging/messaging.h>
 
@@ -38,7 +38,7 @@ namespace knp::framework::modifier
  * @brief A modifier functor to process spikes and select random K spikes out of the whole set.
  * @note Only processes a single message.
  */
-class KWtaRandomHandler
+class KNP_DECLSPEC KWtaRandomHandler
 {
 public:
     /**
@@ -63,7 +63,6 @@ public:
 private:
     size_t num_winners_;
     std::mt19937 random_engine_;
-    std::uniform_int_distribution<size_t> distribution_;
 };
 
 
@@ -72,7 +71,7 @@ private:
  * @note Group is considered to be winning if it is in the top K groups sorted by number of spikes in descending order.
  * @note If last place in the top K is shared between groups, the functor selects random ones among the sharing groups.
  */
-class GroupWtaRandomHandler
+class KNP_DECLSPEC GroupWtaRandomHandler
 {
 public:
     /**
@@ -104,9 +103,41 @@ private:
 
 
 /**
+ * @brief K spikes per group handler.
+ * @note Input message is divided into independent groups and only k spikes from each group are allowed to pass.
+ */
+class KNP_DECLSPEC KWtaPerGroup
+{
+public:
+    /**
+     * @brief Functor constructor.
+     * @param group_borders right borders of the index intervals. Border is not included in the interval.
+     * @param winners_per_group the number of winning neurons per group.
+     * @param seed seed for internal random number generator.
+     */
+    explicit KWtaPerGroup(const std::vector<size_t> &group_borders, size_t winners_per_group = 1, int seed = 0)
+        : group_borders_(group_borders), winners_per_group_(winners_per_group), random_engine_(seed)
+    {
+        std::sort(group_borders_.begin(), group_borders_.end());
+    }
+
+    /**
+     * @brief Call operator, returns a set of N spikes.
+     * @param messages input messages.
+     * @return random winning spikes from each group.
+     */
+    knp::core::messaging::SpikeData operator()(const std::vector<knp::core::messaging::SpikeMessage> &messages);
+
+private:
+    std::vector<size_t> group_borders_;
+    size_t winners_per_group_;
+    std::mt19937 random_engine_;
+};
+
+/**
  * @brief Spike handler functor. An output vector has a spike if that spike was present in at least one input message.
  */
-class SpikeUnionHandler
+class KNP_DECLSPEC SpikeUnionHandler
 {
 public:
     /**
