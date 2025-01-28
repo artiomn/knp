@@ -41,6 +41,27 @@ private:
 };
 
 
+template <class DataIn>
+struct BinaryFunction<knp::core::messaging::SpikeData, DataIn>
+{
+    using DataOut = knp::core::messaging::SpikeData;
+
+public:
+    explicit BinaryFunction(py::object func) : func_(std::move(func)) {}
+
+    DataOut operator()(const DataIn &input)
+    {
+        auto value = py::call<py::list>(func_.ptr(), input);
+        return DataOut(
+            py::stl_input_iterator<knp::core::messaging::SpikeIndex>(value),
+            py::stl_input_iterator<knp::core::messaging::SpikeIndex>());
+    }
+
+private:
+    py::object func_;
+};
+
+
 std::shared_ptr<knp::framework::ModelExecutor> create_model_executor(
     knp::framework::Model &model, std::shared_ptr<knp::core::Backend> &backend, py::dict &input_map)
 {

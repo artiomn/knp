@@ -47,8 +47,9 @@ def is_continue_execution(step_num):  # type: ignore[no-untyped-def]
 def run_model(model, input_channel_uid, input_generator, output_uid, root_path):  # type: ignore[no-untyped-def]
     backend = BackendLoader().load(f'{root_path}/../bin/libknp-cpu-single-threaded-backend')
     input_channel_map = {input_channel_uid: input_generator}
+    print("Creating model executor...")
     model_executor = ModelExecutor(model, backend, input_channel_map)
-    print("starting model executor")
+    print("Starting model executor...")
     model_executor.start(is_continue_execution)
     output = model.output_channels[output_uid].read_some_from_buffer(0, 20)
     return output

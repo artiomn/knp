@@ -113,8 +113,11 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
                 else
                 {
                     knp::core::messaging::SynapticImpactMessage message_out{
-                        {projection.get_uid(), step_n}, projection.get_presynaptic(), projection.get_postsynaptic(),
-                        projection.get_presynaptic(),   is_forcing<ProjectionType>(), {impact}};
+                        {projection.get_uid(), step_n},
+                        projection.get_presynaptic(),
+                        projection.get_postsynaptic(),
+                        is_forcing<ProjectionType>(),
+                        {impact}};
                     future_messages.insert(std::make_pair(future_step, message_out));
                 }
             }
