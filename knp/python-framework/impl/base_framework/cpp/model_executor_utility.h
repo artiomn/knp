@@ -106,3 +106,9 @@ void add_executor_impact_observer(
         std::function{BinaryFunction<void, std::vector<knp::core::messaging::SynapticImpactMessage>>{impact_proc}},
         senders);
 }
+
+
+auto &get_output_channel(knp::framework::ModelExecutor &self, const knp::core::UID &channel_uid)
+{
+    return self.get_loader().get_output_channel(channel_uid);
+}

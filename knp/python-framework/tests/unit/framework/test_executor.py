@@ -47,16 +47,22 @@ def is_continue_execution(step_num):  # type: ignore[no-untyped-def]
 def run_model(model, input_channel_uid, input_generator, output_uid, root_path):  # type: ignore[no-untyped-def]
     backend = BackendLoader().load(f'{root_path}/../bin/libknp-cpu-single-threaded-backend')
     input_channel_map = {input_channel_uid: input_generator}
-    print("Creating model executor...")
     model_executor = ModelExecutor(model, backend, input_channel_map)
-    print("Starting model executor...")
     model_executor.start(is_continue_execution)
-    output = model.output_channels[output_uid].read_some_from_buffer(0, 20)
+    output = model_executor.get_output_channel(output_uid).read_some_from_buffer(0, 20)
     return output
+
+
+def messages_to_results(messages):  # type: ignore[no-untyped-def]
+    result = []
+    for msg in messages:
+        result.append(msg.header.send_time)
+    return result
 
 
 def test_small_network(pytestconfig):  # type: ignore[no-untyped-def]
     model, input_uid, output_uid = create_model()  # type: ignore[no-untyped-call]
-    results = run_model(model, input_uid, input_data_generator, output_uid, pytestconfig.rootdir)  # type: ignore[no-untyped-call]
+    messages = run_model(model, input_uid, input_data_generator, output_uid, pytestconfig.rootdir)  # type: ignore[no-untyped-call]
+    results = messages_to_results(messages)  # type: ignore[no-untyped-call]
     expected_results = [1, 6, 7, 11, 12, 13, 16, 17, 18, 19]
     assert results == expected_results
