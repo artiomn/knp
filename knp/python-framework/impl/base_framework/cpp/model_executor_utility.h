@@ -32,7 +32,17 @@ template <class DataOut, class DataIn>
 struct BinaryFunction
 {
 public:
-    explicit BinaryFunction(py::object func) : func_(std::move(func)) {}
+    explicit BinaryFunction(py::object func) : func_(std::move(func))
+    {
+        try
+        {
+            py::object call = func_.attr("__call__");
+        }
+        catch (...)
+        {
+            throw;
+        }
+    }
     //knp::core::messaging::SpikeData operator()(const knp::core::Step &step)
     DataOut operator()(const DataIn &input) { return boost::python::call<DataOut>(func_.ptr(), input); }
 
@@ -47,7 +57,17 @@ struct BinaryFunction<knp::core::messaging::SpikeData, DataIn>
     using DataOut = knp::core::messaging::SpikeData;
 
 public:
-    explicit BinaryFunction(py::object func) : func_(std::move(func)) {}
+    explicit BinaryFunction(py::object func) : func_(std::move(func))
+    {
+        try
+        {
+            py::object call = func_.attr("__call__");
+        }
+        catch (...)
+        {
+            throw;
+        }
+    }
 
     DataOut operator()(const DataIn &input)
     {
