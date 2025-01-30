@@ -36,15 +36,15 @@ jobs:
       # 1. <Linux, Debug, latest GCC compiler toolchain on the default runner image, default generator>
       # 2. <Linux, Debug, latest Clang compiler toolchain on the default runner image, default generator>
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         build_type: [Debug]
         c_compiler: [gcc, clang]
         arch: [amd64, arm64]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             c_compiler: clang
             cpp_compiler: clang++
 
