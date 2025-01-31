@@ -45,7 +45,7 @@ def is_continue_execution(step_num):  # type: ignore[no-untyped-def]
 
 
 def run_model(model, input_channel_uid, input_generator, output_uid, root_path):  # type: ignore[no-untyped-def]
-    backend = BackendLoader().load(f'{root_path}/../bin/libknp-cpu-single-threaded-backend')
+    backend = BackendLoader().load(f'{root_path}/../bin/knp-cpu-single-threaded-backend')
     input_channel_map = {input_channel_uid: input_generator}
     model_executor = ModelExecutor(model, backend, input_channel_map)
     model_executor.start(is_continue_execution)
