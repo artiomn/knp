@@ -24,13 +24,12 @@ namespace fs = std::filesystem;
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
-constexpr int numSubNetworks = 1;
+constexpr int numSubNetworks = 10;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 200000;  // 1200000;
-constexpr int TestingPeriod = 2000;     // 200000;
+constexpr int LearningPeriod = 1200000;
+constexpr int TestingPeriod = 200000;
 
 constexpr int logging_aggregation_period = 4000;
-
 
 // Create a spike message generator from an array of boolean frames.
 auto make_input_generator(const std::vector<std::vector<bool>> &spike_frames, size_t offset)
@@ -70,7 +69,7 @@ std::vector<int> read_classes(std::string classes_file, std::vector<std::vector<
         ss >> cla;
         std::vector<bool> buffer(input_size, false);
         buffer[cla] = true;
-        if (spike_classes.size() >= TestingPeriod) classes_for_testing.push_back(cla);
+        if (spike_classes.size() >= LearningPeriod) classes_for_testing.push_back(cla);
         for (int i = 0; i < frames_per_image; ++i) spike_classes.push_back(buffer);
     }
     return classes_for_testing;
@@ -470,12 +469,13 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
     std::vector<size_t> borders;
     std::vector<knp::core::UID> result;
     for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
+    int seed = 0;
     for (const auto &senders_receivers : network.data_.wta_data)
     {
         knp::core::UID handler_uid;
         executor.add_spike_message_handler(
-            knp::framework::modifier::KWtaPerGroup{borders}, senders_receivers.first, senders_receivers.second,
-            handler_uid);
+            knp::framework::modifier::KWtaPerGroup{borders, 1, seed++}, senders_receivers.first,
+            senders_receivers.second, handler_uid);
         result.push_back(handler_uid);
     }
     return result;
@@ -488,12 +488,13 @@ std::vector<knp::core::UID> add_wta_handlers_inference(
     std::vector<size_t> borders;
     std::vector<knp::core::UID> result;
     for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
+    int seed = 0;
     for (const auto &senders_receivers : network.data_.wta_data)
     {
         knp::core::UID handler_uid;
         executor.add_spike_message_handler(
-            knp::framework::modifier::GroupWtaRandomHandler{borders}, senders_receivers.first, senders_receivers.second,
-            handler_uid);
+            knp::framework::modifier::GroupWtaRandomHandler{borders, 1, seed++}, senders_receivers.first,
+            senders_receivers.second, handler_uid);
         result.push_back(handler_uid);
     }
     return result;
@@ -520,7 +521,7 @@ AnnotatedNetwork train_mnist_network(
     knp::framework::ModelLoader::InputChannelMap channel_map;
 
     channel_map.insert({input_image_channel_raster, make_input_generator(spike_frames, 0)});
-    channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 20)});
+    channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 0)});
 
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(model, backend_loader.load(path_to_backend), std::move(channel_map));
@@ -574,7 +575,7 @@ AnnotatedNetwork train_mnist_network(
         {
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_projection_observer_function(
-                    weight_stream, 500, model_executor, example_network.data_.projections_from_raster[0]),
+                    weight_stream, 2000, model_executor, example_network.data_.projections_from_raster[0]),
                 {});
         }
     }

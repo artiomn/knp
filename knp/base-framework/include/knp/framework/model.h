@@ -131,9 +131,7 @@ public:
 private:
     knp::core::BaseData base_;
     knp::framework::Network network_;
-    // cppcheck-suppress unusedStructMember
     std::unordered_multimap<core::UID, core::UID, core::uid_hash> in_channels_;
-    // cppcheck-suppress unusedStructMember
     std::unordered_multimap<core::UID, core::UID, core::uid_hash> out_channels_;
 };
 
