@@ -25,12 +25,12 @@ WORKDIR /azp
 RUN \
   echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes \
   && export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//') \
-#  && wget https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/cuda-keyring_1.1-1_all.deb \
-#  && dpkg -i cuda-keyring_1.1-1_all.deb \
-#  && rm cuda-keyring_1.1-1_all.deb \
-#  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
-#  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
-#    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
+  && wget https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/cuda-keyring_1.1-1_all.deb \
+  && dpkg -i cuda-keyring_1.1-1_all.deb \
+  && rm cuda-keyring_1.1-1_all.deb \
+  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
+  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
+    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
   && apt-get update \
   && apt-get -y --no-install-recommends --show-progress install \
     apt-transport-https \
@@ -46,15 +46,15 @@ RUN \
     cppcheck \
 #    cppzmq-dev \
     curl \
-    # cuda-12-3 \
-#    cuda-libraries-dev-12-3 \
-#    libnpp-dev-12-3 \
-#    cuda-nvtx-12-3 \
-#    cuda-toolkit-12-3 \
-#    cuda-tools-12-3 \
-#    cuda-compiler-12-3 \
-#    libcusparse-dev-12-3 \
-#    libcublas-dev-12-3 \
+    cuda-12-8 \
+    cuda-libraries-dev-12-8 \
+    libnpp-dev-12-8 \
+    cuda-nvtx-12-8 \
+    cuda-toolkit-12-8 \
+    cuda-tools-12-8 \
+    cuda-compiler-12-8 \
+    libcusparse-dev-12-8 \
+    libcublas-dev-12-8 \
     flake8 \
     flex \
     fonts-liberation \
