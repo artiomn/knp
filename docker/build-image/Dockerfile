@@ -28,7 +28,6 @@ RUN \
   && wget https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/cuda-keyring_1.1-1_all.deb \
   && dpkg -i cuda-keyring_1.1-1_all.deb \
   && rm cuda-keyring_1.1-1_all.deb \
-  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
   && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
     tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
   && apt-get update \
@@ -140,10 +139,6 @@ RUN \
   && curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-`uname -s`-`uname -m` -o "${DESTINATION}" \
   && chmod +x ${DESTINATION} \
   && ln -sf ${DESTINATION} /usr/bin/docker-compose
-
-#RUN \
-#  wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb && dpkg -i libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb && rm libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb \
-#  && sed -i 's/openssl_conf = openssl_init/#openssl_conf = openssl_init/g' /etc/ssl/openssl.cnf
 
 # COPY "${OCLINT_FILE}" .
 RUN \
