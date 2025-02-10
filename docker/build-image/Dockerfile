@@ -31,7 +31,7 @@ RUN \
   && wget "https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/cuda-keyring_1.1-1_all.deb" \
   && dpkg -i cuda-keyring_1.1-1_all.deb \
   && rm cuda-keyring_1.1-1_all.deb \
-  && curl -fsSL https://https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/3bf863cc.pub | gpg --dearmor -o /etc/apt/keyrings/cuda.gpg \
+  && curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/3bf863cc.pub | gpg --dearmor -o /etc/apt/keyrings/cuda.gpg \
   && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/ /" | \
     tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-${CUDA_ARCH}.list \
   && apt-get update \
