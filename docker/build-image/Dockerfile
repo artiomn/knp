@@ -27,7 +27,7 @@ WORKDIR /azp
 RUN \
   echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes \
   && if [ "${TARGETARCH}" = "arm64" ]; then export CUDA_ARCH="arm64"; export DEBIAN_VERSION="ubuntu2204"; else export CUDA_ARCH="x86_64"; export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//'); fi \
-  && wget "https://geveloper.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/cuda-keyring_1.1-1_all.deb" \
+  && wget "https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/cuda-keyring_1.1-1_all.deb" \
   && dpkg -i cuda-keyring_1.1-1_all.deb \
   && rm cuda-keyring_1.1-1_all.deb \
   && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/ /" | \
