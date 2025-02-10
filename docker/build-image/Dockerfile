@@ -1,4 +1,4 @@
-# Build image Dockerfile.
+# Build image Dockerfile for x86_64.
 #
 # © 2024 AO Kaspersky Lab
 #
@@ -24,12 +24,12 @@ WORKDIR /azp
 
 RUN \
   echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes \
-  && export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//') \
-  && wget https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/cuda-keyring_1.1-1_all.deb \
+  && if [ ${BUILDARCH} = "arm64" ]; then export CUDA_ARCH="arm64"; export DEBIAN_VERSION="ubuntu2204"; else export CUDA_ARCH="x86_64"; export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//'); fi \
+  && wget "https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/cuda-keyring_1.1-1_all.deb" \
   && dpkg -i cuda-keyring_1.1-1_all.deb \
   && rm cuda-keyring_1.1-1_all.deb \
-  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
-    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
+  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/ /" | \
+    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-${CUDA_ARCH}.list \
   && apt-get update \
   && apt-get -y --no-install-recommends --show-progress install \
     apt-transport-https \
