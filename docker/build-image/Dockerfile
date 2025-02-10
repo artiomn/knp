@@ -29,8 +29,10 @@ RUN \
   && if [ "${TARGETARCH}" = "arm64" ]; then export CUDA_ARCH="arm64"; export DEBIAN_VERSION="ubuntu2204"; else export CUDA_ARCH="x86_64"; export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//'); fi \
   && mkdir -m 0755 -p /etc/apt/keyrings/ \
   && wget "https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/cuda-keyring_1.1-1_all.deb" \
+  && apt-key del 7fa2af80 \
   && dpkg -i cuda-keyring_1.1-1_all.deb \
   && rm cuda-keyring_1.1-1_all.deb \
+  && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/3bf863cc.pub \
   && curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/3bf863cc.pub | gpg --dearmor -o /etc/apt/keyrings/cuda.gpg \
   && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/${CUDA_ARCH}/ /" | \
     tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-${CUDA_ARCH}.list \
