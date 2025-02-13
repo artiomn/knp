@@ -26,8 +26,8 @@ using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::Synap
 
 constexpr int numSubNetworks = 10;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 1200000;
-constexpr int TestingPeriod = 200000;
+constexpr int LearningPeriod = 200000;
+constexpr int TestingPeriod = 10000;
 
 constexpr int logging_aggregation_period = 4000;
 
@@ -127,8 +127,8 @@ auto make_log_observer_function(std::ofstream &log_stream, const std::map<knp::c
             }
             log_stream << std::endl;
         }
-        log_stream << "-----------------" << std::endl;
     };
+    std::cout << "}log obs" << std::endl;
     return observer_func;
 }
 
@@ -469,7 +469,9 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
     std::vector<size_t> borders;
     std::vector<knp::core::UID> result;
     for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
-    int seed = 0;
+    // std::random_device rnd_device;
+    int seed = 0;  // rnd_device();
+    std::cout << "Seed " << seed << std::endl;
     for (const auto &senders_receivers : network.data_.wta_data)
     {
         knp::core::UID handler_uid;
@@ -562,20 +564,21 @@ AnnotatedNetwork train_mnist_network(
         }
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
-        all_spikes_stream.open(log_path / "all_spikes_training.log", std::ofstream::out);
-        if (all_spikes_stream.is_open())
-        {
-            auto all_senders = all_populations_uids;
-            all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
-            model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-                make_log_observer_function(all_spikes_stream, example_network.data_.population_names), all_senders);
-        }
+        //        all_spikes_stream.open(log_path / "all_spikes_training.log", std::ofstream::out);
+        //        if (all_spikes_stream.is_open())
+        //        {
+        //            auto all_senders = all_populations_uids;
+        //            all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
+        //            model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+        //                make_log_observer_function(all_spikes_stream, example_network.data_.population_names),
+        //                all_senders);
+        //        }
         weight_stream.open(log_path / "weights.log", std::ofstream::out);
         if (weight_stream.is_open())
         {
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_projection_observer_function(
-                    weight_stream, 2000, model_executor, example_network.data_.projections_from_raster[0]),
+                    weight_stream, 199000, model_executor, example_network.data_.projections_from_raster[0]),
                 {});
         }
     }
@@ -736,6 +739,7 @@ int main(int argc, char **argv)
     std::vector<std::vector<bool>> spike_classes;
     std::vector<int> classes_for_testing = read_classes(argv[2], spike_classes);
     AnnotatedNetwork trained_network = train_mnist_network(path_to_backend, spike_frames, spike_classes, log_path);
+    // AnnotatedNetwork trained_network = parse_network_from_sonata("");
 
     auto spikes = run_mnist_inference(path_to_backend, trained_network, spike_frames, log_path);
     std::cout << get_time_string() << ": inference finished  -- output spike count is " << spikes.size() << std::endl;

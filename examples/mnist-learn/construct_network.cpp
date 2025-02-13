@@ -6,6 +6,7 @@
 
 #include <knp/core/population.h>
 #include <knp/core/projection.h>
+#include <knp/framework/sonata/network_io.h>
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
@@ -22,6 +23,12 @@ using ResourceSynapseData = ResourceDeltaProjection::Synapse;
 using ResourceSynapseGenerator = std::function<ResourceSynapseData(size_t)>;
 using ResourceSynapseParams = knp::synapse_traits::synapse_parameters<ResourceSynapse>;
 using ResourceNeuronGenerator = std::function<ResourceNeuronData(size_t)>;
+
+
+constexpr float min_synaptic_weight = -0.7;
+constexpr float max_synaptic_weight = 0.864249F;
+constexpr float L_neuron_potential_decay = 1.0 - 1.0 / 3.0;
+constexpr float dopamine_parameter = 0.042F;
 
 
 // A dense projection generator from a default synapse.
@@ -58,7 +65,7 @@ DeltaProjection::SynapseGenerator make_all_to_all_sections_generator(
         size_t index_in_section = index % (section_size * section_size);
         size_t input_neuron = index_in_section % section_size;
         size_t output_neuron = index_in_section / section_size;
-        if (input_neuron == output_neuron) return {};  // Сам к себе: связи нет.
+        if (input_neuron == output_neuron) return {};  // No link to itself.
         return DeltaProjection::Synapse{
             default_synapse, section * section_size + input_neuron, section * section_size + output_neuron};
     };
@@ -136,11 +143,11 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         ResourceNeuronData default_neuron{{}};
         default_neuron.activation_threshold_ = 8.571;
         ResourceNeuronData L_neuron = default_neuron;
-        L_neuron.potential_decay_ = 1 - 1 / 3.;
-        L_neuron.d_h_ = -0.042F;
+        L_neuron.potential_decay_ = L_neuron_potential_decay;
+        L_neuron.d_h_ = -dopamine_parameter;
         L_neuron.dopamine_plasticity_time_ = 10;
-        // L_neuron.w_min_ = -0.7F;
-        // L_neuron.w_max_ = 0.864249F;
+        // L_neuron.w_min_ = min_synaptic_weight;
+        // L_neuron.w_max_ = max_synaptic_weight;
         L_neuron.isi_max_ = 10;
         // L_neuron.synaptic_resource_threshold_ = 10;
 
@@ -185,8 +192,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         auto afferent_synapse = default_synapse;
         afferent_synapse.rule_.synaptic_resource_ = 1.267F;
         afferent_synapse.rule_.dopamine_plasticity_period_ = 10;
-        afferent_synapse.rule_.w_min_ = -0.7F;
-        afferent_synapse.rule_.w_max_ = 0.864249F;
+        afferent_synapse.rule_.w_min_ = min_synaptic_weight;
+        afferent_synapse.rule_.w_max_ = max_synaptic_weight;
         ResourceDeltaProjection input_projection{
             knp::core::UID{false}, population_uids[INPUT], make_dense_generator(28 * 28, afferent_synapse),
             28 * 28 * 150};
@@ -241,7 +248,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         }
 
         // Дофаминовая проекция
-        const DeltaSynapseData default_dopamine_synapse{0.042F, 1, knp::synapse_traits::OutputType::DOPAMINE};
+        const DeltaSynapseData default_dopamine_synapse{
+            dopamine_parameter, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3{
             population_uids[DOPAMINE], population_uids[INPUT],
             make_aligned_generator(pop_data[DOPAMINE].pd.size_, pop_data[INPUT].pd.size_, default_dopamine_synapse),
@@ -344,7 +352,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         OUTPUT = 2,
         GATE = 3,
     };
-    constexpr float dopamine_value = 0.042F;
+    constexpr float dopamine_value = dopamine_parameter;
     result.data_.wta_data.resize(num_compound_networks);
     for (int i = 0; i < num_compound_networks; ++i)
     {
@@ -352,11 +360,11 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         ResourceNeuronData default_neuron{{}};
         default_neuron.activation_threshold_ = 8.571;
         ResourceNeuronData L_neuron = default_neuron;
-        L_neuron.potential_decay_ = 1 - 1 / 3.;
+        L_neuron.potential_decay_ = L_neuron_potential_decay;
         L_neuron.d_h_ = -dopamine_value;
         L_neuron.dopamine_plasticity_time_ = 10;
-        // L_neuron.w_min_ = -0.7F;
-        // L_neuron.w_max_ = 0.864249F;
+        // L_neuron.w_min_ = min_synaptic_weight;
+        // L_neuron.w_max_ = max_synaptic_weight;
         L_neuron.isi_max_ = 10;
         // L_neuron.synaptic_resource_threshold_ = 10;
 
@@ -402,8 +410,8 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         auto afferent_synapse = default_synapse;
         afferent_synapse.rule_.synaptic_resource_ = 1.267F;
         afferent_synapse.rule_.dopamine_plasticity_period_ = 10;
-        afferent_synapse.rule_.w_min_ = -0.7F;
-        afferent_synapse.rule_.w_max_ = 0.864249F;
+        afferent_synapse.rule_.w_min_ = min_synaptic_weight;
+        afferent_synapse.rule_.w_max_ = max_synaptic_weight;
         ResourceDeltaProjection input_projection{
             knp::core::UID{false}, population_uids[INPUT], make_dense_generator(28 * 28, afferent_synapse),
             28 * 28 * 150};
@@ -507,5 +515,61 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
     }
 
     // Сеть готова, возвращаем её.
+    return result;
+}
+
+
+AnnotatedNetwork parse_network_from_sonata(const std::filesystem::path &path_to_model)
+{
+    AnnotatedNetwork result;
+    result.network_ = knp::framework::sonata::load_network(path_to_model);
+    constexpr int input_projection_size = 28 * 28 * 150;
+    constexpr int output_pop_size = 10;
+    std::vector<knp::core::UID> input_pop_uids;
+    std::vector<knp::core::UID> wta_pop_uids;
+    std::vector<knp::core::UID> output_pop_uids;
+    std::vector<knp::core::UID> dop_pop_uids;
+    // Projections that have an appropriate size are input projections
+    for (auto proj_iter = result.network_.begin_projections(); proj_iter != result.network_.end_projections();
+         ++proj_iter)
+    {
+        size_t proj_size = std::visit([](auto &proj) { return proj.size(); }, *proj_iter);
+        knp::core::UID proj_uid = std::visit([](auto &proj) { return proj.get_uid(); }, *proj_iter);
+        knp::core::UID post_uid = std::visit([](auto &proj) { return proj.get_postsynaptic(); }, *proj_iter);
+
+        if (proj_size == input_projection_size)
+        {
+            result.data_.projections_from_raster.push_back(proj_uid);
+            result.data_.population_names.insert({post_uid, "INPUT"});
+            result.data_.inference_population_uids.insert(post_uid);
+            input_pop_uids.push_back(post_uid);
+        }
+    }
+    std::set<knp::core::UID> population_uids;
+    for (auto pop_iter = result.network_.begin_populations(); pop_iter != result.network_.end_populations(); ++pop_iter)
+    {
+        knp::core::UID pop_uid = std::visit([](auto &pop) { return pop.get_uid(); }, *pop_iter);
+        size_t pop_size = std::visit([](auto &pop) { return pop.size(); }, *pop_iter);
+        // Find output candidates
+        if (pop_size == output_pop_size) population_uids.insert(pop_uid);
+    }
+
+    // Check output candidates: output population has no direct contact with input
+    for (auto proj_iter = result.network_.begin_projections(); proj_iter != result.network_.end_projections();
+         ++proj_iter)
+    {
+        knp::core::UID pre_uid = std::visit([](auto &proj) { return proj.get_presynaptic(); }, *proj_iter);
+        knp::core::UID post_uid = std::visit([](auto &proj) { return proj.get_postsynaptic(); }, *proj_iter);
+        if (std::find(input_pop_uids.begin(), input_pop_uids.end(), pre_uid) != input_pop_uids.end())
+            population_uids.erase(post_uid);
+        if (std::find(input_pop_uids.begin(), input_pop_uids.end(), post_uid) != input_pop_uids.end())
+            population_uids.erase(pre_uid);
+    }
+    // The ones left in population_uids are output populations.
+    for (const auto &uid : population_uids)
+    {
+        result.data_.output_uids.push_back(uid);
+        result.data_.population_names.insert({uid, "OUTPUT"});
+    }
     return result;
 }

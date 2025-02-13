@@ -6,6 +6,7 @@
 
 #include <knp/framework/network.h>
 
+#include <filesystem>
 #include <map>
 #include <set>
 #include <string>
@@ -33,3 +34,5 @@ struct AnnotatedNetwork
 AnnotatedNetwork create_example_network(int num_compound_networks);
 
 AnnotatedNetwork create_example_network_new(int num_compound_networks);
+
+AnnotatedNetwork parse_network_from_sonata(const std::filesystem::path &path_to_model);
