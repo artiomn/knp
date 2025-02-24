@@ -28,11 +28,16 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.30")
     cmake_policy(SET CMP0167 OLD)
 endif()
 
-project(knp-gpu-cuda-backend VERSION "${KNP_VERSION}" LANGUAGES C CXX
+project(knp-gpu-cuda-backend VERSION "${KNP_VERSION}" LANGUAGES CUDA C CXX
         DESCRIPTION "Kaspersky Neuromorphic Platform NVIDIA CUDA GPU backend"
         HOMEPAGE_URL "https://neuro.kaspersky.ru/neyromorfnye-tekhnologii/")
 
-set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/backends/cpu-single-threaded")
+if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+endif()
+
+set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/backends/gpu-cuda")
 
 include(GNUInstallDirs)
 include(clang-tidy)
@@ -60,7 +65,8 @@ set_target_properties(
         "${PROJECT_NAME}"
         PROPERTIES
         VERSION "${CMAKE_PROJECT_VERSION}"
-        SOVERSION "${CMAKE_PROJECT_VERSION_MAJOR}")
+        SOVERSION "${CMAKE_PROJECT_VERSION_MAJOR}"
+        CUDA_SEPARABLE_COMPILATION ON)
 
 if (KNP_INSTALL)
     knp_get_component_name("${PROJECT_NAME}" COMPONENT_NAME)
