@@ -20,8 +20,11 @@
  */
 
 #include <knp/devices/gpu-cuda.h>
+
 #include <spdlog/spdlog.h>
+
 #include <exception>
+
 #include <boost/uuid/name_generator.hpp>
 
 
@@ -33,16 +36,19 @@ static constexpr const char* ns_uid = "0000-0000-0000-0001";
 
 CUDA::CUDA(uint32_t gpu_num) : cpu_num_(cpu_num), power_meter_{std::make_unique<CpuPower>(cpu_num)}
 {
-    gpu_name_ = ""; /*pcm_instance->getCUDABrandString() + " " + pcm_instance->getCUDAFamilyModelString() + " " +
-                std::to_string(cpu_num);*/
+    gpu_name_ = "";  // pcm_instance->getCUDABrandString() + " " + pcm_instance->getCUDAFamilyModelString() + " " +
+                     // std::to_string(cpu_num);
     Device::base_.uid_ = knp::core::UID(boost::uuids::name_generator(core::UID(ns_uid))(gpu_name_.c_str()));
 }
 
 
-CUDA::CUDA(CUDA&& other) : gpu_name_{std::move(other.gpu_name_)}} {}
+CUDA::CUDA(CUDA&& other)
+    : gpu_name_{std::move(other.gpu_name_)}
 
 
-CUDA::~CUDA() {}
+      CUDA::~CUDA()
+{
+}
 
 
 CUDA& CUDA::operator=(CUDA&& other) noexcept
@@ -86,6 +92,6 @@ KNP_DECLSPEC std::vector<CUDA> list_processors()
     return result;
 }
 
-}  // namespace knp::devices::cuda
+}  //namespace cuda
 
 }  // namespace knp::devices::gpu
