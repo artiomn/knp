@@ -25,7 +25,7 @@
 #include <knp/core/impexp.h>
 #include <knp/core/population.h>
 #include <knp/core/projection.h>
-#include <knp/devices/cpu.h>
+#include <knp/devices/gpu_cuda.h>
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 

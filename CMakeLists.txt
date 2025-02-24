@@ -183,7 +183,8 @@ if (KNP_ENABLE_AVX)
     # endif()
 
     set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
-    add_compile_options(-include x86intrin.h)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX,C>:-include>)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX,C>:x86intrin.h>)
     # -include bits/stdc++.h
 endif()
 

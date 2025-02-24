@@ -19,8 +19,10 @@
  * limitations under the License.
  */
 
-#include <knp/devices/gpu-cuda.h>
+#include <knp/devices/gpu_cuda.h>
 
+#include <cub/cub.cuh>
+#include <thrust/device_vector.h>
 #include <spdlog/spdlog.h>
 
 #include <exception>
@@ -34,7 +36,7 @@ namespace knp::devices::gpu
 static constexpr const char* ns_uid = "0000-0000-0000-0001";
 
 
-CUDA::CUDA(uint32_t gpu_num) : cpu_num_(cpu_num), power_meter_{std::make_unique<CpuPower>(cpu_num)}
+CUDA::CUDA(uint32_t gpu_num) : gpu_num_(gpu_num)
 {
     gpu_name_ = "";  // pcm_instance->getCUDABrandString() + " " + pcm_instance->getCUDAFamilyModelString() + " " +
                      // std::to_string(cpu_num);
@@ -44,9 +46,11 @@ CUDA::CUDA(uint32_t gpu_num) : cpu_num_(cpu_num), power_meter_{std::make_unique<
 
 CUDA::CUDA(CUDA&& other)
     : gpu_name_{std::move(other.gpu_name_)}
+{
+}
 
 
-      CUDA::~CUDA()
+CUDA::~CUDA()
 {
 }
 

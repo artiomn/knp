@@ -1,5 +1,5 @@
 /**
- * @file backend.cpp
+ * @file backend.cu
  * @brief CUDA backend class implementation.
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
@@ -20,6 +20,7 @@
  */
 
 
+#include <knp/backends/gpu-cuda/backend.h>
 #include <knp/devices/gpu_cuda.h>
 #include <knp/meta/assert_helpers.h>
 #include <knp/meta/stringify.h>
@@ -31,10 +32,11 @@
 
 #include <boost/mp11.hpp>
 
+
 namespace knp::backends::gpu
 {
 
-CUDA::CUDA()
+__host__ CUDA::CUDA()
 {
     SPDLOG_INFO("Single-threaded CPU backend instance created.");
 }
