@@ -106,6 +106,9 @@ private:
 
 private:
     uint32_t gpu_num_;
+    // Non const, because of move operator.
+    // cppcheck-suppress unusedStructMember
+    std::string gpu_name_;
 };
 
 

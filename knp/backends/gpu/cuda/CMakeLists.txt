@@ -40,7 +40,7 @@ endif()
 set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/backends/gpu/cuda")
 
 include(GNUInstallDirs)
-# include(clang-tidy)
+include(clang-tidy)
 include(knp-functions)
 
 find_package(Boost ${KNP_BOOST_MIN_VERSION} COMPONENTS system filesystem REQUIRED)
@@ -51,6 +51,7 @@ source_group(source REGULAR_EXPRESSION "impl/.*")
 knp_add_library("${PROJECT_NAME}"
     BOTH
         impl/backend.cpp
+        impl/cpu_cuda_device.cpp
         # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}
     ALIAS KNP::Backends::CUDA
