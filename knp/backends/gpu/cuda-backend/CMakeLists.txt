@@ -43,7 +43,7 @@ include(GNUInstallDirs)
 include(clang-tidy)
 include(knp-functions)
 
-find_package(CUDAToolkit)
+find_package(CUDAToolkit REQUIRED)
 find_package(Boost ${KNP_BOOST_MIN_VERSION} COMPONENTS system filesystem REQUIRED)
 
 file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
@@ -57,7 +57,7 @@ knp_add_library("${PROJECT_NAME}"
         ${${PROJECT_NAME}_headers}
     ALIAS KNP::Backends::CUDA
     LINK_PRIVATE
-        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only # CUDA::cudart_static
+        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::cudart_static
     LINK_PUBLIC
         KNP::Core
 )

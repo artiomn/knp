@@ -1,6 +1,6 @@
 /**
  * @file backend.cu
- * @brief CUDA backend class implementation.
+ * @brief CUDABackend backend class implementation.
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
  * @license Apache 2.0
@@ -36,40 +36,40 @@
 namespace knp::backends::gpu
 {
 
-__host__ CUDA::CUDA()
+CUDABackend::CUDABackend()
 {
     SPDLOG_INFO("Single-threaded CPU backend instance created.");
 }
 
 
-std::shared_ptr<CUDA> CUDA::create()
+std::shared_ptr<CUDABackend> CUDABackend::create()
 {
     SPDLOG_DEBUG("Creating single-threaded CPU backend instance...");
-    return std::make_shared<CUDA>();
+    return std::make_shared<CUDABackend>();
 }
 
 
-std::vector<std::string> CUDA::get_supported_neurons() const
+std::vector<std::string> CUDABackend::get_supported_neurons() const
 {
     return knp::meta::get_supported_type_names<knp::neuron_traits::AllNeurons, SupportedNeurons>(
         knp::neuron_traits::neurons_names);
 }
 
 
-std::vector<std::string> CUDA::get_supported_synapses() const
+std::vector<std::string> CUDABackend::get_supported_synapses() const
 {
     return knp::meta::get_supported_type_names<knp::synapse_traits::AllSynapses, SupportedSynapses>(
         knp::synapse_traits::synapses_names);
 }
 
 
-std::vector<size_t> CUDA::get_supported_projection_indexes() const
+std::vector<size_t> CUDABackend::get_supported_projection_indexes() const
 {
     return knp::meta::get_supported_type_indexes<core::AllProjections, SupportedProjections>();
 }
 
 
-std::vector<size_t> CUDA::get_supported_population_indexes() const
+std::vector<size_t> CUDABackend::get_supported_population_indexes() const
 {
     return knp::meta::get_supported_type_indexes<core::AllPopulations, SupportedPopulations>();
 }
@@ -83,7 +83,7 @@ SupportedVariants convert_variant(const AllVariants &input)
 }
 
 
-void CUDA::_step()
+void CUDABackend::_step()
 {
     SPDLOG_DEBUG("Starting step #{}...", get_step());
     get_message_bus().route_messages();
@@ -138,7 +138,7 @@ void CUDA::_step()
 }
 
 
-void CUDA::load_populations(const std::vector<PopulationVariants> &populations)
+void CUDABackend::load_populations(const std::vector<PopulationVariants> &populations)
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
     populations_.clear();
@@ -152,7 +152,7 @@ void CUDA::load_populations(const std::vector<PopulationVariants> &populations)
 }
 
 
-void CUDA::load_projections(const std::vector<ProjectionVariants> &projections)
+void CUDABackend::load_projections(const std::vector<ProjectionVariants> &projections)
 {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
     projections_.clear();
@@ -167,7 +167,7 @@ void CUDA::load_projections(const std::vector<ProjectionVariants> &projections)
 }
 
 
-void CUDA::load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections)
+void CUDABackend::load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections)
 {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
     knp::meta::load_from_container<SupportedProjections>(projections, projections_);
@@ -175,7 +175,7 @@ void CUDA::load_all_projections(const std::vector<knp::core::AllProjectionsVaria
 }
 
 
-void CUDA::load_all_populations(const std::vector<knp::core::AllPopulationsVariant> &populations)
+void CUDABackend::load_all_populations(const std::vector<knp::core::AllPopulationsVariant> &populations)
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
     knp::meta::load_from_container<SupportedPopulations>(populations, populations_);
@@ -183,7 +183,7 @@ void CUDA::load_all_populations(const std::vector<knp::core::AllPopulationsVaria
 }
 
 
-std::vector<std::unique_ptr<knp::core::Device>> CUDA::get_devices() const
+std::vector<std::unique_ptr<knp::core::Device>> CUDABackend::get_devices() const
 {
     std::vector<std::unique_ptr<knp::core::Device>> result;
     auto &&processors{knp::devices::gpu::cuda::list_processors()};
@@ -201,9 +201,9 @@ std::vector<std::unique_ptr<knp::core::Device>> CUDA::get_devices() const
 }
 
 
-void CUDA::_init()
+void CUDABackend::_init()
 {
-    SPDLOG_DEBUG("Initializing CUDA backend...");
+    SPDLOG_DEBUG("Initializing CUDABackend backend...");
 
     // knp::backends::cpu::init(projections_, get_message_endpoint());
 
@@ -211,7 +211,7 @@ void CUDA::_init()
 }
 
 
-std::optional<core::messaging::SpikeMessage> CUDA::calculate_population(
+std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
     core::Population<knp::neuron_traits::BLIFATNeuron> &population)
 {
     SPDLOG_TRACE("Calculate BLIFAT population {}.", std::string(population.get_uid()));
@@ -220,15 +220,15 @@ std::optional<core::messaging::SpikeMessage> CUDA::calculate_population(
 }
 
 
-std::optional<core::messaging::SpikeMessage> CUDA::calculate_population(
+std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
     knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population)
 {
     SPDLOG_TRACE("Calculate resource-based STDP-compatible BLIFAT population {}.", std::string(population.get_uid()));
-    return std:: : nullopt;
+    return std::nullopt;
 }
 
 
-void CUDA::calculate_projection(
+void CUDABackend::calculate_projection(
     knp::core::Projection<knp::synapse_traits::DeltaSynapse> &projection, SynapticMessageQueue &message_queue)
 {
     SPDLOG_TRACE("Calculate delta synapse projection {}.", std::string(projection.get_uid()));
@@ -237,7 +237,7 @@ void CUDA::calculate_projection(
 }
 
 
-void CUDA::calculate_projection(
+void CUDABackend::calculate_projection(
     knp::core::Projection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
     SynapticMessageQueue &message_queue)
 {
@@ -245,7 +245,7 @@ void CUDA::calculate_projection(
 }
 
 
-void CUDA::calculate_projection(
+void CUDABackend::calculate_projection(
     knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
     SynapticMessageQueue &message_queue)
 {
@@ -253,54 +253,54 @@ void CUDA::calculate_projection(
 }
 
 
-CUDA::PopulationIterator CUDA::begin_populations()
+CUDABackend::PopulationIterator CUDABackend::begin_populations()
 {
     return PopulationIterator{populations_.begin()};
 }
 
 
-CUDA::PopulationConstIterator CUDA::begin_populations() const
+CUDABackend::PopulationConstIterator CUDABackend::begin_populations() const
 {
     return {populations_.cbegin()};
 }
 
 
-CUDA::PopulationIterator CUDA::end_populations()
+CUDABackend::PopulationIterator CUDABackend::end_populations()
 {
     return PopulationIterator{populations_.end()};
 }
 
 
-CUDA::PopulationConstIterator CUDA::end_populations() const
+CUDABackend::PopulationConstIterator CUDABackend::end_populations() const
 {
     return populations_.cend();
 }
 
 
-CUDA::ProjectionIterator CUDA::begin_projections()
+CUDABackend::ProjectionIterator CUDABackend::begin_projections()
 {
     return ProjectionIterator{projections_.begin()};
 }
 
 
-CUDA::ProjectionConstIterator CUDA::begin_projections() const
+CUDABackend::ProjectionConstIterator CUDABackend::begin_projections() const
 {
     return projections_.cbegin();
 }
 
 
-CUDA::ProjectionIterator CUDA::end_projections()
+CUDABackend::ProjectionIterator CUDABackend::end_projections()
 {
     return ProjectionIterator{projections_.end()};
 }
 
 
-CUDA::ProjectionConstIterator CUDA::end_projections() const
+CUDABackend::ProjectionConstIterator CUDABackend::end_projections() const
 {
     return projections_.cend();
 }
 
 
-BOOST_DLL_ALIAS(knp::backends::gpu::CUDA::create, create_knp_backend)
+BOOST_DLL_ALIAS(knp::backends::gpu::CUDABackend::create, create_knp_backend)
 
 }  // namespace knp::backends::gpu
