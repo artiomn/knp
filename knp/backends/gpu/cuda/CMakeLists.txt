@@ -37,28 +37,27 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 endif()
 
-set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/backends/gpu-cuda")
+set(${PROJECT_NAME}_PUBLIC_INCLUDE_DIR "knp/backends/gpu/cuda")
 
 include(GNUInstallDirs)
-include(clang-tidy)
+# include(clang-tidy)
 include(knp-functions)
 
 find_package(Boost ${KNP_BOOST_MIN_VERSION} COMPONENTS system filesystem REQUIRED)
 
 file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
 source_group(source REGULAR_EXPRESSION "impl/.*")
-source_group(headers REGULAR_EXPRESSION "include/.*")
 
 knp_add_library("${PROJECT_NAME}"
     BOTH
         impl/backend.cpp
-        impl/get_network.cpp
+        # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}
-    ALIAS KNP::Backends::CPUSingleThreaded
+    ALIAS KNP::Backends::CUDA
     LINK_PRIVATE
-        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only KNP::Backends::CPU::Library
+        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::libcudacxx
     LINK_PUBLIC
-        KNP::Core KNP::Devices::CPU
+        KNP::Core
 )
 
 set_target_properties(

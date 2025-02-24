@@ -35,7 +35,7 @@
  */
 
 /**
- * @brief CUDA device namespace.
+ * @brief GPU devices namespace.
  */
 namespace knp::devices::gpu
 {
@@ -109,10 +109,17 @@ private:
 };
 
 
+
+/**
+ * @brief CUDA device namespace.
+ */
+namespace cuda
+{
 /**
  * @brief List all GPUs on which backend can be initialized.
  * @return vector of CUDAs.
  */
 KNP_DECLSPEC std::vector<CUDA> list_processors();
+}
 
 }  // namespace knp::devices::gpu
