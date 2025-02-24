@@ -1,5 +1,5 @@
 /**
- * @file gpu_cuda.h
+ * @file gpu-cuda.h
  * @brief Class definition for CUDA device.
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
