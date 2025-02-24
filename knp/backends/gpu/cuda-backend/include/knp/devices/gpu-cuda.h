@@ -112,7 +112,6 @@ private:
 };
 
 
-
 /**
  * @brief CUDA device namespace.
  */
@@ -123,6 +122,6 @@ namespace cuda
  * @return vector of CUDAs.
  */
 KNP_DECLSPEC std::vector<CUDA> list_processors();
-}
+}  //namespace cuda
 
 }  // namespace knp::devices::gpu

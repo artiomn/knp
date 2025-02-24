@@ -203,7 +203,7 @@ void CUDA::_init()
 {
     SPDLOG_DEBUG("Initializing CUDA backend...");
 
-//    knp::backends::cpu::init(projections_, get_message_endpoint());
+    // knp::backends::cpu::init(projections_, get_message_endpoint());
 
     SPDLOG_DEBUG("Initialization finished.");
 }
@@ -213,7 +213,8 @@ std::optional<core::messaging::SpikeMessage> CUDA::calculate_population(
     core::Population<knp::neuron_traits::BLIFATNeuron> &population)
 {
     SPDLOG_TRACE("Calculate BLIFAT population {}.", std::string(population.get_uid()));
-    return std::nullopt; // knp::backends::cpu::calculate_blifat_population(population, get_message_endpoint(), get_step());
+    return std::nullopt;  // knp::backends::cpu::calculate_blifat_population(population, get_message_endpoint(),
+                          // get_step());
 }
 
 
@@ -221,7 +222,7 @@ std::optional<core::messaging::SpikeMessage> CUDA::calculate_population(
     knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population)
 {
     SPDLOG_TRACE("Calculate resource-based STDP-compatible BLIFAT population {}.", std::string(population.get_uid()));
-    return std:::nullopt;
+    return std:: : nullopt;
 }
 
 

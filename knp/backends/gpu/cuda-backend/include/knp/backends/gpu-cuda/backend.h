@@ -55,8 +55,7 @@ public:
     /**
      * @brief List of neuron types supported by the single-threaded CPU backend.
      */
-    using SupportedNeurons =
-        boost::mp11::mp_list<knp::neuron_traits::BLIFATNeuron>;
+    using SupportedNeurons = boost::mp11::mp_list<knp::neuron_traits::BLIFATNeuron>;
 
     /**
      * @brief List of synapse types supported by the single-threaded CPU backend.

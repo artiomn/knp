@@ -51,7 +51,7 @@ source_group(source REGULAR_EXPRESSION "impl/.*")
 knp_add_library("${PROJECT_NAME}"
     BOTH
         impl/backend.cpp
-        impl/cpu_cuda_device.cpp
+        impl/gpu_cuda_device.cpp
         # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}
     ALIAS KNP::Backends::CUDA
