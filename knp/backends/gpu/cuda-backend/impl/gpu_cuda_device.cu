@@ -41,12 +41,11 @@ CUDA::CUDA(uint32_t gpu_num) : gpu_num_(gpu_num)
     static_assert(sizeof(boost::uuids::uuid) == sizeof(cudaUUID_t));
     std::copy_n(reinterpret_cast<const char*>(&properties_.uuid),
                 Device::base_.uid_.tag.size(), Device::base_.uid_.tag.begin());
-    gpu_name_ = properties_.name;
 }
 
 
 CUDA::CUDA(CUDA&& other)
-    : gpu_num_{std::move(other.gpu_num_)}, gpu_name_{std::move(other.gpu_name_)},
+    : gpu_num_{std::move(other.gpu_num_)},
       properties_{std::move(other.properties_)}
 {
 }
@@ -61,7 +60,7 @@ CUDA& CUDA::operator=(CUDA&& other) noexcept
 {
     std::swap(gpu_num_, other.gpu_num_);
     std::swap(properties_, other.properties_);
-    std::swap(gpu_name_, other.gpu_name_);
+
     return *this;
 }
 
@@ -72,9 +71,9 @@ knp::core::DeviceType CUDA::get_type() const
 }
 
 
-const std::string& CUDA::get_name() const
+const std::string CUDA::get_name() const
 {
-    return gpu_name_;
+    return properties_.name;
 }
 
 

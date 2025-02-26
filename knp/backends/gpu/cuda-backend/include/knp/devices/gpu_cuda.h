@@ -46,7 +46,7 @@ namespace knp::devices::gpu
 /**
  * @brief The CUDA class is a definition of an interface to the CUDA device.
  */
-class KNP_DECLSPEC CUDA : public knp::core::Device  // cppcheck-suppress class_X_Y
+class KNP_DECLSPEC CUDA final : public knp::core::Device  // cppcheck-suppress class_X_Y
 {
 public:
     /**
@@ -86,7 +86,7 @@ public:
      * @brief Get device name.
      * @return device name in the arbitrary format.
      */
-    [[nodiscard]] const std::string &get_name() const override;
+    [[nodiscard]] const std::string get_name() const override;
 
     /**
      * @brief Get CUDA device socket number.
@@ -109,7 +109,6 @@ private:
 
 private:
     uint32_t gpu_num_;
-    std::string gpu_name_;
     cudaDeviceProp properties_;
 };
 
