@@ -48,7 +48,7 @@ class CpuPower;
 /**
  * @brief The CPU class is a definition of an interface to the CPU device.
  */
-class KNP_DECLSPEC CPU : public knp::core::Device  // cppcheck-suppress class_X_Y
+class KNP_DECLSPEC CPU final : public knp::core::Device  // cppcheck-suppress class_X_Y
 {
 public:
     /**
@@ -88,7 +88,7 @@ public:
      * @brief Get device name.
      * @return device name in the arbitrary format.
      */
-    [[nodiscard]] const std::string &get_name() const override;
+    [[nodiscard]] const std::string get_name() const override;
 
     /**
      * @brief Get CPU device socket number.
