@@ -24,6 +24,8 @@
 #include <knp/core/device.h>
 #include <knp/core/impexp.h>
 
+#include <cuda.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -102,26 +104,19 @@ private:
      * @brief CUDA device constructor.
      */
     explicit CUDA(uint32_t gpu_num);
-    friend KNP_DECLSPEC std::vector<CUDA> list_processors();
+    friend KNP_DECLSPEC std::vector<CUDA> list_cuda_processors();
 
 private:
     uint32_t gpu_num_;
-    // Non const, because of move operator.
-    // cppcheck-suppress unusedStructMember
     std::string gpu_name_;
+    cudaDeviceProp properties_;
 };
 
 
 /**
- * @brief CUDA device namespace.
- */
-namespace cuda
-{
-/**
  * @brief List all GPUs on which backend can be initialized.
  * @return vector of CUDAs.
  */
-KNP_DECLSPEC std::vector<CUDA> list_processors();
-}  //namespace cuda
+KNP_DECLSPEC std::vector<CUDA> list_cuda_processors();
 
 }  // namespace knp::devices::gpu

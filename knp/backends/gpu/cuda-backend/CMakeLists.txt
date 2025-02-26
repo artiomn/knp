@@ -50,14 +50,14 @@ file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLU
 source_group(source REGULAR_EXPRESSION "impl/.*")
 
 knp_add_library("${PROJECT_NAME}"
-    BOTH
+    STATIC
         impl/backend.cu
         impl/gpu_cuda_device.cu
         # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}
     ALIAS KNP::Backends::CUDA
     LINK_PRIVATE
-        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::cudart_static
+        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::cudart
     LINK_PUBLIC
         KNP::Core
 )
@@ -72,15 +72,15 @@ set_target_properties(
 if (KNP_INSTALL)
     knp_get_component_name("${PROJECT_NAME}" COMPONENT_NAME)
 
-    install(TARGETS "${PROJECT_NAME}"
-            EXPORT "${PROJECT_NAME}"
-            COMPONENT "${COMPONENT_NAME}"
-            LIBRARY)
+#    install(TARGETS "${PROJECT_NAME}"
+#            EXPORT "${PROJECT_NAME}"
+#            COMPONENT "${COMPONENT_NAME}"
+#            LIBRARY)
 
-    install(TARGETS "${PROJECT_NAME}_static"
-            EXPORT "${PROJECT_NAME}_static"
-            COMPONENT "${COMPONENT_NAME}-dev"
-            ARCHIVE)
+#    install(TARGETS "${PROJECT_NAME}_static"
+#            EXPORT "${PROJECT_NAME}_static"
+#            COMPONENT "${COMPONENT_NAME}-dev"
+#            ARCHIVE)
 
     install(DIRECTORY "include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}"
             COMPONENT "${COMPONENT_NAME}-dev"

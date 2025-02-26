@@ -21,31 +21,33 @@
 
 #include <knp/devices/gpu_cuda.h>
 
-#include <cub/cub.cuh>
-#include <thrust/device_vector.h>
 #include <spdlog/spdlog.h>
 
 #include <exception>
-
-#include <boost/uuid/name_generator.hpp>
 
 
 namespace knp::devices::gpu
 {
 
-static constexpr const char* ns_uid = "0000-0000-0000-0001";
-
-
 CUDA::CUDA(uint32_t gpu_num) : gpu_num_(gpu_num)
 {
-    gpu_name_ = "";  // pcm_instance->getCUDABrandString() + " " + pcm_instance->getCUDAFamilyModelString() + " " +
-                     // std::to_string(cpu_num);
-    Device::base_.uid_ = knp::core::UID(boost::uuids::name_generator(core::UID(ns_uid))(gpu_name_.c_str()));
+    if (const auto e_code = cudaGetDeviceProperties(&properties_, gpu_num_); e_code != cudaSuccess)
+    {
+        const auto err_msg = std::string("CUDA error during get device properties") + cudaGetErrorString(e_code);
+        SPDLOG_ERROR("{} [{}]", err_msg.c_str(), e_code);
+        throw std::runtime_error(err_msg);
+    }
+
+    static_assert(sizeof(boost::uuids::uuid) == sizeof(cudaUUID_t));
+    std::copy_n(reinterpret_cast<const char*>(&properties_.uuid),
+                Device::base_.uid_.tag.size(), Device::base_.uid_.tag.begin());
+    gpu_name_ = properties_.name;
 }
 
 
 CUDA::CUDA(CUDA&& other)
-    : gpu_name_{std::move(other.gpu_name_)}
+    : gpu_num_{std::move(other.gpu_num_)}, gpu_name_{std::move(other.gpu_name_)},
+      properties_{std::move(other.properties_)}
 {
 }
 
@@ -57,7 +59,9 @@ CUDA::~CUDA()
 
 CUDA& CUDA::operator=(CUDA&& other) noexcept
 {
-    gpu_name_.swap(other.gpu_name_);
+    std::swap(gpu_num_, other.gpu_num_);
+    std::swap(properties_, other.properties_);
+    std::swap(gpu_name_, other.gpu_name_);
     return *this;
 }
 
@@ -86,16 +90,25 @@ float CUDA::get_power() const
 }
 
 
-namespace cuda
+KNP_DECLSPEC std::vector<CUDA> list_cuda_processors()
 {
-KNP_DECLSPEC std::vector<CUDA> list_processors()
-{
+    int device_count = 0;
+
+    if (auto e_code = cudaGetDeviceCount(&device_count); e_code != cudaSuccess)
+    {
+        const auto err_msg = std::string("CUDA error during get device properties") + cudaGetErrorString(e_code);
+        SPDLOG_ERROR("{} [{}]", err_msg.c_str(), e_code);
+        throw std::runtime_error(err_msg);
+    }
+
+    if (0 == device_count) return {};
+
     std::vector<CUDA> result;
-    result.reserve(1);
+    result.reserve(device_count);
+
+    for (int i = 0; i < device_count; ++i) result.push_back(CUDA(i));
 
     return result;
 }
-
-}  //namespace cuda
 
 }  // namespace knp::devices::gpu

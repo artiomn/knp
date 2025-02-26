@@ -186,7 +186,7 @@ void CUDABackend::load_all_populations(const std::vector<knp::core::AllPopulatio
 std::vector<std::unique_ptr<knp::core::Device>> CUDABackend::get_devices() const
 {
     std::vector<std::unique_ptr<knp::core::Device>> result;
-    auto &&processors{knp::devices::gpu::cuda::list_processors()};
+    auto &&processors{knp::devices::gpu::list_cuda_processors()};
 
     result.reserve(processors.size());
 
