@@ -25,6 +25,7 @@
 #include <knp/core/impexp.h>
 
 #include <cuda.h>
+#include <cuda_runtime_api.h>
 
 #include <memory>
 #include <string>

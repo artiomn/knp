@@ -302,7 +302,7 @@ public:
      * @brief Get a set of iterators for projections and populations.
      * @return `DataRanges` structure containing iterators.
      */
-    [[nodiscard]] DataRanges get_network_data() const override;
+    [[nodiscard]] DataRanges get_network_data() const override { return {}; }
 
 protected:
     /**
