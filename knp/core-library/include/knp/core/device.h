@@ -45,9 +45,9 @@ enum class DeviceType
      */
     GPU,
     /**
-     * @brief NPU device.
+     * @brief Generic NPU device.
      */
-    AltAI1_NPU
+    NPU
 };
 
 
@@ -87,7 +87,7 @@ public:
      * @brief Get device name.
      * @return device name in the arbitrary format.
      */
-    [[nodiscard]] virtual const std::string &get_name() const = 0;
+    [[nodiscard]] virtual const std::string get_name() const = 0;
 
     /**
      * @brief Get power consumption details for the device.
