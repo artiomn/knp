@@ -45,13 +45,20 @@ void ModelLoader::init_channels(
 
         std::transform(
             bucket_iter, channels.end(i), std::back_inserter(p_uids),
-            [&channel_uid](const auto &bucket)
-            {
-                SPDLOG_TRACE(
-                    "Inserting channel {} peer bucket UID = {}...", std::string(channel_uid),
-                    std::string(bucket.second));
-                return bucket.second;
-            });
+#ifdef __clang__
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunused-lambda-capture"
+#endif
+                        [&channel_uid](const auto &bucket)
+                        {
+                            SPDLOG_TRACE(
+                                "Inserting channel {} peer bucket UID = {}...", std::string(channel_uid),
+                                std::string(bucket.second));
+                            return bucket.second;
+                        });
+#ifdef __clang__
+#    pragma clang diagnostic pop
+#endif
         (this->*channel_gen)(model, channel_uid, p_uids);
     }
 }
