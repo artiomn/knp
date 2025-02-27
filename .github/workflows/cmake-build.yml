@@ -123,11 +123,11 @@ jobs:
         build_type: [Debug]
         c_compiler: [clang, cl]
         include:
-          - os: macos-12
+          - os: macos-13
             c_compiler: clang
             cpp_compiler: clang++
-            boost_install_dir: /opt/local/
-            boost_platform_version: 12
+            # boost_install_dir: /opt/local/
+            boost_platform_version: 13
             boost_toolset: clang
           - os: windows-latest
             c_compiler: cl
