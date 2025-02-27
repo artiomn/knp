@@ -115,14 +115,14 @@ jobs:
 
       # Set up a matrix to run:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-11, windows-latest]
         build_type: [Debug]
         c_compiler: [clang, cl]
         include:
-          - os: macos-latest
+          - os: macos-11
             c_compiler: clang
             cpp_compiler: clang++
-          #   boost_install_dir:
+            boost_install_dir: /opt/local/
             boost_platform_version: 11
             boost_toolset: clang
           - os: windows-latest
@@ -134,7 +134,7 @@ jobs:
         exclude:
           - os: windows-latest
             c_compiler: clang
-          - os: macos-latest
+          - os: macos-11
             c_compiler: cl
 
     steps:
@@ -166,7 +166,7 @@ jobs:
           -S .
 
       - name: Build
-        # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+        # Build with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel 8
         timeout-minutes: 180
 
