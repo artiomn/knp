@@ -129,7 +129,7 @@ jobs:
           - os: macos-13
             c_compiler: clang
             cpp_compiler: clang++
-            boost_install_dir: /Users/runner/work/boost
+            boost_install_dir: /Users/runner/work/boost/knp
             boost_platform_version: 13
             boost_toolset: clang
           - os: windows-latest
@@ -151,7 +151,7 @@ jobs:
         id: strings
         shell: bash
         run: |
-          echo "build-output-dir=build_windows" >> "$GITHUB_OUTPUT"
+          echo "build-output-dir=build" >> "$GITHUB_OUTPUT"
 
       - name: Install Boost
         uses: MarkusJx/install-boost@v2.4.5
