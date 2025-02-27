@@ -129,7 +129,7 @@ jobs:
           - os: macos-13
             c_compiler: clang
             cpp_compiler: clang++
-            # boost_install_dir: /opt/local/
+            boost_install_dir: ${{ github.workspace }}/boost
             boost_platform_version: 13
             boost_toolset: clang
           - os: windows-latest
@@ -165,6 +165,7 @@ jobs:
       - name: Configure CMake
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+          Boost_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
