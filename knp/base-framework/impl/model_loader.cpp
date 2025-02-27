@@ -49,13 +49,13 @@ void ModelLoader::init_channels(
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunused-lambda-capture"
 #endif
-                        [&channel_uid](const auto &bucket)
-                        {
-                            SPDLOG_TRACE(
-                                "Inserting channel {} peer bucket UID = {}...", std::string(channel_uid),
-                                std::string(bucket.second));
-                            return bucket.second;
-                        });
+            [&channel_uid](const auto &bucket)
+            {
+                SPDLOG_TRACE(
+                    "Inserting channel {} peer bucket UID = {}...", std::string(channel_uid),
+                    std::string(bucket.second));
+                return bucket.second;
+            });
 #ifdef __clang__
 #    pragma clang diagnostic pop
 #endif
