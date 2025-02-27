@@ -24,9 +24,9 @@ namespace fs = std::filesystem;
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
-constexpr int numSubNetworks = 15;
+constexpr int numSubNetworks = 1;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 1200000;  // 1200000
+constexpr int LearningPeriod = 200000;  // 1200000
 constexpr int TestingPeriod = 10000;
 
 constexpr int logging_aggregation_period = 4000;
@@ -471,8 +471,8 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
     std::vector<size_t> borders;
     std::vector<knp::core::UID> result;
     for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
-    std::random_device rnd_device;
-    int seed = rnd_device();  // 0
+    // std::random_device rnd_device;
+    int seed = 0;  // rnd_device();
     std::cout << "Seed " << seed << std::endl;
     for (const auto &senders_receivers : network.data_.wta_data)
     {
