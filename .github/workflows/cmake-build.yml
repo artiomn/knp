@@ -129,7 +129,7 @@ jobs:
           - os: macos-13
             c_compiler: clang
             cpp_compiler: clang++
-            boost_install_dir: ${{ github.workspace }}/boost
+            boost_install_dir: /Users/runner/work/boost
             boost_platform_version: 13
             boost_toolset: clang
           - os: windows-latest
