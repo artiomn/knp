@@ -123,7 +123,7 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
           #   boost_install_dir:
-          #   boost_platform_version: 11
+            boost_platform_version: 11
             boost_toolset: clang
           - os: windows-latest
             c_compiler: cl
