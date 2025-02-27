@@ -50,7 +50,7 @@ jobs:
           - arch: amd64
             build_threads_count: 8
           - arch: arm64
-            build_threads_count: 4
+            build_threads_count: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -115,17 +115,16 @@ jobs:
 
       # Set up a matrix to run:
       matrix:
-        # [macos-latest, windows-latest]
-        os: [windows-latest]
+        os: [macos-latest, windows-latest]
         build_type: [Debug]
         c_compiler: [clang, cl]
         include:
-          # - os: macos-latest
-          #   c_compiler: clang
-          #   cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
           #   boost_install_dir:
           #   boost_platform_version: 11
-          #   boost_toolset: clang
+            boost_toolset: clang
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
@@ -135,8 +134,8 @@ jobs:
         exclude:
           - os: windows-latest
             c_compiler: clang
-          # - os: macos-latest
-          #   c_compiler: cl
+          - os: macos-latest
+            c_compiler: cl
 
     steps:
       - uses: actions/checkout@v4
