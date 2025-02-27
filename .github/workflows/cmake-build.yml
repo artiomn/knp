@@ -36,21 +36,35 @@ jobs:
       # 1. <Linux, Debug, latest GCC compiler toolchain on the default runner image, default generator>
       # 2. <Linux, Debug, latest Clang compiler toolchain on the default runner image, default generator>
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
         build_type: [Debug]
         c_compiler: [gcc, clang]
-        arch: [amd64, arm64]
+        # arch: [amd64, arm64]
         include:
           - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
+            arch: amd64
+            build_threads_count: 8
           - os: ubuntu-24.04
             c_compiler: clang
             cpp_compiler: clang++
-          - arch: amd64
+            arch: amd64
             build_threads_count: 8
-          - arch: arm64
-            build_threads_count: 1
+          - os: ubuntu-24.04-arm
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: arm64
+            build_threads_count: 8
+          - os: ubuntu-24.04-arm
+            c_compiler: clang
+            cpp_compiler: clang++
+            arch: arm64
+            build_threads_count: 8
+          # - arch: amd64
+          #  build_threads_count: 8
+          #- arch: arm64
+          #   build_threads_count: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +78,12 @@ jobs:
       # Install support for non-x86 emulation in Docker via QEMU.
       # Platforms: linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x,
       #            linux/386, linux/arm/v7, linux/arm/v6
-      - name: Set-up Docker ARM emulation
-        if: matrix.arch == 'arm64'
-        run: |
-          sudo apt-get update -q -y
-          sudo apt-get -qq install -y qemu-system-arm qemu-user-static
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
+      # - name: Set-up Docker ARM emulation
+      #  if: matrix.arch == 'arm64'
+      #  run: |
+      #    sudo apt-get update -q -y
+      #    sudo apt-get -qq install -y qemu-system-arm qemu-user-static
+      #    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
 
       - name: Configure
         run: >
@@ -115,15 +129,15 @@ jobs:
 
       # Set up a matrix to run:
       matrix:
-        os: [macos-11, windows-latest]
+        os: [macos-13, windows-latest]
         build_type: [Debug]
         c_compiler: [clang, cl]
         include:
-          - os: macos-11
+          - os: macos-13
             c_compiler: clang
             cpp_compiler: clang++
             boost_install_dir: /opt/local/
-            boost_platform_version: 11
+            boost_platform_version: 13
             boost_toolset: clang
           - os: windows-latest
             c_compiler: cl
@@ -134,7 +148,7 @@ jobs:
         exclude:
           - os: windows-latest
             c_compiler: clang
-          - os: macos-11
+          - os: macos-13
             c_compiler: cl
 
     steps:
