@@ -161,6 +161,11 @@ struct neuron_parameters<SynapticResourceSTDPNeuron<NeuronType>> : public neuron
     uint64_t last_step_ = 0;
 
     /**
+     * @brief Last any spike step.
+     */
+    uint64_t last_spike_step_ = 0;
+
+    /**
      * @brief Step of the last unforced spike. Used to update the dopamine value.
      */
     uint64_t first_isi_spike_ = 0;

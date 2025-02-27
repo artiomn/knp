@@ -24,21 +24,21 @@ namespace fs = std::filesystem;
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
-constexpr int numSubNetworks = 10;
+constexpr int numSubNetworks = 15;
 constexpr int nClasses = 10;
-constexpr int LearningPeriod = 200000;
+constexpr int LearningPeriod = 1200000;  // 1200000
 constexpr int TestingPeriod = 10000;
 
 constexpr int logging_aggregation_period = 4000;
+constexpr int logging_weights_period = 100000;
 
 // Create a spike message generator from an array of boolean frames.
-auto make_input_generator(const std::vector<std::vector<bool>> &spike_frames, size_t offset)
+auto make_input_generator(const std::vector<std::vector<bool>> &spike_frames, int64_t offset)
 {
     auto generator = [&spike_frames, offset](knp::core::Step step)
     {
         knp::core::messaging::SpikeData message;
-
-        if (step >= spike_frames.size()) return message;
+        if ((step + offset) >= spike_frames.size()) return message;
 
         for (size_t i = 0; i < spike_frames[step + offset].size(); ++i)
         {
@@ -154,13 +154,15 @@ auto make_projection_observer_function(
             {
                 const knp::core::AllProjectionsVariant proj_variant = *iter;
                 const auto &proj = std::get<ResourceDeltaProjection>(proj_variant);
-                std::vector<std::tuple<int, int, float>> weights_by_receiver_sender;
+                // std::vector<std::tuple<int, int, float>> weights_by_receiver_sender;
+                std::vector<std::tuple<int, int, float, float>> weights_by_receiver_sender;
                 for (const auto &synapse_data : proj)
                 {
-                    float weight = std::get<0>(synapse_data).weight_;
+                    float weight = std::get<0>(synapse_data).rule_.synaptic_resource_;
+                    float value = std::get<0>(synapse_data).rule_.last_spike_step_;  // TODO TEMP
                     size_t sender = std::get<1>(synapse_data);
                     size_t receiver = std::get<2>(synapse_data);
-                    weights_by_receiver_sender.push_back({receiver, sender, weight});
+                    weights_by_receiver_sender.push_back({receiver, sender, weight, value});
                 }
                 std::sort(
                     weights_by_receiver_sender.begin(), weights_by_receiver_sender.end(),
@@ -178,7 +180,7 @@ auto make_projection_observer_function(
                         neuron = new_neuron;
                         weights_log << std::endl << "Neuron " << neuron << std::endl;
                     }
-                    weights_log << std::get<2>(syn_data) << " ";
+                    weights_log << std::get<2>(syn_data) << "|" << std::get<3>(syn_data) << " ";
                 }
                 weights_log << std::endl;
                 return;
@@ -469,8 +471,8 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
     std::vector<size_t> borders;
     std::vector<knp::core::UID> result;
     for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
-    // std::random_device rnd_device;
-    int seed = 0;  // rnd_device();
+    std::random_device rnd_device;
+    int seed = rnd_device();  // 0
     std::cout << "Seed " << seed << std::endl;
     for (const auto &senders_receivers : network.data_.wta_data)
     {
@@ -522,7 +524,7 @@ AnnotatedNetwork train_mnist_network(
 
     knp::framework::ModelLoader::InputChannelMap channel_map;
 
-    channel_map.insert({input_image_channel_raster, make_input_generator(spike_frames, 0)});
+    channel_map.insert({input_image_channel_raster, make_input_generator(spike_frames, 0)});  // -4 was better
     channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 0)});
 
     knp::framework::BackendLoader backend_loader;
@@ -564,21 +566,22 @@ AnnotatedNetwork train_mnist_network(
         }
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
-        //        all_spikes_stream.open(log_path / "all_spikes_training.log", std::ofstream::out);
-        //        if (all_spikes_stream.is_open())
-        //        {
-        //            auto all_senders = all_populations_uids;
-        //            all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
-        //            model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-        //                make_log_observer_function(all_spikes_stream, example_network.data_.population_names),
-        //                all_senders);
-        //        }
+        //            all_spikes_stream.open(log_path / "all_spikes_training.log", std::ofstream::out);
+        //            if (all_spikes_stream.is_open())
+        //            {
+        //                auto all_senders = all_populations_uids;
+        //                all_senders.insert(all_senders.end(), wta_uids.begin(), wta_uids.end());
+        //                model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+        //                    make_log_observer_function(all_spikes_stream, example_network.data_.population_names),
+        //                    all_senders);
+        //            }
         weight_stream.open(log_path / "weights.log", std::ofstream::out);
         if (weight_stream.is_open())
         {
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_projection_observer_function(
-                    weight_stream, 199000, model_executor, example_network.data_.projections_from_raster[0]),
+                    weight_stream, logging_weights_period, model_executor,
+                    example_network.data_.projections_from_raster[0]),
                 {});
         }
     }

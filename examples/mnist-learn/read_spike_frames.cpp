@@ -26,7 +26,8 @@ std::vector<std::vector<unsigned char>> read_images_from_file(const std::string 
     return result;
 }
 
-std::vector<std::vector<bool>> image_to_spikes(std::vector<unsigned char> &buf, std::vector<double> &state)
+
+std::vector<std::vector<bool>> image_to_spikes(const std::vector<unsigned char> &image, std::vector<double> &state)
 {
     std::vector<std::vector<bool>> ret;
     int i;
@@ -35,7 +36,7 @@ std::vector<std::vector<bool>> image_to_spikes(std::vector<unsigned char> &buf, 
         std::vector<bool> spikes(input_size, false);
         for (int l = 0; l < input_size; ++l)
         {
-            state[l] += state_increment_factor * buf[l];
+            state[l] += state_increment_factor * image[l];
             if (state[l] >= 1.)
             {
                 spikes[l] = true;
@@ -47,6 +48,8 @@ std::vector<std::vector<bool>> image_to_spikes(std::vector<unsigned char> &buf, 
     for (; i < frames_per_image; ++i) ret.push_back(std::vector<bool>(input_size, false));
     return ret;
 }
+
+
 // Read image dataset from a binary file and trasnform it into a vector of boolean frames.
 std::vector<std::vector<bool>> read_spike_frames(const std::string &path_to_data)
 {

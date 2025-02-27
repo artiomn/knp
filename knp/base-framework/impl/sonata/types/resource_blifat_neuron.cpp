@@ -102,6 +102,7 @@ void add_population_to_h5<core::Population<knp::neuron_traits::SynapticResourceS
     PUT_NEURON_TO_DATASET(population, isi_max_, group0);
     PUT_NEURON_TO_DATASET(population, d_h_, group0);
     PUT_NEURON_TO_DATASET(population, last_step_, group0);
+    PUT_NEURON_TO_DATASET(population, last_spike_step_, group0);
     PUT_NEURON_TO_DATASET(population, first_isi_spike_, group0);
     PUT_NEURON_TO_DATASET(population, is_being_forced_, group0);
     {
@@ -176,6 +177,7 @@ load_population<neuron_traits::SynapticResourceSTDPBLIFATNeuron>(
     LOAD_NEURONS_PARAMETER_DEF(target, isi_max_, group, group_size, default_params);
     LOAD_NEURONS_PARAMETER_DEF(target, d_h_, group, group_size, default_params);
     LOAD_NEURONS_PARAMETER_DEF(target, last_step_, group, group_size, default_params);
+    LOAD_NEURONS_PARAMETER_DEF(target, last_spike_step_, group, group_size, default_params);
     LOAD_NEURONS_PARAMETER_DEF(target, first_isi_spike_, group, group_size, default_params);
     LOAD_NEURONS_PARAMETER_DEF(target, is_being_forced_, group, group_size, default_params);
     {
