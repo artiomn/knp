@@ -165,7 +165,6 @@ jobs:
       - name: Configure CMake
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
-          Boost_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
