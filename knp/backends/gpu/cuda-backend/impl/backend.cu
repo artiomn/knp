@@ -143,13 +143,6 @@ void CUDABackend::_step()
 void CUDABackend::load_populations(const std::vector<PopulationVariants> &populations)
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
-    populations_.clear();
-    populations_.reserve(populations.size());
-
-    for (const auto &population : populations)
-    {
-        populations_.push_back(population);
-    }
 
     device_populations_.clear();
     device_populations_.reserve(populations.size());
@@ -168,11 +161,7 @@ void CUDABackend::load_populations(const std::vector<PopulationVariants> &popula
                         "Population is not supported by the CUDA backend.");
                 }
 
-                device_populations_.push_back(CUDAPopulation<typename T::PopulationNeuronType>
-                {
-                    .uid_{arg.get_uid().tag.begin(), arg.get_uid().tag.end()},
-                    .neurons_ = arg.get_neurons_parameters()
-                });
+                device_populations_.push_back(CUDAPopulation<typename T::PopulationNeuronType>(arg));
             },
             population);
     }
@@ -189,6 +178,29 @@ void CUDABackend::load_projections(const std::vector<ProjectionVariants> &projec
     for (const auto &projection : projections)
     {
         projections_.push_back(ProjectionWrapper{projection});
+    }
+
+    device_projections_.clear();
+    device_projections_.reserve(projections.size());
+
+    for (const auto &projection : projections)
+    {
+        std::visit(
+            [this](auto &arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (
+                    boost::mp11::mp_find<SupportedProjections, T>{} == boost::mp11::mp_size<SupportedProjections>{})
+                {
+                    static_assert(
+                        knp::meta::always_false_v<T>,
+                        "Projection is not supported by the CUDA backend.");
+                }
+
+                device_projections_.push_back(CUDAProjection<typename T::ProjectionSynapseType>(arg));
+//                    .neurons_ = arg.get_neurons_parameters()
+            },
+            projection);
     }
 
     SPDLOG_DEBUG("All projections loaded.");

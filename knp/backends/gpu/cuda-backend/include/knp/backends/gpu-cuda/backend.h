@@ -29,11 +29,14 @@
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include <thrust/device_free.h>
+#include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -51,7 +54,7 @@ namespace knp::backends::gpu
 {
 
 /**
- * @brief The CUDABackend class is a definition of an interface to the CUDA GPU backend.
+ * @brief The CUDAPopulation class is a definition of a CUDA neurons population.
  */
 template <typename NeuronType>
 struct CUDAPopulation
@@ -68,6 +71,17 @@ struct CUDAPopulation
      * @brief Neuron parameters and their values for the specified neuron type.
      */
     using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
+
+    /**
+     * @brief Constructor.
+     * @param population source population.
+     */
+    explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
+        : uid_{population.get_uid().tag.begin(), population.get_uid().tag.end()},
+          neurons_{population.get_neurons_parameters()}
+    {
+    }
+
     /**
      * @brief UID.
      */
@@ -76,6 +90,74 @@ struct CUDAPopulation
      * @brief Neurons.
      */
     thrust::device_vector<NeuronParameters> neurons_;
+};
+
+
+/**
+ * @brief The CUDAProjection class is a definition of a CUDA synapses.
+ */
+template <typename SynapseType>
+struct CUDAProjection
+{
+    /**
+     * @brief Type of the projection synapses.
+     */
+    using ProjectionSynapseType = SynapseType;
+    /**
+     * @brief Projection of synapses with the specified synapse type.
+     */
+    using ProjectionType = CUDAProjection<SynapseType>;
+    /**
+     * @brief Parameters of the specified synapse type.
+     */
+    using SynapseParameters = typename synapse_traits::synapse_parameters<SynapseType>;
+
+    /**
+     * @brief Synapse description structure that contains synapse parameters and indexes of the associated neurons.
+     */
+    using Synapse = std::tuple<SynapseParameters, uint32_t, uint32_t>;
+
+    /**
+     * @brief Constructor.
+     * @param projection source projection.
+     */
+    explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
+        : uid_(projection.get_uid().tag.begin(), projection.get_uid().tag.end()),
+          presynaptic_uid_(projection.get_presynaptic().tag.begin(), projection.get_presynaptic().tag.end()),
+          postsynaptic_uid_(projection.get_postsynaptic().tag.begin(), projection.get_postsynaptic().tag.end()),
+          is_locked_(thrust::device_malloc<bool>(1))
+    {
+        *is_locked_ = projection.is_locked();
+    }
+    /**
+     * @brief Destructor.
+     */
+    ~CUDAProjection() { thrust::device_free(is_locked_); }
+
+    /**
+     * @brief UID.
+     */
+    thrust::device_vector<std::uint8_t> uid_{16};
+
+    /**
+     * @brief UID of the population that sends spikes to the projection (presynaptic population)
+     */
+    thrust::device_vector<std::uint8_t> presynaptic_uid_{16};
+
+    /**
+     * @brief UID of the population that receives synapse responses from this projection (postsynaptic population).
+     */
+    thrust::device_vector<std::uint8_t> postsynaptic_uid_{16};
+
+    /**
+     * @brief Return `false` if the weight change for synapses is not locked.
+     */
+    thrust::device_ptr<bool> is_locked_;
+
+    /**
+     * @brief Container of synapse parameters.
+     */
+    thrust::device_vector<SynapseParameters> synapses_;
 };
 
 
@@ -138,6 +220,9 @@ private:
 private:
     using SupportedCUDAPopulations = boost::mp11::mp_transform<CUDAPopulation, SupportedNeurons>;
     using CUDAPopulationVariants = boost::mp11::mp_rename<SupportedCUDAPopulations, std::variant>;
+
+    using SupportedCUDAProjections = boost::mp11::mp_transform<CUDAProjection, SupportedSynapses>;
+    using CUDAProjectionVariants = boost::mp11::mp_rename<SupportedCUDAProjections, std::variant>;
 
 public:
     /**
@@ -399,11 +484,12 @@ protected:
 private:
     // cppcheck-suppress unusedStructMember
     PopulationContainer populations_;
+    ProjectionContainer projections_;
 
     // cppcheck-suppress unusedStructMember
     std::vector<CUDAPopulationVariants> device_populations_;
-
-    ProjectionContainer projections_;
+    // cppcheck-suppress unusedStructMember
+    std::vector<CUDAProjectionVariants> device_projections_;
 };
 
 }  // namespace knp::backends::gpu
