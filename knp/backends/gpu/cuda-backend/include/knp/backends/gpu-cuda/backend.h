@@ -29,6 +29,9 @@
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -46,6 +49,36 @@
  */
 namespace knp::backends::gpu
 {
+
+/**
+ * @brief The CUDABackend class is a definition of an interface to the CUDA GPU backend.
+ */
+template <typename NeuronType>
+struct CUDAPopulation
+{
+    /**
+     * @brief Type of the population neurons.
+     */
+    using PopulationNeuronType = NeuronType;
+    /**
+     * @brief Population of neurons with the specified neuron type.
+     */
+    using PopulationType = CUDAPopulation<NeuronType>;
+    /**
+     * @brief Neuron parameters and their values for the specified neuron type.
+     */
+    using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
+    /**
+     * @brief UID.
+     */
+    thrust::device_vector<std::uint8_t> uid_{16};
+    /**
+     * @brief Neurons.
+     */
+    thrust::device_vector<NeuronParameters> neurons_;
+};
+
+
 /**
  * @brief The CUDABackend class is a definition of an interface to the CUDA GPU backend.
  */
@@ -102,15 +135,19 @@ private:
         std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
     };
 
+private:
+    using SupportedCUDAPopulations = boost::mp11::mp_transform<CUDAPopulation, SupportedNeurons>;
+    using CUDAPopulationVariants = boost::mp11::mp_rename<SupportedCUDAPopulations, std::variant>;
+
 public:
     /**
      * @brief Type of population container.
      */
-    using PopulationContainer = std::vector<PopulationVariants>;
+    using PopulationContainer = thrust::host_vector<PopulationVariants>;
     /**
      * @brief Type of projection container.
      */
-    using ProjectionContainer = std::vector<ProjectionWrapper>;
+    using ProjectionContainer = thrust::host_vector<ProjectionWrapper>;
 
     /**
      * @brief Types of non-constant population iterators.
@@ -362,6 +399,10 @@ protected:
 private:
     // cppcheck-suppress unusedStructMember
     PopulationContainer populations_;
+
+    // cppcheck-suppress unusedStructMember
+    std::vector<CUDAPopulationVariants> device_populations_;
+
     ProjectionContainer projections_;
 };
 

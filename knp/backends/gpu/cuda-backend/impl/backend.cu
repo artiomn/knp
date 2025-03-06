@@ -26,6 +26,8 @@
 #include <knp/meta/stringify.h>
 #include <knp/meta/variant_helpers.h>
 
+#include <variant/variant.h>
+
 #include <spdlog/spdlog.h>
 
 #include <vector>
@@ -100,7 +102,7 @@ void CUDABackend::_step()
                 {
                     static_assert(
                         knp::meta::always_false_v<T>,
-                        "Population is not supported by the single-threaded CPU backend.");
+                        "Population is not supported by the CUDA backend.");
                 }
                 auto message_opt = calculate_population(arg);
             },
@@ -122,7 +124,7 @@ void CUDABackend::_step()
                 {
                     static_assert(
                         knp::meta::always_false_v<T>,
-                        "Projection is not supported by the single-threaded CPU backend.");
+                        "Projection is not supported by the CUDA backend.");
                 }
                 calculate_projection(arg, projection.messages_);
             },
@@ -147,6 +149,32 @@ void CUDABackend::load_populations(const std::vector<PopulationVariants> &popula
     for (const auto &population : populations)
     {
         populations_.push_back(population);
+    }
+
+    device_populations_.clear();
+    device_populations_.reserve(populations.size());
+
+    for (const auto &population : populations)
+    {
+        std::visit(
+            [this](auto &arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (
+                    boost::mp11::mp_find<SupportedPopulations, T>{} == boost::mp11::mp_size<SupportedPopulations>{})
+                {
+                    static_assert(
+                        knp::meta::always_false_v<T>,
+                        "Population is not supported by the CUDA backend.");
+                }
+
+                device_populations_.push_back(CUDAPopulation<typename T::PopulationNeuronType>
+                {
+                    .uid_{arg.get_uid().tag.begin(), arg.get_uid().tag.end()},
+                    .neurons_ = arg.get_neurons_parameters()
+                });
+            },
+            population);
     }
     SPDLOG_DEBUG("All populations loaded.");
 }
@@ -187,9 +215,7 @@ std::vector<std::unique_ptr<knp::core::Device>> CUDABackend::get_devices() const
 {
     std::vector<std::unique_ptr<knp::core::Device>> result;
     auto &&processors{knp::devices::gpu::list_cuda_processors()};
-
     result.reserve(processors.size());
-
     for (auto &&gpu : processors)
     {
         SPDLOG_DEBUG("GPU \"{}\".", gpu.get_name());
@@ -216,7 +242,7 @@ std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
 {
     SPDLOG_TRACE("Calculate BLIFAT population {}.", std::string(population.get_uid()));
     return std::nullopt;  // knp::backends::cpu::calculate_blifat_population(population, get_message_endpoint(),
-                          // get_step());
+                          // get_step());}
 }
 
 
