@@ -213,10 +213,11 @@ void process_spiking_neurons(
         {
             neuron.stability_ -= neuron.stability_change_at_isi_;
         }
-
+        neuron.additional_threshold_ = 0.0;
         // Mark contributed synapses
         for (auto *synapse : synapse_params)
         {
+            neuron.additional_threshold_ += synapse->weight_ * (synapse->weight_ > 0);
             const bool had_spike = is_point_in_interval(
                 step - synapse->rule_.dopamine_plasticity_period_, step,
                 synapse->rule_.last_spike_step_ + synapse->delay_ - 1);
@@ -224,6 +225,7 @@ void process_spiking_neurons(
             if (neuron_traits::ISIPeriodType::period_continued != neuron.isi_status_ || had_spike)
                 synapse->rule_.has_contributed_ = had_spike;
         }
+        neuron.additional_threshold_ *= neuron.synapse_sum_threshold_coefficient_;
 
         // This is a new spiking sequence, we can update synapses now.
         if (neuron.isi_status_ != neuron_traits::ISIPeriodType::period_continued)

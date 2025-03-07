@@ -33,6 +33,7 @@ constexpr int neuron_dopamine_period = 10;
 constexpr int synapse_dopamine_period = 10;
 constexpr float L_neuron_potential_decay = 1.0 - 1.0 / 3.0;
 constexpr float dopamine_parameter = 0.042F;
+constexpr float threshold_weight_coeff = 0.023817F;
 
 
 float resource_from_weight(float weight, float min_weight, float max_weight)
@@ -162,6 +163,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         L_neuron.potential_decay_ = L_neuron_potential_decay;
         L_neuron.d_h_ = -dopamine_value;
         L_neuron.dopamine_plasticity_time_ = neuron_dopamine_period;
+        L_neuron.synapse_sum_threshold_coefficient_ = threshold_weight_coeff;
         // L_neuron.w_min_ = min_synaptic_weight;
         // L_neuron.w_max_ = max_synaptic_weight;
         L_neuron.isi_max_ = 10;

@@ -105,6 +105,8 @@ void add_population_to_h5<core::Population<knp::neuron_traits::SynapticResourceS
     PUT_NEURON_TO_DATASET(population, last_spike_step_, group0);
     PUT_NEURON_TO_DATASET(population, first_isi_spike_, group0);
     PUT_NEURON_TO_DATASET(population, is_being_forced_, group0);
+    PUT_NEURON_TO_DATASET(population, dopamine_plasticity_time_, group0);
+    PUT_NEURON_TO_DATASET(population, additional_threshold_, group0);
     {
         std::vector<int> data;
         data.reserve(population.size());
@@ -180,6 +182,7 @@ load_population<neuron_traits::SynapticResourceSTDPBLIFATNeuron>(
     LOAD_NEURONS_PARAMETER_DEF(target, last_spike_step_, group, group_size, default_params);
     LOAD_NEURONS_PARAMETER_DEF(target, first_isi_spike_, group, group_size, default_params);
     LOAD_NEURONS_PARAMETER_DEF(target, is_being_forced_, group, group_size, default_params);
+    LOAD_NEURONS_PARAMETER_DEF(target, dopamine_plasticity_time_, group, group_size, default_params);
     {
         const auto values =
             read_parameter(group, "isi_status_", group_size, static_cast<int>(default_params.isi_status_));
@@ -197,6 +200,7 @@ load_population<neuron_traits::SynapticResourceSTDPBLIFATNeuron>(
     LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, bursting_phase_, dyn_group, group_size);
     LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, total_blocking_period_, dyn_group, group_size);
     LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, dopamine_value_, dyn_group, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, additional_threshold_, dyn_group, group_size);
 
     const knp::core::UID uid{boost::lexical_cast<boost::uuids::uuid>(population_name)};
     return core::Population<ResourceNeuron>(

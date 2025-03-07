@@ -100,8 +100,14 @@ struct neuron_parameters<SynapticResourceSTDPNeuron<NeuronType>> : public neuron
     }
 
     /**
+     * @brief Coefficient for a synapse-dependent part of neuron activation threshold.
+     * @note Potential threshold is a sum of base threshold, dynamic threshold and synapse-dependent threshold.
+     */
+    float synapse_sum_threshold_coefficient_ = 0.0F;
+
+
+    /**
      * @brief Time parameter for dopamine plasticity.
-     * @todo Remove it when 3-phase learning is ready.
      */
     uint32_t dopamine_plasticity_time_ = 1;
 

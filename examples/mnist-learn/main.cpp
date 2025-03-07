@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
-constexpr int numSubNetworks = 1;
+constexpr int numSubNetworks = 15;
 constexpr int nClasses = 10;
 constexpr int LearningPeriod = 200000;  // 1200000
 constexpr int TestingPeriod = 10000;
