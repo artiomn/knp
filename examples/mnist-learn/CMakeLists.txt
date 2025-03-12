@@ -10,5 +10,5 @@ if (NOT TARGET KNP::BaseFramework::Core)
     find_package(knp-base-framework REQUIRED)
 endif()
 
-add_executable(MnistLearnExample main.cpp read_spike_frames.cpp construct_network.cpp)
+add_executable(MnistLearnExample main.cpp read_spike_frames.cpp construct_network.cpp evaluation.cpp)
 target_link_libraries(MnistLearnExample PRIVATE KNP::BaseFramework::Core ${Boost_LIBRARIES})

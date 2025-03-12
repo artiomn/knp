@@ -17,6 +17,7 @@
 #include <optional>
 
 #include "construct_network.h"
+#include "evaluation.h"
 #include "mnist-learn.h"
 
 namespace fs = std::filesystem;
@@ -24,11 +25,9 @@ namespace fs = std::filesystem;
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
-constexpr int numSubNetworks = 15;
-constexpr int nClasses = 10;
-constexpr int LearningPeriod = 200000;  // 1200000
-constexpr int TestingPeriod = 10000;
-
+constexpr int num_subnetworks = 1;
+constexpr int learning_period = 200000;
+constexpr int testing_period = 10000;
 constexpr int logging_aggregation_period = 4000;
 constexpr int logging_weights_period = 100000;
 
@@ -69,7 +68,7 @@ std::vector<int> read_classes(std::string classes_file, std::vector<std::vector<
         ss >> cla;
         std::vector<bool> buffer(input_size, false);
         buffer[cla] = true;
-        if (spike_classes.size() >= LearningPeriod) classes_for_testing.push_back(cla);
+        if (spike_classes.size() >= learning_period) classes_for_testing.push_back(cla);
         for (int i = 0; i < frames_per_image; ++i) spike_classes.push_back(buffer);
     }
     return classes_for_testing;
@@ -273,190 +272,6 @@ knp::framework::Network get_network_for_inference(
 }
 
 
-class Target
-{
-    struct TargetClass
-    {
-        std::string str;
-    };
-    const std::vector<int> &v_States;
-    std::vector<std::pair<int, int>> PredictedStates;
-    size_t tact = 0;
-    const int StateDuration = 20;
-    std::string strPredictionFile;
-    std::vector<double> vd_PossiblePredictions;
-    std::vector<int> vn_PredictionVotes;
-    std::vector<int> v_maxVote;
-    std::vector<TargetClass> vtc_;
-    int indran = 0;
-
-public:
-    enum criterion
-    {
-        absolute_error,
-        weighted_error,
-        averaged_F
-    };
-
-    Target(int nTargetClasses, const std::vector<int> &classes)
-        : vn_PredictionVotes(nTargetClasses, 0), v_States(classes), v_maxVote(nTargetClasses, 0)
-    {
-    }
-    void ObtainOutputSpikes(const knp::core::messaging::SpikeData &firing_neuron_indices);
-    [[nodiscard]] int get_ntargets() const { return static_cast<int>(vn_PredictionVotes.size()); }
-    [[nodiscard]] int Finalize(
-        enum criterion cri = absolute_error, std::string strPredictionFile = std::string()) const;
-};
-
-
-void Target::ObtainOutputSpikes(const knp::core::messaging::SpikeData &firing_neuron_indices)
-{
-    for (auto i : firing_neuron_indices) ++vn_PredictionVotes[i % get_ntargets()];
-    if (!((tact + 1) % StateDuration))
-    {
-        int indstart = indran;
-        int j = indstart;
-        int nmax = 0;
-        int PredictedState = -1;
-        do
-        {
-            if (vn_PredictionVotes[j] > nmax)
-            {
-                nmax = vn_PredictionVotes[j];
-                PredictedState = j;
-            }
-            if (++j == get_ntargets()) j = 0;
-        } while (j != indstart);
-        if (++indran == get_ntargets()) indran = 0;
-        PredictedStates.push_back(std::make_pair(PredictedState, nmax));
-        if (nmax) v_maxVote[PredictedState] = std::max(v_maxVote[PredictedState], nmax);
-        std::fill(vn_PredictionVotes.begin(), vn_PredictionVotes.end(), 0);
-    }
-    ++tact;
-}
-
-
-int Target::Finalize(enum criterion cri, std::string strPredictionFile) const
-{
-    int nExistingClasses, nNoClass, ndef;
-    double dWeightedCorrect, dWeightedF;
-    if (none_of(v_maxVote.begin(), v_maxVote.end(), std::identity()))  // No predictions at all...
-        return 1;
-    std::vector<int> v_pred;
-    auto v_lims = v_maxVote;
-    auto v_pars = v_lims;
-    auto v_parbest = v_pars;
-    int ncorrbest = 0;
-    size_t i;
-    int curcla = 0;
-    do
-    {
-        v_pred.clear();
-        for (i = 0; i < PredictedStates.size(); ++i)
-            v_pred.push_back(
-                PredictedStates[i].first == -1 || PredictedStates[i].second < v_pars[PredictedStates[i].first]
-                    ? -1
-                    : PredictedStates[i].first);
-        int ncorr = 0;
-        for (i = 0; i < v_pred.size(); ++i)
-            if (v_pred[i] == v_States[i]) ++ncorr;
-        if (ncorr > ncorrbest)
-        {
-            ncorrbest = ncorr;
-            v_parbest = v_pars;
-        }
-        if (v_pars[curcla])
-            --v_pars[curcla];
-        else
-        {
-            v_pars = v_parbest;
-            ++curcla;
-        }
-    } while (curcla < get_ntargets());
-
-    v_pred.clear();
-    for (i = 0; i < PredictedStates.size(); ++i)
-        v_pred.push_back(
-            PredictedStates[i].first == -1 || PredictedStates[i].second < v_parbest[PredictedStates[i].first]
-                ? -1
-                : PredictedStates[i].first);
-    int nerr = 0;
-    struct classres
-    {
-        int real = 0;
-        int predicted = 0;
-        int correcty_predicted = 0;
-    };
-    std::vector<classres> vcr_(get_ntargets());
-    int nTrueNegatives = 0;
-    for (i = 0; i < PredictedStates.size(); ++i)
-    {
-        int predicted = v_pred[i];
-        if (v_States[i] != -1) ++vcr_[v_States[i]].real;
-        if (predicted != -1) ++vcr_[predicted].predicted;
-        if (predicted != v_States[i])
-            ++nerr;
-        else if (predicted != -1)
-            ++vcr_[predicted].correcty_predicted;
-        else
-            ++nTrueNegatives;
-    }
-    if (strPredictionFile.length())
-    {
-        std::ofstream ofsPredictionFile(strPredictionFile);
-        ofsPredictionFile << "TARGET,THRESHOLD,PRECISION,RECALL,F\n";
-        for (int cla = 0; cla < get_ntargets(); ++cla)
-        {
-            float rPrecision =
-                vcr_[cla].predicted ? vcr_[cla].correcty_predicted / static_cast<float>(vcr_[cla].predicted) : 0.F;
-            float rRecall = vcr_[cla].real ? vcr_[cla].correcty_predicted / static_cast<float>(vcr_[cla].real) : 0.F;
-            ofsPredictionFile << cla << ',' << v_parbest[cla] << ',' << rPrecision << ',' << rRecall << ','
-                              << (rPrecision && rRecall ? 2 / (1 / rPrecision + 1 / rRecall) : 0.F) << std::endl;
-        }
-        for (i = 0; i < PredictedStates.size(); ++i)
-            ofsPredictionFile << v_States[i] << ',' << PredictedStates[i].first << ',' << PredictedStates[i].second
-                              << ',' << v_pred[i] << std::endl;
-    }
-    switch (cri)
-    {
-        case absolute_error:
-            return 10000 * (1 - static_cast<float>(nerr) / PredictedStates.size());
-        case weighted_error:
-            nExistingClasses = 0;
-            dWeightedCorrect = 0.;
-            nNoClass = static_cast<int>(PredictedStates.size());
-            for (int cla = 0; cla < get_ntargets(); ++cla)
-                if (vcr_[cla].real)
-                {
-                    dWeightedCorrect += vcr_[cla].correcty_predicted / static_cast<double>(vcr_[cla].real);
-                    ++nExistingClasses;
-                    nNoClass -= vcr_[cla].real;
-                }
-            if (nNoClass)
-            {
-                ++nExistingClasses;
-                dWeightedCorrect += nTrueNegatives / static_cast<double>(nNoClass);
-            }
-            return 10000 * dWeightedCorrect / nExistingClasses;
-        default:
-            dWeightedF = 0.;
-            ndef = 0;
-            for (int cla = 0; cla < get_ntargets(); ++cla)
-                if (vcr_[cla].real)
-                {
-                    double dPrecision = vcr_[cla].predicted
-                                            ? vcr_[cla].correcty_predicted / static_cast<double>(vcr_[cla].predicted)
-                                            : 0.F;
-                    double dRecall = vcr_[cla].correcty_predicted / static_cast<double>(vcr_[cla].real);
-                    double dF = dPrecision && dRecall ? 2 / (1 / dPrecision + 1 / dRecall) : 0.;
-                    dWeightedF += dF * vcr_[cla].real;
-                    ndef += vcr_[cla].real;
-                }
-            return static_cast<int>(std::lround(10000.0 * dWeightedF / ndef));
-    }
-}
-
-
 std::string get_time_string()
 {
     auto time_now = std::chrono::system_clock::now();
@@ -509,7 +324,7 @@ AnnotatedNetwork train_mnist_network(
     const fs::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const fs::path &log_path = "")
 {
-    AnnotatedNetwork example_network = create_example_network_new(numSubNetworks);
+    AnnotatedNetwork example_network = create_example_network_new(num_subnetworks);
     std::filesystem::create_directory("mnist_network");
     knp::framework::sonata::save_network(example_network.network_, "mnist_network");
     knp::framework::Model model(std::move(example_network.network_));
@@ -593,7 +408,7 @@ AnnotatedNetwork train_mnist_network(
         [](size_t step)
         {
             if (step % 20 == 0) std::cout << "Step: " << step << std::endl;
-            return step != LearningPeriod;
+            return step != learning_period;
         });
 
     std::cout << get_time_string() << ": learning finished\n";
@@ -617,7 +432,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // and the population IDs.
     knp::framework::ModelLoader::InputChannelMap channel_map;
     knp::core::UID input_image_channel_uid;
-    channel_map.insert({input_image_channel_uid, make_input_generator(spike_frames, LearningPeriod)});
+    channel_map.insert({input_image_channel_uid, make_input_generator(spike_frames, learning_period)});
 
     for (auto i : described_network.data_.output_uids) model.add_output_channel(o_channel_uid, i);
     for (auto image_proj_uid : described_network.data_.projections_from_raster)
@@ -691,7 +506,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
         [&spike_frames](size_t step)
         {
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
-            return step != TestingPeriod;
+            return step != testing_period;
         });
     // Creates the results vector that contains the indices of the spike steps.
     std::vector<knp::core::Step> results;
@@ -709,7 +524,7 @@ void process_inference_results(
 {
     auto j = spikes.begin();
     Target tar(10, classes_for_testing);
-    for (int tact = 0; tact < TestingPeriod; ++tact)
+    for (int tact = 0; tact < testing_period; ++tact)
     {
         knp::core::messaging::SpikeData firing_neuron_indices;
         while (j != spikes.end() && j->header_.send_time_ == tact)
@@ -718,9 +533,9 @@ void process_inference_results(
                 firing_neuron_indices.end(), j->neuron_indexes_.begin(), j->neuron_indexes_.end());
             ++j;
         }
-        tar.ObtainOutputSpikes(firing_neuron_indices);
+        tar.obtain_output_spikes(firing_neuron_indices);
     }
-    auto res = tar.Finalize(Target::absolute_error, "mnist.log");
+    auto res = tar.finalize(Target::absolute_error, "mnist.log");
     std::cout << "ACCURACY: " << res / 100.F << "%\n";
 }
 
