@@ -535,7 +535,7 @@ void process_inference_results(
         }
         tar.obtain_output_spikes(firing_neuron_indices);
     }
-    auto res = tar.finalize(Target::absolute_error, "mnist.log");
+    auto res = tar.finalize(Target::Criterion::absolute_error, "mnist.log");
     std::cout << "ACCURACY: " << res / 100.F << "%\n";
 }
 
