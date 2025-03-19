@@ -53,6 +53,8 @@ knp_add_library("${PROJECT_NAME}"
     STATIC
         impl/backend.cu
         impl/gpu_cuda_device.cu
+        impl/cuda_bus/message_bus.cuh
+        impl/cuda_bus/message_bus.cu
         # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}
     ALIAS KNP::Backends::CUDA
