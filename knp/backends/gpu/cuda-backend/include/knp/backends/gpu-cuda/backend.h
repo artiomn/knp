@@ -158,6 +158,12 @@ struct CUDAProjection
      * @brief Container of synapse parameters.
      */
     thrust::device_vector<SynapseParameters> synapses_;
+
+    /**
+     * @brief Messages container.
+     */
+    // cppcheck-suppress unusedStructMember
+    std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
 };
 
 
@@ -208,14 +214,6 @@ public:
      * @see ALL_SYNAPSES.
      */
     using ProjectionVariants = boost::mp11::mp_rename<SupportedProjections, std::variant>;
-
-private:
-    struct ProjectionWrapper
-    {
-        ProjectionVariants arg_;
-        // cppcheck-suppress unusedStructMember
-        std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
-    };
 
 private:
     using SupportedCUDAPopulations = boost::mp11::mp_transform<CUDAPopulation, SupportedNeurons>;

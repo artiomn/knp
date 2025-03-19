@@ -26,8 +26,6 @@
 #include <knp/meta/stringify.h>
 #include <knp/meta/variant_helpers.h>
 
-#include <variant/variant.h>
-
 #include <spdlog/spdlog.h>
 
 #include <vector>
