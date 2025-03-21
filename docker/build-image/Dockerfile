@@ -85,7 +85,6 @@ RUN \
     p7zip-full \
     pre-commit \
     protobuf-compiler \
-    pvs-studio \
     pylint \
     python3 \
     python3-dev \
@@ -107,6 +106,7 @@ RUN \
     wget \
     zip \
     $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}') \
+  && if [ "${TARGETPLATFORM}" == "linux/amd64" ]; then apt-get -y --no-install-recommends install pvs-studio fi \
   # && apt-get purge -y libboost\* \
   && apt-get clean \
   # && git clone --recursive --depth 1 --branch boost-1.84.0 https://github.com/boostorg/boost /usr/local/boost/1.84.0 \
