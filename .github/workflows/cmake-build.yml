@@ -74,7 +74,6 @@ jobs:
       #    sudo apt-get update -q -y
       #    sudo apt-get -qq install -y qemu-system-arm qemu-user-static
       #    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
-
       - name: Configure
         run: >
           docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake -B ${{ steps.strings.outputs.build-output-dir }}
@@ -87,6 +86,10 @@ jobs:
       - name: Build
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel ${{ matrix.build_threads_count }}
         timeout-minutes: 180
+
+      - name: Analyze with PVS Studio
+        if: matrix.arch == 'amd64'
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image ci/run_pvs.sh ${{ secrets.PVS_STUDIO_CREDENTIALS }}
 
       - name: Test
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests kasperskydh/knp-build-image ctest -V
