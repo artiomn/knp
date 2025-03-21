@@ -36,17 +36,25 @@ jobs:
       # 1. <Linux, Debug, latest GCC compiler toolchain on the default runner image, default generator>
       # 2. <Linux, Debug, latest Clang compiler toolchain on the default runner image, default generator>
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
         build_type: [Debug]
         c_compiler: [gcc, clang]
-        arch: [amd64, arm64]
+        # arch: [amd64, arm64]
         include:
-          - os: ubuntu-latest
-            c_compiler: gcc
+          - os: ubuntu-24.04
+            arch: amd64
+            build_threads_count: 8
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            build_threads_count: 6
+          - c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
+          - c_compiler: clang
             cpp_compiler: clang++
+          # - arch: amd64
+          #  build_threads_count: 8
+          #- arch: arm64
+          #   build_threads_count: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -60,12 +68,12 @@ jobs:
       # Install support for non-x86 emulation in Docker via QEMU.
       # Platforms: linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x,
       #            linux/386, linux/arm/v7, linux/arm/v6
-      - name: Set-up Docker ARM emulation
-        if: matrix.arch == 'arm64'
-        run: |
-          sudo apt-get update -q -y
-          sudo apt-get -qq install -y qemu qemu-user-static
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
+      # - name: Set-up Docker ARM emulation
+      #  if: matrix.arch == 'arm64'
+      #  run: |
+      #    sudo apt-get update -q -y
+      #    sudo apt-get -qq install -y qemu-system-arm qemu-user-static
+      #    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes --credential yes
 
       - name: Configure
         run: >
@@ -77,12 +85,15 @@ jobs:
           -S .
 
       - name: Build
-        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel 8
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel ${{ matrix.build_threads_count }}
         timeout-minutes: 180
 
       - name: Test
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests kasperskydh/knp-build-image ctest -V
         timeout-minutes: 180
+
+      - name: Python Test
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp_python_framework kasperskydh/knp-build-image pytest
 
       - name: Create deb packages
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }} kasperskydh/knp-build-image cpack -G DEB
@@ -111,17 +122,16 @@ jobs:
 
       # Set up a matrix to run:
       matrix:
-        # [macos-latest, windows-latest]
-        os: [windows-latest]
+        os: [macos-13, windows-latest]
         build_type: [Debug]
         c_compiler: [clang, cl]
         include:
-          # - os: macos-latest
-          #   c_compiler: clang
-          #   cpp_compiler: clang++
-          #   boost_install_dir:
-          #   boost_platform_version: 11
-          #   boost_toolset: clang
+          - os: macos-13
+            c_compiler: clang
+            cpp_compiler: clang++
+            boost_install_dir: /Users/runner/work/boost/knp
+            boost_platform_version: 13
+            boost_toolset: clang
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
@@ -131,8 +141,8 @@ jobs:
         exclude:
           - os: windows-latest
             c_compiler: clang
-          # - os: macos-latest
-          #   c_compiler: cl
+          - os: macos-13
+            c_compiler: cl
 
     steps:
       - uses: actions/checkout@v4
@@ -141,7 +151,7 @@ jobs:
         id: strings
         shell: bash
         run: |
-          echo "build-output-dir=build_windows" >> "$GITHUB_OUTPUT"
+          echo "build-output-dir=build" >> "$GITHUB_OUTPUT"
 
       - name: Install Boost
         uses: MarkusJx/install-boost@v2.4.5
@@ -163,7 +173,7 @@ jobs:
           -S .
 
       - name: Build
-        # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+        # Build with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel 8
         timeout-minutes: 180
 

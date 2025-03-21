@@ -79,7 +79,7 @@ knp::core::DeviceType CPU::get_type() const
 }
 
 
-const std::string& CPU::get_name() const
+const std::string CPU::get_name() const
 {
     return cpu_name_;
 }

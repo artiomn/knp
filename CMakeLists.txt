@@ -41,6 +41,10 @@ if (POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
 
+if (POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif()
+
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.30")
     # Suppress Boost warning.
     cmake_policy(SET CMP0167 OLD)
@@ -93,7 +97,9 @@ if (Boost_ROOT)  # WIN32?
             set(BOOST_LIBRARYDIR "${Boost_ROOT}/stage")
         else()
             file(GLOB _BOOST_LIB_DIRS LIST_DIRECTORIES true "${Boost_ROOT}/lib*-*-*")
-            list(GET _BOOST_LIB_DIRS 0 BOOST_LIBRARYDIR)
+            if (_BOOST_LIB_DIRS)
+                list(GET _BOOST_LIB_DIRS 0 BOOST_LIBRARYDIR)
+            endif()
             # set(Boost_LIB_PREFIX "")
         endif()
     endif()
@@ -310,7 +316,7 @@ add_third_party("gh:p-ranav/csv2@0.1"
                     "CSV2_TEST OFF"
                     "CSV2_SAMPLES OFF")
 
-if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(x86.*)|(X86.*)|(amd64)|(AMD64)")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(x86.*)|(X86.*)|(amd64)|(AMD64)" AND NOT APPLE)
     add_third_party("gh:intel/pcm"
                     GIT_TAG 2f9b0c2
                     OPTIONS
