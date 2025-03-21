@@ -21,10 +21,6 @@ ENV OCLINT_FILE=oclint-22.02-llvm-13.0.1-x86_64-linux-ubuntu-20.04.tar.gz \
 
 WORKDIR /azp
 
-          sudo apt update
-          sudo apt install pvs-studio
-          pvs-studio-analyzer credentials ${{ secrets.PVS_STUDIO_CREDENTIALS }}
-
 RUN \
   echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes \
   && export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//') \
