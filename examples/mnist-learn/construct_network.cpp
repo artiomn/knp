@@ -55,7 +55,7 @@ ResourceSynapseGenerator make_dense_generator(size_t from_size, const ResourceSy
     {
         size_t from_index = index % from_size;
         size_t to_index = index / from_size;
-        // Если нужно, можно модифицировать параметры синапса по умолчанию в зависимости от индекса.
+        // If you need to have synapses with different parameters, change them here.
         return ResourceSynapseData{default_synapse, from_index, to_index};
     };
     return synapse_generator;
@@ -72,6 +72,7 @@ ResourceSynapseGenerator make_1_to_1_generator(const ResourceSynapseParams &defa
 }
 
 
+// This is a generator of connections from one group of neurons to all neurons not in this group.
 DeltaProjection::SynapseGenerator make_all_to_all_sections_generator(
     size_t section_size, const DeltaSynapseData &default_synapse)
 {
@@ -143,7 +144,6 @@ struct PopulationData
 
 AnnotatedNetwork create_example_network_new(int num_compound_networks)
 {
-    // Сеть, которую мы наполним и вернём
     AnnotatedNetwork result;
     enum PopIndexes
     {
@@ -156,7 +156,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
     result.data_.wta_data.resize(num_compound_networks);
     for (int i = 0; i < num_compound_networks; ++i)
     {
-        // Параметры нейрона по умолчанию. Здесь можно задать те параметры, которые нужны.
+        // Parameters for a default neuron.
         ResourceNeuronData default_neuron{{}};
         default_neuron.activation_threshold_ = 8.571;
         ResourceNeuronData L_neuron = default_neuron;
@@ -164,8 +164,6 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         L_neuron.d_h_ = -dopamine_value;
         L_neuron.dopamine_plasticity_time_ = neuron_dopamine_period;
         L_neuron.synapse_sum_threshold_coefficient_ = threshold_weight_coeff;
-        // L_neuron.w_min_ = min_synaptic_weight;
-        // L_neuron.w_max_ = max_synaptic_weight;
         L_neuron.isi_max_ = 10;
 
         struct PopulationRole
@@ -177,20 +175,18 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         };
         auto dopamine_neuron = default_neuron;
         dopamine_neuron.total_blocking_period_ = 0;
-        // Инициируем данные для создания популяций. Их будет 5.
+        // Create initial neuron data for populations. There are four of them.
         std::vector<PopulationRole> pop_data{
             {{150, L_neuron}, true, false, "INPUT"},
-            //{{150, default_neuron}, true, false, "WTA"}, // Using WTA message handler instead.
             {{150, dopamine_neuron}, false, false, "DOPAMINE"},
             {{10, default_neuron}, true, true, "OUTPUT"},
             {{10, default_neuron}, false, false, "GATE"}};
 
-        // Создаём популяции: это обычно очень просто, нейроны скорее всего исходно все одинаковые, связей в популяции
-        // нет.
+        // Creating a population. It's usually very simple as all neurons are usually the same.
         std::vector<knp::core::UID> population_uids;
         for (auto &pop_init_data : pop_data)
         {
-            // Очень простой генератор нейронов "по образцу".
+            // A very simple neuron generator returning a default neuron.
             auto neuron_generator = [&pop_init_data](size_t index) { return pop_init_data.pd.neuron_; };
 
             knp::core::UID uid;
@@ -202,10 +198,10 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         }
         result.data_.wta_data[i].first.push_back(population_uids[INPUT]);
 
-        // В сеть добавлены все нужные популяции, теперь связываем их проекциями. Пусть последовательно.
-        // Проекции создавать несколько сложнее, так как вся логика связей сети расположена в них.
+        // Now that we added all the populations we need, we have to connect them with projections.
+        // Creating a projection is more tricky, as all the connection logic should be described in a generator.
 
-        // Создаём образец "обучаемого" синапса. Здесь же можно задать ему нужные параметры.
+        // Create a default synapse.
         ResourceSynapseParams default_synapse;
         auto afferent_synapse = default_synapse;
         afferent_synapse.rule_.synaptic_resource_ =
@@ -219,11 +215,11 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         result.data_.projections_from_raster.push_back(input_projection.get_uid());
 
         default_synapse.weight_ = 9;
-        input_projection.unlock_weights();  // Обучаемая
+        input_projection.unlock_weights();  // Trainable
         result.network_.add_projection(input_projection);
         result.data_.inference_internal_projection.insert(input_projection.get_uid());
 
-        // Активирующая проекция
+        // Activating projection. It sends signals from labels to dopamine population.
         const DeltaSynapseData default_activating_synapse{1, 1, knp::synapse_traits::OutputType::BLOCKING};
         DeltaProjection projection_2{
             knp::core::UID{false}, population_uids[DOPAMINE],
@@ -232,7 +228,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         result.network_.add_projection(projection_2);
         result.data_.wta_data[i].second.push_back(projection_2.get_uid());
 
-        // Дофаминовая проекция
+        // Dopamine projection, it goes from dopamine population to input population.
         const DeltaSynapseData default_dopamine_synapse{dopamine_value, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3{
             population_uids[DOPAMINE], population_uids[INPUT],
@@ -315,7 +311,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         }
     }
 
-    // Сеть готова, возвращаем её.
+    // Return created network.
     return result;
 }
 
