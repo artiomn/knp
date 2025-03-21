@@ -17,10 +17,13 @@
 FROM gcc:14.1.0
 
 ENV OCLINT_FILE=oclint-22.02-llvm-13.0.1-x86_64-linux-ubuntu-20.04.tar.gz \
-    PVS_FILE=pvs-studio-7.32.83291.394-amd64.deb \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /azp
+
+          sudo apt update
+          sudo apt install pvs-studio
+          pvs-studio-analyzer credentials ${{ secrets.PVS_STUDIO_CREDENTIALS }}
 
 RUN \
   echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes \
@@ -31,6 +34,8 @@ RUN \
 #  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
 #  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
 #    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
+  && wget -q -O - https://files.pvs-studio.com/etc/pubkey.txt | apt-key add - \
+  && wget -O /etc/apt/sources.list.d/viva64.list https://files.pvs-studio.com/etc/viva64.list \
   && apt-get update \
   && apt-get -y --no-install-recommends --show-progress install \
     apt-transport-https \
@@ -76,7 +81,6 @@ RUN \
 #    libzmq5-dev \
     iputils-ping \
     iproute2 \
-    less \
     meson \
     mypy \
     netcat-openbsd \
@@ -85,6 +89,7 @@ RUN \
     p7zip-full \
     pre-commit \
     protobuf-compiler \
+    pvs-studio \
     pylint \
     python3 \
     python3-dev \
@@ -98,16 +103,11 @@ RUN \
     python3-types-requests \
     python3-wheel \
     rapidjson-dev \
-    rsync \
     software-properties-common \
     ssh \
     strace \
-    sudo \
     tar \
-    telnet \
-    tcpdump \
     valgrind \
-    vim \
     wget \
     zip \
     $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}') \
@@ -140,10 +140,6 @@ RUN \
   && curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-`uname -s`-`uname -m` -o "${DESTINATION}" \
   && chmod +x ${DESTINATION} \
   && ln -sf ${DESTINATION} /usr/bin/docker-compose
-
-#RUN \
-#  wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb && dpkg -i libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb && rm libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb \
-#  && sed -i 's/openssl_conf = openssl_init/#openssl_conf = openssl_init/g' /etc/ssl/openssl.cnf
 
 # COPY "${OCLINT_FILE}" .
 RUN \
