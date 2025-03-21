@@ -15,7 +15,7 @@ limitations under the License.
 ]]
 
 cmake_minimum_required(VERSION 3.22)
-project(MnistLearnExample)
+project(mnist_learn_example)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -26,5 +26,5 @@ if (NOT TARGET KNP::BaseFramework::Core)
     find_package(knp-base-framework REQUIRED)
 endif()
 
-add_executable(MnistLearnExample main.cpp data_read.cpp construct_network.cpp evaluation.cpp)
-target_link_libraries(MnistLearnExample PRIVATE KNP::BaseFramework::Core ${Boost_LIBRARIES})
+add_executable(mnist_learn_example main.cpp data_read.cpp construct_network.cpp evaluation.cpp)
+target_link_libraries(mnist_learn_example PRIVATE KNP::BaseFramework::Core ${Boost_LIBRARIES})
