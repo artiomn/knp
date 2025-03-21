@@ -43,7 +43,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             arch: amd64
-            build_threads_count: 8
+            build_threads_count: 4
           - os: ubuntu-24.04-arm
             arch: arm64
             build_threads_count: 6
