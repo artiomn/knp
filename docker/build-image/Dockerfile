@@ -30,7 +30,7 @@ RUN \
 #  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
 #  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
 #    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
-  && wget -q -O - https://files.pvs-studio.com/etc/pubkey.txt | apt-key add - \
+  && wget -qO- https://files.pvs-studio.com/etc/pubkey.txt | gpg --dearmor -o /etc/apt/trusted.gpg.d/viva64.gpg \
   && wget -O /etc/apt/sources.list.d/viva64.list https://files.pvs-studio.com/etc/viva64.list \
   && apt-get update \
   && apt-get -y --no-install-recommends --show-progress install \
@@ -126,7 +126,7 @@ RUN \
   && cmake --install . \
   && cd .. \
   && rm -rf doxygen \
-  && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - \
+  && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
   && add-apt-repository \
         "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
         mantic \
