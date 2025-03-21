@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <fstream>
 
-#include "data_read.h"
+#include "mnist-learn.h"
 
 /**
  * @brief Read buffers from binary data file.
@@ -51,7 +51,7 @@ std::vector<std::vector<bool>> image_to_spikes(const std::vector<unsigned char> 
 
 
 // Read image dataset from a binary file and trasnform it into a vector of boolean frames.
-std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &path_to_data)
+std::vector<std::vector<bool>> read_spike_frames(const std::string &path_to_data)
 {
     auto images = read_images_from_file(path_to_data);
     std::vector<std::vector<bool>> result;
@@ -64,30 +64,4 @@ std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &pa
             [](auto &v) { return std::move(v); });
     }
     return result;
-}
-
-
-
-Labels read_labels(const std::filesystem::path &classes_file, int learning_period, int offset)
-{
-    std::ifstream file_stream(classes_file);
-    Labels labels;
-    int cla;
-    while (file_stream.good())
-    {
-        std::string str;
-        if (!std::getline(file_stream, str).good()) break;
-        if (offset > 0)
-        {
-            --offset;
-            continue;
-        }
-        std::stringstream ss(str);
-        ss >> cla;
-        std::vector<bool> buffer(input_size, false);
-        buffer[cla] = true;
-        if (labels.train_.size() >= learning_period) labels.test_.push_back(cla);
-        for (int i = 0; i < frames_per_image; ++i) labels.train_.push_back(buffer);
-    }
-    return labels;
 }

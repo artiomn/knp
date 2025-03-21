@@ -18,7 +18,7 @@
 
 #include "construct_network.h"
 #include "evaluation.h"
-#include "data_read.h"
+#include "mnist-learn.h"
 
 namespace fs = std::filesystem;
 
@@ -47,6 +47,31 @@ auto make_input_generator(const std::vector<std::vector<bool>> &spike_frames, in
     };
 
     return generator;
+}
+
+
+std::vector<int> read_classes(std::string classes_file, std::vector<std::vector<bool>> &spike_classes, int offset = 0)
+{
+    std::ifstream file_stream(classes_file);
+    std::vector<int> classes_for_testing;
+    int cla;
+    while (file_stream.good())
+    {
+        std::string str;
+        if (!std::getline(file_stream, str).good()) break;
+        if (offset > 0)
+        {
+            --offset;
+            continue;
+        }
+        std::stringstream ss(str);
+        ss >> cla;
+        std::vector<bool> buffer(input_size, false);
+        buffer[cla] = true;
+        if (spike_classes.size() >= learning_period) classes_for_testing.push_back(cla);
+        for (int i = 0; i < frames_per_image; ++i) spike_classes.push_back(buffer);
+    }
+    return classes_for_testing;
 }
 
 
@@ -529,14 +554,14 @@ int main(int argc, char **argv)
     std::filesystem::path path_to_backend =
         std::filesystem::path(argv[0]).parent_path() / "knp-cpu-single-threaded-backend";
     auto spike_frames = read_spike_frames(argv[1]);
-    // std::vector<std::vector<bool>> spike_classes;
-    auto labels = read_labels(argv[2], learning_period);
-    AnnotatedNetwork trained_network = train_mnist_network(path_to_backend, spike_frames, labels.train_, log_path);
+    std::vector<std::vector<bool>> spike_classes;
+    std::vector<int> classes_for_testing = read_classes(argv[2], spike_classes);
+    AnnotatedNetwork trained_network = train_mnist_network(path_to_backend, spike_frames, spike_classes, log_path);
     // AnnotatedNetwork trained_network = parse_network_from_sonata("");
 
     auto spikes = run_mnist_inference(path_to_backend, trained_network, spike_frames, log_path);
     std::cout << get_time_string() << ": inference finished  -- output spike count is " << spikes.size() << std::endl;
 
-    process_inference_results(spikes, labels.test_);
+    process_inference_results(spikes, classes_for_testing);
     return EXIT_SUCCESS;
 }
