@@ -48,7 +48,7 @@ constexpr float base_weight_value = 0.000F;
 constexpr float base_resource_value = 1.267F;
 constexpr int neuron_dopamine_period = 10;
 constexpr int synapse_dopamine_period = 10;
-constexpr float L_neuron_potential_decay = 1.0 - 1.0 / 3.0;
+constexpr float l_neuron_potential_decay = 1.0 - 1.0 / 3.0;
 constexpr float dopamine_parameter = 0.042F;
 constexpr float threshold_weight_coeff = 0.023817F;
 
@@ -176,12 +176,12 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         // Parameters for a default neuron.
         ResourceNeuronData default_neuron{{}};
         default_neuron.activation_threshold_ = 8.571;
-        ResourceNeuronData L_neuron = default_neuron;
-        L_neuron.potential_decay_ = L_neuron_potential_decay;
-        L_neuron.d_h_ = -dopamine_value;
-        L_neuron.dopamine_plasticity_time_ = neuron_dopamine_period;
-        L_neuron.synapse_sum_threshold_coefficient_ = threshold_weight_coeff;
-        L_neuron.isi_max_ = 10;
+        ResourceNeuronData l_neuron = default_neuron;
+        l_neuron.potential_decay_ = l_neuron_potential_decay;
+        l_neuron.d_h_ = -dopamine_value;
+        l_neuron.dopamine_plasticity_time_ = neuron_dopamine_period;
+        l_neuron.synapse_sum_threshold_coefficient_ = threshold_weight_coeff;
+        l_neuron.isi_max_ = 10;
 
         struct PopulationRole
         {
@@ -194,7 +194,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         dopamine_neuron.total_blocking_period_ = 0;
         // Create initial neuron data for populations. There are four of them.
         std::vector<PopulationRole> pop_data{
-            {{150, L_neuron}, true, false, "INPUT"},
+            {{150, l_neuron}, true, false, "INPUT"},
             {{150, dopamine_neuron}, false, false, "DOPAMINE"},
             {{10, default_neuron}, true, true, "OUTPUT"},
             {{10, default_neuron}, false, false, "GATE"}};
