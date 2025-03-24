@@ -118,9 +118,9 @@ RUN \
   # && ./b2 -a -j 6 cxxflags="-fPIC" cflags="-fPIC" link=static,shared threading=multi \
   && cd /azp \
   # New Doxygen version. \
-  && git clone --depth 1 https://github.com/doxygen/doxygen.git \
+  && git clone --depth 1 --branch Release_1_13_2 --single-branch https://github.com/doxygen/doxygen.git \
   && cd doxygen \
-  && cmake -G "Unix Makefiles" -DCMAKE_POSITION_INDEPENDENT_CODE=ON . \
+  && cmake -G "Unix Makefiles" . \
   && cmake --build . --parallel 4 \
   && cmake --install . \
   && cd .. \
