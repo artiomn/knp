@@ -120,7 +120,7 @@ RUN \
   # New Doxygen version. \
   && git clone --depth 1 --branch Release_1_13_2 --single-branch https://github.com/doxygen/doxygen.git \
   && cd doxygen \
-  && cmake -G "Unix Makefiles" . \
+  && cmake -G "Unix Makefiles" -DCMAKE_POSITION_INDEPENDENT_CODE=ON . \
   && cmake --build . --parallel 4 \
   && cmake --install . \
   && cd .. \
