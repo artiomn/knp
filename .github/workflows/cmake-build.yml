@@ -43,7 +43,7 @@ jobs:
         include:
           - os: ubuntu-24.04
             arch: amd64
-            build_threads_count: 4
+            build_threads_count: 8
           - os: ubuntu-24.04-arm
             arch: arm64
             build_threads_count: 6
@@ -51,10 +51,6 @@ jobs:
             cpp_compiler: g++
           - c_compiler: clang
             cpp_compiler: clang++
-          # - arch: amd64
-          #  build_threads_count: 8
-          #- arch: arm64
-          #   build_threads_count: 1
 
     steps:
       - uses: actions/checkout@v4
