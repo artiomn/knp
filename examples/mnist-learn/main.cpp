@@ -121,25 +121,6 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
 }
 
 
-std::vector<knp::core::UID> add_wta_handlers_inference(
-    const AnnotatedNetwork &network, knp::framework::ModelExecutor &executor)
-{
-    std::vector<size_t> borders;
-    std::vector<knp::core::UID> result;
-    for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
-    int seed = 0;
-    for (const auto &senders_receivers : network.data_.wta_data)
-    {
-        knp::core::UID handler_uid;
-        executor.add_spike_message_handler(
-            knp::framework::modifier::GroupWtaRandomHandler{borders, 1, seed++}, senders_receivers.first,
-            senders_receivers.second, handler_uid);
-        result.push_back(handler_uid);
-    }
-    return result;
-}
-
-
 AnnotatedNetwork train_mnist_network(
     const fs::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const fs::path &log_path = "")
@@ -265,7 +246,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     std::map<std::string, size_t> spike_accumulator;
     // cppcheck-suppress variableScope
     size_t current_index = 0;
-    auto wta_uids = add_wta_handlers_inference(described_network, model_executor);
+    auto wta_uids = add_wta_handlers(described_network, model_executor);
     auto all_senders_names = described_network.data_.population_names;
     for (const auto &uid : wta_uids)
     {
