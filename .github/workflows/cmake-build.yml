@@ -89,7 +89,7 @@ jobs:
 
       - name: Analyze with PVS Studio
         if: matrix.arch == 'amd64'
-        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image ci/run_pvs.sh ${{ secrets.PVS_STUDIO_CREDENTIALS }}
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image /KNP/ci/run_pvs.sh ${{ secrets.PVS_STUDIO_CREDENTIALS }}
 
       - name: Test
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests kasperskydh/knp-build-image ctest -V
