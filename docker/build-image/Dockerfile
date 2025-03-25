@@ -15,7 +15,7 @@
 # limitations under the License.
 
 FROM gcc:14.1.0
-ARG TARGETARCH
+ARG TARGETPLATFORM
 
 ENV OCLINT_FILE=oclint-22.02-llvm-13.0.1-x86_64-linux-ubuntu-20.04.tar.gz \
     DEBIAN_FRONTEND=noninteractive
@@ -31,10 +31,11 @@ RUN <<EOT
 #  && rm cuda-keyring_1.1-1_all.deb \
 #  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
 #  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
-#    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
+#    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list
+
   echo "TARGETPLATFORM: ${TARGETPLATFORM}"
 
-  if [ "x${TARGETPLATFORM}" == "xlinux/amd64" ]; then
+  if [ "x$TARGETPLATFORM" = "xlinux/amd64" ]; then
     echo "Adding PVS Studio repo..."
     {
       wget -qO- https://files.pvs-studio.com/etc/pubkey.txt | gpg --dearmor -o /etc/apt/trusted.gpg.d/viva64.gpg \
@@ -98,7 +99,7 @@ RUN <<EOT
       $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}')
   } || { echo "Apt install failed!" >&2; exit 1; }
 
-  if [ "x${TARGETPLATFORM}" == "xlinux/amd64" ]; then
+  if [ "x$TARGETPLATFORM" = "xlinux/amd64" ]; then
     echo "Installing PVS Studio..."
     apt-get -y --no-install-recommends install pvs-studio || exit 1
   fi
