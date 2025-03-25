@@ -55,34 +55,18 @@ RUN <<EOT
       cloc \
       cpplint \
       cppcheck \
-#    cppzmq-dev \
       curl \
-    # cuda-12-3 \
-#    cuda-libraries-dev-12-3 \
-#    libnpp-dev-12-3 \
-#    cuda-nvtx-12-3 \
-#    cuda-toolkit-12-3 \
-#    cuda-tools-12-3 \
-#    cuda-compiler-12-3 \
-#    libcusparse-dev-12-3 \
-#    libcublas-dev-12-3 \
       flake8 \
       flex \
       fonts-liberation \
-      # gcovr \
       gdbserver \
       git \
       gnupg-agent \
       graphviz \
       gsfonts \
       jq \
-    # libboost-all-dev \
       libcurl4 \
-#    libgtest-dev \
-#    libhdf5-dev \
-#    libssl-dev \
       libunwind8 \
-#    libzmq5-dev \
       meson \
       mypy \
       netcat-openbsd \
@@ -98,7 +82,6 @@ RUN <<EOT
       python3-mypy \
       python3-opencv \
       python3-pip \
-    # python3-pytest \
       python3-requests \
       python3-setuptools \
       python3-types-requests \
