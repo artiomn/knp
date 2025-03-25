@@ -113,14 +113,14 @@ void Target::obtain_output_spikes(const knp::core::messaging::SpikeData &firing_
 
 int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_file_path) const
 {
-    int nExistingClasses, nNoClass;
+    int num_existing_classes, num_no_class;
     if (none_of(max_vote_.begin(), max_vote_.end(), std::identity()))  // No predictions at all...
         return 1;
     std::vector<int> predictions;
     auto v_lims = max_vote_;
     auto v_pars = v_lims;
     auto v_parbest = v_pars;
-    int ncorrbest = 0;
+    int num_correct_max = 0;
     size_t i;
     int curcla = 0;
     do
@@ -131,12 +131,12 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
                 predicted_states_[i].first == -1 || predicted_states_[i].second < v_pars[predicted_states_[i].first]
                     ? -1
                     : predicted_states_[i].first);
-        int ncorr = 0;
+        int num_correct = 0;
         for (i = 0; i < predictions.size(); ++i)
-            if (predictions[i] == states_[i]) ++ncorr;
-        if (ncorr > ncorrbest)
+            if (predictions[i] == states_[i]) ++num_correct;
+        if (num_correct > num_correct_max)
         {
-            ncorrbest = ncorr;
+            num_correct_max = num_correct;
             v_parbest = v_pars;
         }
         if (v_pars[curcla])
@@ -188,29 +188,29 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
             out_stream << states_[i] << ',' << predicted_states_[i].first << ',' << predicted_states_[i].second << ','
                        << predictions[i] << std::endl;
     }
-    double dWeightedCorrect;
+    double num_correct_weighted;
     switch (criterion)
     {
         case Criterion::absolute_error:
             return static_cast<int>(std::lround(10000.0 * (1 - static_cast<double>(nerr) / predicted_states_.size())));
 
         case Criterion::weighted_error:
-            nExistingClasses = 0;
-            dWeightedCorrect = 0.;
-            nNoClass = static_cast<int>(predicted_states_.size());
+            num_existing_classes = 0;
+            num_correct_weighted = 0.;
+            num_no_class = static_cast<int>(predicted_states_.size());
             for (int cla = 0; cla < get_num_targets(); ++cla)
                 if (vcr[cla].real)
                 {
-                    dWeightedCorrect += vcr[cla].correcty_predicted / static_cast<double>(vcr[cla].real);
-                    ++nExistingClasses;
-                    nNoClass -= vcr[cla].real;
+                    num_correct_weighted += vcr[cla].correcty_predicted / static_cast<double>(vcr[cla].real);
+                    ++num_existing_classes;
+                    num_no_class -= vcr[cla].real;
                 }
-            if (nNoClass)
+            if (num_no_class)
             {
-                ++nExistingClasses;
-                dWeightedCorrect += num_true_negatives / static_cast<double>(nNoClass);
+                ++num_existing_classes;
+                num_correct_weighted += num_true_negatives / static_cast<double>(num_no_class);
             }
-            return static_cast<int>(std::lround(10000.0 * dWeightedCorrect / nExistingClasses));
+            return static_cast<int>(std::lround(10000.0 * num_correct_weighted / num_existing_classes));
 
         default:
             return finalize_averaged_f(vcr);
@@ -220,7 +220,7 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
 
 int Target::finalize_averaged_f(const std::vector<Result> &vcr) const
 {
-    double dWeightedF = 0.;
+    double weighted_f_measure = 0.;
     int ndef = 0;
     for (int target_index = 0; target_index < get_num_targets(); ++target_index)
     {
@@ -231,11 +231,11 @@ int Target::finalize_averaged_f(const std::vector<Result> &vcr) const
                                                            : 0.F;
             double recall = vcr[target_index].correcty_predicted / static_cast<double>(vcr[target_index].real);
             double f_measure = precision && recall ? 2 / (1 / precision + 1 / recall) : 0.;
-            dWeightedF += f_measure * vcr[target_index].real;
+            weighted_f_measure += f_measure * vcr[target_index].real;
             ndef += vcr[target_index].real;
         }
     }
-    return static_cast<int>(std::lround(10000.0 * dWeightedF / ndef));
+    return static_cast<int>(std::lround(10000.0 * weighted_f_measure / ndef));
 }
 
 

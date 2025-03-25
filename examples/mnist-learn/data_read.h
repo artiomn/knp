@@ -28,9 +28,18 @@ constexpr int frames_per_image = 20;
 constexpr size_t input_size = 28 * 28;
 constexpr double state_increment_factor = 1. / 255;
 
+
+/**
+ * @brief Read input images.
+ * @param path_to_data path to coded input images file.
+ * @return vector of spike-based frames.
+ */
 std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &path_to_data);
 
 
+/**
+ * @brief Labels for testing and training data.
+ */
 struct Labels
 {
     std::vector<int> test_;
@@ -38,4 +47,11 @@ struct Labels
 };
 
 
+/**
+ * @brief Read labels for training and testing.
+ * @param classes_file file with labels.
+ * @param learning_period period for training.
+ * @param offset how many frames to skip.
+ * @return labels for training and testing.
+ */
 Labels read_labels(const std::filesystem::path &classes_file, int learning_period, int offset = 0);

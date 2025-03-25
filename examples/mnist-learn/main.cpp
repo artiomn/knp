@@ -18,6 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <knp/core/projection.h>
 #include <knp/framework/model.h>
 #include <knp/framework/model_executor.h>

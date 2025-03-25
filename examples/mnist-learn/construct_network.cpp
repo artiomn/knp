@@ -51,6 +51,7 @@ constexpr int synapse_dopamine_period = 10;
 constexpr float l_neuron_potential_decay = 1.0 - 1.0 / 3.0;
 constexpr float dopamine_parameter = 0.042F;
 constexpr float threshold_weight_coeff = 0.023817F;
+constexpr int input_size = 28 * 28;
 
 
 float resource_from_weight(float weight, float min_weight, float max_weight)
@@ -227,7 +228,7 @@ AnnotatedNetwork create_example_network_new(int num_compound_networks)
         afferent_synapse.rule_.w_min_ = min_synaptic_weight;
         afferent_synapse.rule_.w_max_ = max_synaptic_weight;
         ResourceDeltaProjection input_projection{
-            knp::core::UID{false}, population_uids[INPUT], make_dense_generator(28 * 28, afferent_synapse),
+            knp::core::UID{false}, population_uids[INPUT], make_dense_generator(input_size, afferent_synapse),
             28 * 28 * 150};
         result.data_.projections_from_raster.push_back(input_projection.get_uid());
 
