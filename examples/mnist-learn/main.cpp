@@ -294,27 +294,6 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
 }
 
 
-void process_inference_results(
-    const std::vector<knp::core::messaging::SpikeMessage> &spikes, const std::vector<int> &classes_for_testing)
-{
-    auto j = spikes.begin();
-    Target tar(10, classes_for_testing);
-    for (int tact = 0; tact < testing_period; ++tact)
-    {
-        knp::core::messaging::SpikeData firing_neuron_indices;
-        while (j != spikes.end() && j->header_.send_time_ == tact)
-        {
-            firing_neuron_indices.insert(
-                firing_neuron_indices.end(), j->neuron_indexes_.begin(), j->neuron_indexes_.end());
-            ++j;
-        }
-        tar.obtain_output_spikes(firing_neuron_indices);
-    }
-    auto res = tar.finalize(Target::Criterion::absolute_error, "mnist.log");
-    std::cout << "ACCURACY: " << res / 100.F << "%\n";
-}
-
-
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -336,6 +315,6 @@ int main(int argc, char **argv)
     auto spikes = run_mnist_inference(path_to_backend, trained_network, spike_frames, log_path);
     std::cout << get_time_string() << ": inference finished  -- output spike count is " << spikes.size() << std::endl;
 
-    process_inference_results(spikes, labels.test_);
+    process_inference_results(spikes, labels.test_, testing_period);
     return EXIT_SUCCESS;
 }
