@@ -42,21 +42,21 @@ RUN <<EOT
   fi
 
   {
-  apt-get update \
-  && apt-get -y --no-install-recommends --show-progress install \
-    apt-transport-https \
-    bandit \
-    bison \
-    build-essential \
-    ca-certificates \
-    clang \
-    clang-tidy \
-    cmake \
-    cloc \
-    cpplint \
-    cppcheck \
+    apt-get update \
+    && apt-get -y --no-install-recommends --show-progress install \
+      apt-transport-https \
+      bandit \
+      bison \
+      build-essential \
+      ca-certificates \
+      clang \
+      clang-tidy \
+      cmake \
+      cloc \
+      cpplint \
+      cppcheck \
 #    cppzmq-dev \
-    curl \
+      curl \
     # cuda-12-3 \
 #    cuda-libraries-dev-12-3 \
 #    libnpp-dev-12-3 \
@@ -66,56 +66,52 @@ RUN <<EOT
 #    cuda-compiler-12-3 \
 #    libcusparse-dev-12-3 \
 #    libcublas-dev-12-3 \
-    flake8 \
-    flex \
-    fonts-liberation \
-    # gcovr \
-    gdb \
-    gdbserver \
-    git \
-    gnupg-agent \
-    gosu \
-    graphviz \
-    gsfonts \
-    jq \
+      flake8 \
+      flex \
+      fonts-liberation \
+      # gcovr \
+      gdbserver \
+      git \
+      gnupg-agent \
+      graphviz \
+      gsfonts \
+      jq \
     # libboost-all-dev \
-    libcurl4 \
+      libcurl4 \
 #    libgtest-dev \
 #    libhdf5-dev \
 #    libssl-dev \
-    libunwind8 \
+      libunwind8 \
 #    libzmq5-dev \
-    iputils-ping \
-    iproute2 \
-    meson \
-    mypy \
-    netcat-openbsd \
-    net-tools \
-    libopencv-dev \
-    p7zip-full \
-    pre-commit \
-    protobuf-compiler \
-    pylint \
-    python3 \
-    python3-dev \
-    python3-build \
-    python3-mypy \
-    python3-opencv \
-    python3-pip \
+      meson \
+      mypy \
+      netcat-openbsd \
+      net-tools \
+      libopencv-dev \
+      p7zip-full \
+      pre-commit \
+      protobuf-compiler \
+      pylint \
+      python3 \
+      python3-dev \
+      python3-build \
+      python3-mypy \
+      python3-opencv \
+      python3-pip \
     # python3-pytest \
-    python3-requests \
-    python3-setuptools \
-    python3-types-requests \
-    python3-wheel \
-    rapidjson-dev \
-    software-properties-common \
-    ssh \
-    strace \
-    tar \
-    valgrind \
-    wget \
-    zip \
-    $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}')
+      python3-requests \
+      python3-setuptools \
+      python3-types-requests \
+      python3-wheel \
+      rapidjson-dev \
+      software-properties-common \
+      ssh \
+      strace \
+      tar \
+      valgrind \
+      wget \
+      zip \
+      $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}')
   } || { echo "Apt install failed!" >&2; exit 1; }
 
   if [ "${TARGETARCH}" == "amd64" ]; then
