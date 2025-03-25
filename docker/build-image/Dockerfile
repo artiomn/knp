@@ -15,6 +15,7 @@
 # limitations under the License.
 
 FROM gcc:14.1.0
+ARG TARGETARCH
 
 ENV OCLINT_FILE=oclint-22.02-llvm-13.0.1-x86_64-linux-ubuntu-20.04.tar.gz \
     DEBIAN_FRONTEND=noninteractive
