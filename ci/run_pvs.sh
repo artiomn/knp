@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 PVS_LICENSE="${1}"
 BUILD_DIR="${2:-build}"
