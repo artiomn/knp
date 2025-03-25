@@ -21,18 +21,28 @@ ENV OCLINT_FILE=oclint-22.02-llvm-13.0.1-x86_64-linux-ubuntu-20.04.tar.gz \
 
 WORKDIR /azp
 
-RUN \
-  echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes \
-  && export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//') \
+RUN <<EOT
+  echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes
+  export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//')
+
 #  && wget https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/cuda-keyring_1.1-1_all.deb \
 #  && dpkg -i cuda-keyring_1.1-1_all.deb \
 #  && rm cuda-keyring_1.1-1_all.deb \
 #  && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys A4B469963BF863CC \
 #  && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/ /" | \
 #    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
-  && wget -qO- https://files.pvs-studio.com/etc/pubkey.txt | gpg --dearmor -o /etc/apt/trusted.gpg.d/viva64.gpg \
-  && wget -O /etc/apt/sources.list.d/viva64.list https://files.pvs-studio.com/etc/viva64.list \
-  && apt-get update \
+  echo "Build ARCH: ${TARGETARCH}"
+
+  if [ "${TARGETARCH}" == "amd64" ]; then
+    echo "Adding PVS Studio repo..."
+    {
+      wget -qO- https://files.pvs-studio.com/etc/pubkey.txt | gpg --dearmor -o /etc/apt/trusted.gpg.d/viva64.gpg \
+      && wget -O /etc/apt/sources.list.d/viva64.list https://files.pvs-studio.com/etc/viva64.list
+    } || exit 1
+  fi
+
+  {
+  apt-get update \
   && apt-get -y --no-install-recommends --show-progress install \
     apt-transport-https \
     bandit \
@@ -105,9 +115,16 @@ RUN \
     valgrind \
     wget \
     zip \
-    $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}') \
-  && if [ "${TARGETARCH}" == "amd64" ]; then apt-get -y --no-install-recommends install pvs-studio; fi \
-  && apt-get clean \
+    $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}')
+  } || { echo "Apt install failed!" >&2; exit 1; }
+
+  if [ "${TARGETARCH}" == "amd64" ]; then
+    echo "Installing PVS Studio..."
+    apt-get -y --no-install-recommends install pvs-studio || exit 1
+  fi
+
+  apt-get clean
+
   # && git clone --recursive --depth 1 --branch boost-1.84.0 https://github.com/boostorg/boost /usr/local/boost/1.84.0 \
   # && cd /usr/local/boost/1.84.0 \
   # && PY_VER="$(python3 --version|cut -f2 -d' '|cut -f1-2 -d.)" \
@@ -116,7 +133,9 @@ RUN \
   # && cp tools/build/example/user-config.jam ~ \
   # && ./bootstrap.sh  --with-python=/usr/bin/python3 --with-python-version=${PY_VER} --with-python-root=/usr/lib/python${PY_VER} \
   # && ./b2 -a -j 6 cxxflags="-fPIC" cflags="-fPIC" link=static,shared threading=multi \
-  && cd /azp \
+
+  cd /azp \
+  && echo "Install Doxygen..."
   # New Doxygen version. \
   && git clone --depth 1 --branch Release_1_13_2 --single-branch https://github.com/doxygen/doxygen.git \
   && cd doxygen \
@@ -135,6 +154,7 @@ RUN \
   && curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-`uname -s`-`uname -m` -o "${DESTINATION}" \
   && chmod +x ${DESTINATION} \
   && ln -sf ${DESTINATION} /usr/bin/docker-compose
+EOT
 
 # COPY "${OCLINT_FILE}" .
 RUN \
@@ -146,10 +166,3 @@ RUN \
 
 COPY LICENSE.txt .
 COPY NOTICE.txt .
-
-#COPY "${PVS_FILE}" .
-#RUN dpkg -i "${PVS_FILE}"
-
-#COPY --chmod=0555 ./start.sh .
-
-#CMD ["./start.sh"]
