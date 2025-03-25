@@ -63,9 +63,9 @@ private:
         int correcty_predicted = 0;
     };
 
-    int finalize_absolute_err(const std::vector<Result> &vcr) const;
-    int finalize_weighted_err(const std::vector<Result> &vcr) const;
-    int finalize_averaged_f(const std::vector<Result> &vcr) const;
+    int finalize_absolute_err(const std::vector<Result> &prediction_results) const;
+    int finalize_weighted_err(const std::vector<Result> &prediction_results) const;
+    int finalize_averaged_f(const std::vector<Result> &prediction_results) const;
 
     struct TargetClass
     {
@@ -115,58 +115,57 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
 {
     int num_existing_classes, num_no_class;
     if (none_of(max_vote_.begin(), max_vote_.end(), std::identity()))  // No predictions at all...
-        return 1;
+        return 0;
     std::vector<int> predictions;
-    auto v_lims = max_vote_;
-    auto v_pars = v_lims;
-    auto v_parbest = v_pars;
+    auto parameters = max_vote_;
+    auto best_parameters = parameters;
     int num_correct_max = 0;
-    size_t i;
-    int curcla = 0;
+    int current_class = 0;
     do
     {
         predictions.clear();
-        for (i = 0; i < predicted_states_.size(); ++i)
+        for (size_t i = 0; i < predicted_states_.size(); ++i)
             predictions.push_back(
-                predicted_states_[i].first == -1 || predicted_states_[i].second < v_pars[predicted_states_[i].first]
+                predicted_states_[i].first == -1 || predicted_states_[i].second < parameters[predicted_states_[i].first]
                     ? -1
                     : predicted_states_[i].first);
         int num_correct = 0;
-        for (i = 0; i < predictions.size(); ++i)
+        for (size_t i = 0; i < predictions.size(); ++i)
             if (predictions[i] == states_[i]) ++num_correct;
         if (num_correct > num_correct_max)
         {
             num_correct_max = num_correct;
-            v_parbest = v_pars;
+            best_parameters = parameters;
         }
-        if (v_pars[curcla])
-            --v_pars[curcla];
+        if (parameters[current_class])
+            --parameters[current_class];
         else
         {
-            v_pars = v_parbest;
-            ++curcla;
+            parameters = best_parameters;
+            ++current_class;
         }
-    } while (curcla < get_num_targets());
+    } while (current_class < get_num_targets());
 
     predictions.clear();
-    for (i = 0; i < predicted_states_.size(); ++i)
+    for (size_t i = 0; i < predicted_states_.size(); ++i)
         predictions.push_back(
-            predicted_states_[i].first == -1 || predicted_states_[i].second < v_parbest[predicted_states_[i].first]
+            predicted_states_[i].first == -1 ||
+                    predicted_states_[i].second < best_parameters[predicted_states_[i].first]
                 ? -1
                 : predicted_states_[i].first);
-    int nerr = 0;
+    int num_errors = 0;
 
-    std::vector<Result> vcr(get_num_targets());
+    std::vector<Result> prediction_results(get_num_targets());
     int num_true_negatives = 0;
-    for (i = 0; i < predicted_states_.size(); ++i)
+    for (size_t i = 0; i < predicted_states_.size(); ++i)
     {
         int predicted = predictions[i];
-        if (states_[i] != -1) ++vcr[states_[i]].real;
-        if (predicted != -1) ++vcr[predicted].predicted;
+        if (states_[i] != -1) ++prediction_results[states_[i]].real;
+        if (predicted != -1) ++prediction_results[predicted].predicted;
         if (predicted != states_[i])
-            ++nerr;
+            ++num_errors;
         else if (predicted != -1)
-            ++vcr[predicted].correcty_predicted;
+            ++prediction_results[predicted].correcty_predicted;
         else
             ++num_true_negatives;
     }
@@ -175,16 +174,20 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
         std::ofstream out_stream(out_file_path);
         out_stream << "TARGET,THRESHOLD,PRECISION,RECAL"
                       "L,F\n";
-        for (int cla = 0; cla < get_num_targets(); ++cla)
+        for (int label = 0; label < get_num_targets(); ++label)
         {
             float precision =
-                vcr[cla].predicted ? vcr[cla].correcty_predicted / static_cast<float>(vcr[cla].predicted) : 0.F;
+                prediction_results[label].predicted
+                    ? target[label].correcty_predicted / static_cast<float>(prediction_results[label].predicted)
+                    : 0.F;
 
-            float recall = vcr[cla].real ? vcr[cla].correcty_predicted / static_cast<float>(vcr[cla].real) : 0.F;
-            out_stream << cla << ',' << v_parbest[cla] << ',' << precision << ',' << recall << ','
+            float recall = prediction_results[label].real ? prediction_results[label].correcty_predicted /
+                                                                static_cast<float>(prediction_results[label].real)
+                                                          : 0.F;
+            out_stream << label << ',' << best_parameters[label] << ',' << precision << ',' << recall << ','
                        << (precision && recall ? 2 / (1 / precision + 1 / recall) : 0.F) << std::endl;
         }
-        for (i = 0; i < predicted_states_.size(); ++i)
+        for (size_t i = 0; i < predicted_states_.size(); ++i)
             out_stream << states_[i] << ',' << predicted_states_[i].first << ',' << predicted_states_[i].second << ','
                        << predictions[i] << std::endl;
     }
@@ -192,18 +195,20 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
     switch (criterion)
     {
         case Criterion::absolute_error:
-            return static_cast<int>(std::lround(10000.0 * (1 - static_cast<double>(nerr) / predicted_states_.size())));
+            return static_cast<int>(
+                std::lround(10000.0 * (1 - static_cast<double>(num_errors) / predicted_states_.size())));
 
         case Criterion::weighted_error:
             num_existing_classes = 0;
             num_correct_weighted = 0.;
             num_no_class = static_cast<int>(predicted_states_.size());
             for (int cla = 0; cla < get_num_targets(); ++cla)
-                if (vcr[cla].real)
+                if (prediction_results[cla].real)
                 {
-                    num_correct_weighted += vcr[cla].correcty_predicted / static_cast<double>(vcr[cla].real);
+                    num_correct_weighted +=
+                        prediction_results[cla].correcty_predicted / static_cast<double>(prediction_results[cla].real);
                     ++num_existing_classes;
-                    num_no_class -= vcr[cla].real;
+                    num_no_class -= prediction_results[cla].real;
                 }
             if (num_no_class)
             {
@@ -213,26 +218,28 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
             return static_cast<int>(std::lround(10000.0 * num_correct_weighted / num_existing_classes));
 
         default:
-            return finalize_averaged_f(vcr);
+            return finalize_averaged_f(prediction_results);
     }
 }
 
 
-int Target::finalize_averaged_f(const std::vector<Result> &vcr) const
+int Target::finalize_averaged_f(const std::vector<Result> &prediction_results) const
 {
     double weighted_f_measure = 0.;
     int ndef = 0;
     for (int target_index = 0; target_index < get_num_targets(); ++target_index)
     {
-        if (vcr[target_index].real)
+        if (prediction_results[target_index].real)
         {
-            double precision = vcr[target_index].predicted ? vcr[target_index].correcty_predicted /
-                                                                 static_cast<double>(vcr[target_index].predicted)
-                                                           : 0.F;
-            double recall = vcr[target_index].correcty_predicted / static_cast<double>(vcr[target_index].real);
+            double precision = prediction_results[target_index].predicted
+                                   ? prediction_results[target_index].correcty_predicted /
+                                         static_cast<double>(prediction_results[target_index].predicted)
+                                   : 0.F;
+            double recall = prediction_results[target_index].correcty_predicted /
+                            static_cast<double>(prediction_results[target_index].real);
             double f_measure = precision && recall ? 2 / (1 / precision + 1 / recall) : 0.;
-            weighted_f_measure += f_measure * vcr[target_index].real;
-            ndef += vcr[target_index].real;
+            weighted_f_measure += f_measure * prediction_results[target_index].real;
+            ndef += prediction_results[target_index].real;
         }
     }
     return static_cast<int>(std::lround(10000.0 * weighted_f_measure / ndef));
@@ -244,7 +251,7 @@ void process_inference_results(
     int testing_period)
 {
     auto j = spikes.begin();
-    Target tar(10, classes_for_testing);
+    Target target(10, classes_for_testing);
     for (int tact = 0; tact < testing_period; ++tact)
     {
         knp::core::messaging::SpikeData firing_neuron_indices;
@@ -254,8 +261,8 @@ void process_inference_results(
                 firing_neuron_indices.end(), j->neuron_indexes_.begin(), j->neuron_indexes_.end());
             ++j;
         }
-        tar.obtain_output_spikes(firing_neuron_indices);
+        target.obtain_output_spikes(firing_neuron_indices);
     }
-    auto res = tar.finalize(Target::Criterion::absolute_error, "mnist.log");
+    auto res = target.finalize(Target::Criterion::absolute_error, "mnist.log");
     std::cout << "ACCURACY: " << res / 100.F << "%\n";
 }
