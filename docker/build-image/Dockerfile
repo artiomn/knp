@@ -34,7 +34,7 @@ RUN <<EOT
 #    tee /etc/apt/sources.list.d/cuda-${DEBIAN_VERSION}-x86_64.list \
   echo "Build ARCH: ${TARGETARCH}"
 
-  if [ "${TARGETARCH}" == "amd64" ]; then
+  if [ "x${TARGETARCH}" == "xamd64" ]; then
     echo "Adding PVS Studio repo..."
     {
       wget -qO- https://files.pvs-studio.com/etc/pubkey.txt | gpg --dearmor -o /etc/apt/trusted.gpg.d/viva64.gpg \
@@ -98,7 +98,7 @@ RUN <<EOT
       $(apt list|awk '/boost.*1.81.*-dev/ {print($1);}')
   } || { echo "Apt install failed!" >&2; exit 1; }
 
-  if [ "${TARGETARCH}" == "amd64" ]; then
+  if [ "x${TARGETARCH}" == "xamd64" ]; then
     echo "Installing PVS Studio..."
     apt-get -y --no-install-recommends install pvs-studio || exit 1
   fi
@@ -114,10 +114,11 @@ RUN <<EOT
   # && ./bootstrap.sh  --with-python=/usr/bin/python3 --with-python-version=${PY_VER} --with-python-root=/usr/lib/python${PY_VER} \
   # && ./b2 -a -j 6 cxxflags="-fPIC" cflags="-fPIC" link=static,shared threading=multi \
 
-  cd /azp \
-  && echo "Install Doxygen..."
-  # New Doxygen version. \
-  && git clone --depth 1 --branch Release_1_13_2 --single-branch https://github.com/doxygen/doxygen.git \
+  cd /azp
+  echo "Install Doxygen..."
+
+  # New Doxygen version.
+  git clone --depth 1 --branch Release_1_13_2 --single-branch https://github.com/doxygen/doxygen.git \
   && cd doxygen \
   && cmake -G "Unix Makefiles" -DCMAKE_POSITION_INDEPENDENT_CODE=ON . \
   && cmake --build . --parallel 4 \
