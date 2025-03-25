@@ -1,8 +1,8 @@
 #!/bin/sh
 
 PVS_LICENSE="${1}"
+BUILD_DIR="${2:-build}"
 
 pvs-studio-analyzer credentials ${PVS_LICENSE}
-pvs-studio-analyzer analyze -f build/compile_commands.json -j && \
-plog-converter -t sarif -o pvs-report.sarif PVS-Studio.log && \
+cmake --build "${BUILD_DIR}" --parallel --target pvs-analyze
 cat PVS-Studio.log
