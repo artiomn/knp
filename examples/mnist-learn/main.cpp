@@ -311,7 +311,6 @@ int main(int argc, char **argv)
     auto spike_frames = read_spike_frames(argv[1]);
     auto labels = read_labels(argv[2], learning_period);
     AnnotatedNetwork trained_network = train_mnist_network(path_to_backend, spike_frames, labels.train_, log_path);
-    // AnnotatedNetwork trained_network = parse_network_from_sonata("");
 
     auto spikes = run_mnist_inference(path_to_backend, trained_network, spike_frames, log_path);
     std::cout << get_time_string() << ": inference finished  -- output spike count is " << spikes.size() << std::endl;

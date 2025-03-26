@@ -176,10 +176,10 @@ int Target::finalize(enum Criterion criterion, const std::filesystem::path &out_
                       "L,F\n";
         for (int label = 0; label < get_num_targets(); ++label)
         {
-            float precision =
-                prediction_results[label].predicted
-                    ? target[label].correcty_predicted / static_cast<float>(prediction_results[label].predicted)
-                    : 0.F;
+            float precision = prediction_results[label].predicted
+                                  ? prediction_results[label].correcty_predicted /
+                                        static_cast<float>(prediction_results[label].predicted)
+                                  : 0.F;
 
             float recall = prediction_results[label].real ? prediction_results[label].correcty_predicted /
                                                                 static_cast<float>(prediction_results[label].real)
