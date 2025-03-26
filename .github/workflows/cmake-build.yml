@@ -83,9 +83,12 @@ jobs:
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel ${{ matrix.build_threads_count }}
         timeout-minutes: 180
 
-      - name: Analyze with PVS Studio
+      - name: Analyze C++ code with PVS Studio
         if: matrix.arch == 'amd64'
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image bash -c 'pvs-studio-analyzer credentials ${{ secrets.PVS_STUDIO_CREDENTIALS }} && cmake --build ${{ steps.strings.outputs.build-output-dir }} --parallel ${{ matrix.build_threads_count }} --target pvs-analyze'
+
+      - name: Analyze Python code with PyLint
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP kasperskydh/knp-build-image ci/run_pylint.py ${{ steps.strings.outputs.build-output-dir }}/knp_python_framework/knp ${{ steps.strings.outputs.build-output-dir }}
 
       - name: Test
         run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests kasperskydh/knp-build-image ctest -V
