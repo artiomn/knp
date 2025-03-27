@@ -126,7 +126,7 @@ AnnotatedNetwork train_mnist_network(
     const fs::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const fs::path &log_path = "")
 {
-    AnnotatedNetwork example_network = create_example_network_new(num_subnetworks);
+    AnnotatedNetwork example_network = create_example_network(num_subnetworks);
     std::filesystem::create_directory("mnist_network");
     knp::framework::sonata::save_network(example_network.network_, "mnist_network");
     knp::framework::Model model(std::move(example_network.network_));
