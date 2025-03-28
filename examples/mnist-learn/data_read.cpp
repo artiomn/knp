@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+
 /**
  * @brief Read buffers from binary data file.
  * @param path_to_data path to binary data file.
@@ -35,6 +36,7 @@ std::vector<std::vector<unsigned char>> read_images_from_file(const std::string 
     std::ifstream file_stream(path_to_data, std::ios::binary);
     std::vector<unsigned char> buffer;
     std::vector<std::vector<unsigned char>> result;
+
     while (file_stream.good())
     {
         buffer.resize(input_size);
@@ -42,6 +44,7 @@ std::vector<std::vector<unsigned char>> read_images_from_file(const std::string 
         result.push_back(std::move(buffer));
         buffer.clear();
     }
+
     return result;
 }
 
@@ -51,6 +54,7 @@ std::vector<std::vector<bool>> image_to_spikes(const std::vector<unsigned char> 
     std::vector<std::vector<bool>> ret;
     ret.reserve(frames_per_image);
     int i;
+
     for (i = 0; i < intensity_levels; ++i)
     {
         std::vector<bool> spikes(input_size, false);
@@ -65,7 +69,9 @@ std::vector<std::vector<bool>> image_to_spikes(const std::vector<unsigned char> 
         }
         ret.push_back(spikes);
     }
+
     for (; i < frames_per_image; ++i) ret.push_back(std::vector<bool>(input_size, false));
+
     return ret;
 }
 
@@ -77,6 +83,7 @@ std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &pa
     std::vector<std::vector<bool>> result;
     result.reserve(images.size() * frames_per_image);
     std::vector<double> state(input_size, 0.);
+
     for (size_t img_num = 0; img_num < images.size(); ++img_num)
     {
         std::vector<std::vector<bool>> spikes_per_image = image_to_spikes(images[img_num], state);
@@ -93,6 +100,7 @@ Labels read_labels(const std::filesystem::path &classes_file, int learning_perio
     std::ifstream file_stream(classes_file);
     Labels labels;
     int cla;
+
     while (file_stream.good())
     {
         std::string str;

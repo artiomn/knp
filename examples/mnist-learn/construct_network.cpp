@@ -27,18 +27,13 @@
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include "generators.h"
+
 // A list of short type names to make reading easier.
-using DeltaSynapseData = knp::synapse_traits::synapse_parameters<knp::synapse_traits::DeltaSynapse>;
-using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using BlifatPopulation = knp::core::Population<knp::neuron_traits::BLIFATNeuron>;
 using ResourceBlifatPopulation = knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron>;
 using ResourceNeuron = knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron;
 using ResourceNeuronData = knp::neuron_traits::neuron_parameters<ResourceNeuron>;
-using ResourceSynapse = knp::synapse_traits::SynapticResourceSTDPDeltaSynapse;
-using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
-using ResourceSynapseData = ResourceDeltaProjection::Synapse;
-using ResourceSynapseGenerator = std::function<ResourceSynapseData(size_t)>;
-using ResourceSynapseParams = knp::synapse_traits::synapse_parameters<ResourceSynapse>;
 
 // Network hyperparameters. You may want to fine-tune these.
 constexpr float default_threshold = 8.571F;
@@ -52,7 +47,10 @@ constexpr float dopamine_parameter = 0.042F;
 constexpr float dopamine_value = dopamine_parameter;
 constexpr float threshold_weight_coeff = 0.023817F;
 
+//
 // Network geometry.
+//
+
 // Number of neurons reserved per a single digit.
 constexpr int neurons_per_column = 15;
 
@@ -69,77 +67,7 @@ constexpr int input_size = 28 * 28;
 constexpr int input_projection_size = input_size * num_input_neurons;
 
 
-// Calculate synaptic resource value given synapse weight.
-float resource_from_weight(float weight, float min_weight, float max_weight)
-{
-    // Max weight is only possible with infinite resource, so we should select a value less than that.
-    float eps = 1e-6;
-    if (min_weight > max_weight) std::swap(min_weight, max_weight);
-    if (weight < min_weight || weight >= max_weight - eps)
-        throw std::logic_error("Weight should not be less than min_weight, more than max_weight or too close to it.");
-    double diff = max_weight - min_weight;
-    double over = weight - min_weight;
-    return static_cast<float>(over * diff / (diff - over));
-}
-
-
-// A dense projection generator from a default synapse.
-ResourceSynapseGenerator make_dense_generator(size_t from_size, const ResourceSynapseParams &default_synapse)
-{
-    ResourceSynapseGenerator synapse_generator = [from_size, default_synapse](size_t index)
-    {
-        size_t from_index = index % from_size;
-        size_t to_index = index / from_size;
-        // If you need to have synapses with different parameters, change them here.
-        return ResourceSynapseData{default_synapse, from_index, to_index};
-    };
-    return synapse_generator;
-}
-
-
-// Make a 1-to-N or N-to-1 synapse generator depending on whether a presynaptic or a postsynaptic population is larger.
-DeltaProjection::SynapseGenerator make_aligned_generator(
-    size_t prepopulation_size, size_t postpopulation_size, const DeltaSynapseData &default_synapse)
-{
-    DeltaProjection::SynapseGenerator synapse_generator =
-        [prepopulation_size, postpopulation_size, default_synapse](size_t index)
-    {
-        size_t from_index;
-        size_t to_index;
-
-        if (prepopulation_size >= postpopulation_size)
-        {
-            from_index = index;
-            to_index = index * postpopulation_size / prepopulation_size;
-        }
-        else
-        {
-            to_index = index;
-            from_index = index * prepopulation_size / postpopulation_size;
-        }
-        return DeltaProjection::Synapse{default_synapse, from_index, to_index};
-    };
-    return synapse_generator;
-}
-
-
-// This generator makes all-to-all projection without 1-to-1 element.
-DeltaProjection::SynapseGenerator make_exclusive_generator(
-    size_t population_size, const DeltaSynapseData &default_synapse)
-{
-    DeltaProjection::SynapseGenerator synapse_generator = [population_size, default_synapse](size_t index)
-    {
-        size_t from_index;
-        size_t to_index;
-        from_index = index / (population_size - 1);
-        to_index = index % (population_size - 1);
-        if (to_index >= from_index) ++to_index;
-        return DeltaProjection::Synapse{default_synapse, from_index, to_index};
-    };
-    return synapse_generator;
-}
-
-
+// Intermediate population neurons.
 template <class Neuron>
 struct PopulationData
 {
@@ -157,6 +85,21 @@ enum PopIndexes
 };
 
 
+// Calculate synaptic resource value given synapse weight.
+float resource_from_weight(float weight, float min_weight, float max_weight)
+{
+    // Max weight is only possible with infinite resource, so we should select a value less than that.
+    float eps = 1e-6;
+    if (min_weight > max_weight) std::swap(min_weight, max_weight);
+    if (weight < min_weight || weight >= max_weight - eps)
+        throw std::logic_error("Weight should not be less than min_weight, more than max_weight or too close to it.");
+    double diff = max_weight - min_weight;
+    double over = weight - min_weight;
+    return static_cast<float>(over * diff / (diff - over));
+}
+
+
+// Add populations to the network.
 auto add_subnetwork_populations(AnnotatedNetwork &result)
 {
     result.data_.wta_data.push_back({});
@@ -172,10 +115,10 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
 
     struct PopulationRole
     {
-        PopulationData<ResourceNeuron> pd;
-        bool for_inference;
-        bool output;
-        std::string name;
+        PopulationData<ResourceNeuron> pd_;
+        bool for_inference_;
+        bool output_;
+        std::string name_;
     };
     auto dopamine_neuron = default_neuron;
     dopamine_neuron.total_blocking_period_ = 0;
@@ -191,28 +134,28 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
     for (auto &pop_init_data : pop_data)
     {
         // A very simple neuron generator returning a default neuron.
-        auto neuron_generator = [&pop_init_data](size_t index) { return pop_init_data.pd.neuron_; };
+        auto neuron_generator = [&pop_init_data](size_t index) { return pop_init_data.pd_.neuron_; };
 
         knp::core::UID uid;
-        result.network_.add_population(ResourceBlifatPopulation{uid, neuron_generator, pop_init_data.pd.size_});
+        result.network_.add_population(ResourceBlifatPopulation{uid, neuron_generator, pop_init_data.pd_.size_});
         population_uids.push_back(uid);
-        result.data_.population_names[uid] = pop_init_data.name;
-        if (pop_init_data.for_inference) result.data_.inference_population_uids.insert(uid);
-        if (pop_init_data.output) result.data_.output_uids.push_back(uid);
+        result.data_.population_names[uid] = pop_init_data.name_;
+        if (pop_init_data.for_inference_) result.data_.inference_population_uids.insert(uid);
+        if (pop_init_data.output_) result.data_.output_uids.push_back(uid);
     }
+
     result.data_.wta_data.back().first.push_back(population_uids[INPUT]);
     return std::make_pair(population_uids, pop_data);
 }
 
 
+// Create network for MNIST.
 AnnotatedNetwork create_example_network(int num_compound_networks)
 {
     AnnotatedNetwork result;
     for (int i = 0; i < num_compound_networks; ++i)
     {
-        auto pop_data_buf = add_subnetwork_populations(result);
-        auto &population_uids = pop_data_buf.first;
-        auto &pop_data = pop_data_buf.second;
+        auto [population_uids, pop_data] = add_subnetwork_populations(result);
 
         // Now that we added all the populations we need, we have to connect them with projections.
         // Creating a projection is more tricky, as all the connection logic should be described in a generator.
@@ -240,8 +183,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         const DeltaSynapseData default_activating_synapse{1, 1, knp::synapse_traits::OutputType::BLOCKING};
         DeltaProjection projection_2{
             knp::core::UID{false}, population_uids[DOPAMINE],
-            make_aligned_generator(pop_data[INPUT].pd.size_, pop_data[DOPAMINE].pd.size_, default_activating_synapse),
-            pop_data[INPUT].pd.size_};
+            make_aligned_generator(pop_data[INPUT].pd_.size_, pop_data[DOPAMINE].pd_.size_, default_activating_synapse),
+            pop_data[INPUT].pd_.size_};
         result.network_.add_projection(projection_2);
         result.data_.wta_data[i].second.push_back(projection_2.get_uid());
 
@@ -249,8 +192,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         const DeltaSynapseData default_dopamine_synapse{dopamine_value, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3{
             population_uids[DOPAMINE], population_uids[INPUT],
-            make_aligned_generator(pop_data[DOPAMINE].pd.size_, pop_data[INPUT].pd.size_, default_dopamine_synapse),
-            pop_data[INPUT].pd.size_};
+            make_aligned_generator(pop_data[DOPAMINE].pd_.size_, pop_data[INPUT].pd_.size_, default_dopamine_synapse),
+            pop_data[INPUT].pd_.size_};
 
         result.network_.add_projection(projection_3);
         result.data_.inference_internal_projection.insert(projection_3.get_uid());
@@ -258,8 +201,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         // 4. Strong excitatory projection going to output neurons.
         DeltaProjection projection_4{
             knp::core::UID{false}, population_uids[OUTPUT],
-            make_aligned_generator(pop_data[INPUT].pd.size_, pop_data[OUTPUT].pd.size_, default_synapse),
-            pop_data[INPUT].pd.size_};
+            make_aligned_generator(pop_data[INPUT].pd_.size_, pop_data[OUTPUT].pd_.size_, default_synapse),
+            pop_data[INPUT].pd_.size_};
         result.data_.wta_data[i].second.push_back(projection_4.get_uid());
 
         result.network_.add_projection(projection_4);
@@ -269,7 +212,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         const DeltaSynapseData default_blocking_synapse{-20, 1, knp::synapse_traits::OutputType::BLOCKING};
         DeltaProjection projection_5{
             population_uids[OUTPUT], population_uids[GATE],
-            make_aligned_generator(pop_data[OUTPUT].pd.size_, pop_data[GATE].pd.size_, default_blocking_synapse),
+            make_aligned_generator(pop_data[OUTPUT].pd_.size_, pop_data[GATE].pd_.size_, default_blocking_synapse),
             num_possible_labels};
         result.network_.add_projection(projection_5);
         result.data_.inference_internal_projection.insert(projection_5.get_uid());
@@ -277,8 +220,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         // 6. Strong excitatory projection going from ground truth classes.
         DeltaProjection projection_6{
             knp::core::UID{false}, population_uids[DOPAMINE],
-            make_aligned_generator(num_possible_labels, pop_data[DOPAMINE].pd.size_, default_synapse),
-            pop_data[DOPAMINE].pd.size_};
+            make_aligned_generator(num_possible_labels, pop_data[DOPAMINE].pd_.size_, default_synapse),
+            pop_data[DOPAMINE].pd_.size_};
         result.network_.add_projection(projection_6);
         result.data_.projections_from_classes.push_back(projection_6.get_uid());
 
@@ -287,8 +230,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         slow_synapse.delay_ = 10;
         DeltaProjection projection_7{
             knp::core::UID{false}, population_uids[GATE],
-            make_aligned_generator(num_possible_labels, pop_data[GATE].pd.size_, slow_synapse),
-            pop_data[GATE].pd.size_};
+            make_aligned_generator(num_possible_labels, pop_data[GATE].pd_.size_, slow_synapse),
+            pop_data[GATE].pd_.size_};
         result.network_.add_projection(projection_7);
         result.data_.projections_from_classes.push_back(projection_7.get_uid());
 
@@ -298,7 +241,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         DeltaProjection projection_8{
             knp::core::UID{false}, population_uids[GATE],
             make_exclusive_generator(num_possible_labels, inhibitory_synapse),
-            num_possible_labels * (pop_data[GATE].pd.size_ - 1)};
+            num_possible_labels * (pop_data[GATE].pd_.size_ - 1)};
         result.data_.projections_from_classes.push_back(projection_8.get_uid());
         result.network_.add_projection(projection_8);
 
@@ -307,8 +250,8 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         weak_excitatory_synapse.weight_ = 3;
         DeltaProjection projection_9{
             population_uids[GATE], population_uids[INPUT],
-            make_aligned_generator(pop_data[GATE].pd.size_, pop_data[INPUT].pd.size_, weak_excitatory_synapse),
-            pop_data[INPUT].pd.size_};
+            make_aligned_generator(pop_data[GATE].pd_.size_, pop_data[INPUT].pd_.size_, weak_excitatory_synapse),
+            pop_data[INPUT].pd_.size_};
         result.network_.add_projection(projection_9);
         result.data_.inference_internal_projection.insert(projection_9.get_uid());
     }

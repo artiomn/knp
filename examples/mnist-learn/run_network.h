@@ -64,6 +64,5 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     const std::filesystem::path &path_to_backend, AnnotatedNetwork &described_network,
     const std::vector<std::vector<bool>> &spike_frames, const std::filesystem::path &log_path = "");
 
-
 /// Get current time as a string.
 std::string get_time_string();

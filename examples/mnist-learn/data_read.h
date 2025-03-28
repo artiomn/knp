@@ -20,6 +20,7 @@
  */
 
 #pragma once
+
 #include <filesystem>
 #include <vector>
 
@@ -27,15 +28,6 @@ constexpr int intensity_levels = 10;
 constexpr int frames_per_image = 20;
 constexpr size_t input_size = 28 * 28;
 constexpr double state_increment_factor = 1. / 255;
-
-
-/**
- * @brief Read input images.
- * @param path_to_data path to coded input images file.
- * @return vector of spike-based frames.
- */
-std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &path_to_data);
-
 
 /**
  * @brief Labels for testing and training data.
@@ -45,6 +37,14 @@ struct Labels
     std::vector<int> test_;
     std::vector<std::vector<bool>> train_;
 };
+
+
+/**
+ * @brief Read input images.
+ * @param path_to_data path to coded input images file.
+ * @return vector of spike-based frames.
+ */
+std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &path_to_data);
 
 
 /**

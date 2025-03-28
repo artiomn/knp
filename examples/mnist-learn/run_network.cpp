@@ -68,6 +68,7 @@ knp::framework::Network get_network_for_inference(
 {
     auto data_ranges = backend.get_network_data();
     knp::framework::Network res_network;
+
     for (auto &iter = *data_ranges.population_range.first; iter != *data_ranges.population_range.second; ++iter)
     {
         auto population = *iter;
@@ -183,11 +184,11 @@ AnnotatedNetwork train_mnist_network(
 
     // Add all spikes observer.
     // These variables should have the same lifetime as model_executor, or else UB.
-    std::ofstream log_stream, weight_stream, all_spikes_stream;
+    std::ofstream log_stream, weight_stream;
     std::map<std::string, size_t> spike_accumulator;
     // cppcheck-suppress variableScope
     size_t current_index = 0;
-    std::vector<knp::core::UID> wta_uids = add_wta_handlers(example_network, model_executor);
+    add_wta_handlers(example_network, model_executor);
     // All loggers go here
     if (!log_path.empty())
     {
@@ -289,8 +290,6 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
             return step != testing_period;
         });
-    // Creates the results vector that contains the indices of the spike steps.
-    std::vector<knp::core::Step> results;
     // Updates the output channel.
     auto spikes = out_channel.update();
     std::sort(

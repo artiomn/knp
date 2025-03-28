@@ -22,6 +22,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 find_package(Boost COMPONENTS program_options REQUIRED )
 
+# Need to check if the example build inside KNP tree.
 if (NOT TARGET KNP::BaseFramework::Core)
     find_package(knp-base-framework REQUIRED)
 endif()

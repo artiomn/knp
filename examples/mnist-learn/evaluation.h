@@ -20,9 +20,11 @@
  */
 
 #pragma once
+
 #include <knp/core/messaging/messaging.h>
 
 #include <vector>
+
 
 void process_inference_results(
     const std::vector<knp::core::messaging::SpikeMessage> &spikes, const std::vector<int> &classes_for_testing,

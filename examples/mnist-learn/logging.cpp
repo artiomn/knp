@@ -32,6 +32,7 @@
 #include <string>
 #include <tuple>
 
+
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
 
