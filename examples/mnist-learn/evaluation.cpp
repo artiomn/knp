@@ -28,6 +28,16 @@
 #include <string>
 #include <utility>
 
+/**
+ * @brief Prediction result structure.
+ */
+struct Result
+{
+    int real_ = 0;
+    int predicted_ = 0;
+    int correcty_predicted_ = 0;
+};
+
 
 /**
  * @brief A class used for accuracy evaluation.
@@ -47,13 +57,6 @@ public:
     [[nodiscard]] int finalize(const std::filesystem::path &strPredictionFile = "") const;
 
 private:
-    struct Result
-    {
-        int real = 0;
-        int predicted = 0;
-        int correcty_predicted = 0;
-    };
-
     void write_predictions_to_file(
         const std::filesystem::path &out_file_path, const std::vector<Result> &prediction_results,
         const std::vector<int> &predictions) const;
@@ -95,26 +98,40 @@ void Target::obtain_output_spikes(const knp::core::messaging::SpikeData &firing_
 }
 
 
+double get_precision(const Result &prediction_result)
+{
+    if (prediction_result.predicted_ == 0) return 0.F;
+    return static_cast<double>(prediction_result.correcty_predicted_) / prediction_result.predicted_;
+}
+
+
+double get_recall(const Result &prediction_result)
+{
+    if (prediction_result.real_ == 0) return 0.0F;
+    return static_cast<double>(prediction_result.correcty_predicted_) / prediction_result.real_;
+}
+
+
+double get_f_measure(double precision, double recall)
+{
+    if (precision * recall == 0) return 0.0F;
+    return 2.0F * precision * recall / (precision + recall);
+}
+
+
 void Target::write_predictions_to_file(
     const std::filesystem::path &out_file_path, const std::vector<Result> &prediction_results,
     const std::vector<int> &predictions) const
 {
     if (out_file_path.empty()) return;
     std::ofstream out_stream(out_file_path);
-    out_stream << "TARGET,THRESHOLD,PRECISION,RECAL"
-                  "L,F\n";
+    out_stream << "TARGET,PRECISION,RECALL,F\n";
     for (int label = 0; label < get_num_targets(); ++label)
     {
-        float precision =
-            prediction_results[label].predicted
-                ? prediction_results[label].correcty_predicted / static_cast<float>(prediction_results[label].predicted)
-                : 0.F;
-
-        float recall = prediction_results[label].real ? prediction_results[label].correcty_predicted /
-                                                            static_cast<float>(prediction_results[label].real)
-                                                      : 0.F;
-        out_stream << label << ',' << precision << ',' << recall << ','
-                   << (precision && recall ? 2 / (1 / precision + 1 / recall) : 0.F) << std::endl;
+        double precision = get_precision(prediction_results[label]);
+        double recall = get_recall(prediction_results[label]);
+        double f_measure = get_f_measure(precision, recall);
+        out_stream << label << ',' << precision << ',' << recall << ',' << f_measure << std::endl;
     }
     for (size_t i = 0; i < predicted_states_.size(); ++i)
         out_stream << states_[i] << ',' << predicted_states_[i].first << ',' << predicted_states_[i].second << ','
@@ -137,12 +154,12 @@ int Target::finalize(const std::filesystem::path &out_file_path) const
     for (size_t i = 0; i < predicted_states_.size(); ++i)
     {
         int predicted = predictions[i];
-        if (states_[i] != -1) ++prediction_results[states_[i]].real;
-        if (predicted != -1) ++prediction_results[predicted].predicted;
+        if (states_[i] != -1) ++prediction_results[states_[i]].real_;
+        if (predicted != -1) ++prediction_results[predicted].predicted_;
         if (predicted != states_[i])
             ++num_errors;
         else if (predicted != -1)
-            ++prediction_results[predicted].correcty_predicted;
+            ++prediction_results[predicted].correcty_predicted_;
         else
             ++num_true_negatives;
     }

@@ -102,7 +102,7 @@ float resource_from_weight(float weight, float min_weight, float max_weight)
 // Add populations to the network.
 auto add_subnetwork_populations(AnnotatedNetwork &result)
 {
-    result.data_.wta_data.push_back({});
+    result.data_.wta_data_.push_back({});
     // Parameters for a default neuron.
     ResourceNeuronData default_neuron{{}};
     default_neuron.activation_threshold_ = default_threshold;
@@ -139,12 +139,12 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
         knp::core::UID uid;
         result.network_.add_population(ResourceBlifatPopulation{uid, neuron_generator, pop_init_data.pd_.size_});
         population_uids.push_back(uid);
-        result.data_.population_names[uid] = pop_init_data.name_;
-        if (pop_init_data.for_inference_) result.data_.inference_population_uids.insert(uid);
-        if (pop_init_data.output_) result.data_.output_uids.push_back(uid);
+        result.data_.population_names_[uid] = pop_init_data.name_;
+        if (pop_init_data.for_inference_) result.data_.inference_population_uids_.insert(uid);
+        if (pop_init_data.output_) result.data_.output_uids_.push_back(uid);
     }
 
-    result.data_.wta_data.back().first.push_back(population_uids[INPUT]);
+    result.data_.wta_data_.back().first.push_back(population_uids[INPUT]);
     return std::make_pair(population_uids, pop_data);
 }
 
@@ -172,10 +172,10 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         ResourceDeltaProjection input_projection{
             knp::core::UID{false}, population_uids[INPUT], make_dense_generator(input_size, afferent_synapse),
             input_projection_size};
-        result.data_.projections_from_raster.push_back(input_projection.get_uid());
+        result.data_.projections_from_raster_.push_back(input_projection.get_uid());
         input_projection.unlock_weights();  // Trainable
         result.network_.add_projection(input_projection);
-        result.data_.inference_internal_projection.insert(input_projection.get_uid());
+        result.data_.inference_internal_projection_.insert(input_projection.get_uid());
 
         default_synapse.weight_ = 9;
 
@@ -186,7 +186,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             make_aligned_generator(pop_data[INPUT].pd_.size_, pop_data[DOPAMINE].pd_.size_, default_activating_synapse),
             pop_data[INPUT].pd_.size_};
         result.network_.add_projection(projection_2);
-        result.data_.wta_data[i].second.push_back(projection_2.get_uid());
+        result.data_.wta_data_[i].second.push_back(projection_2.get_uid());
 
         // 3. Dopamine projection, it goes from dopamine population to input population.
         const DeltaSynapseData default_dopamine_synapse{dopamine_value, 1, knp::synapse_traits::OutputType::DOPAMINE};
@@ -196,17 +196,17 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             pop_data[INPUT].pd_.size_};
 
         result.network_.add_projection(projection_3);
-        result.data_.inference_internal_projection.insert(projection_3.get_uid());
+        result.data_.inference_internal_projection_.insert(projection_3.get_uid());
 
         // 4. Strong excitatory projection going to output neurons.
         DeltaProjection projection_4{
             knp::core::UID{false}, population_uids[OUTPUT],
             make_aligned_generator(pop_data[INPUT].pd_.size_, pop_data[OUTPUT].pd_.size_, default_synapse),
             pop_data[INPUT].pd_.size_};
-        result.data_.wta_data[i].second.push_back(projection_4.get_uid());
+        result.data_.wta_data_[i].second.push_back(projection_4.get_uid());
 
         result.network_.add_projection(projection_4);
-        result.data_.inference_internal_projection.insert(projection_4.get_uid());
+        result.data_.inference_internal_projection_.insert(projection_4.get_uid());
 
         // 5. Blocking projection.
         const DeltaSynapseData default_blocking_synapse{-20, 1, knp::synapse_traits::OutputType::BLOCKING};
@@ -215,7 +215,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             make_aligned_generator(pop_data[OUTPUT].pd_.size_, pop_data[GATE].pd_.size_, default_blocking_synapse),
             num_possible_labels};
         result.network_.add_projection(projection_5);
-        result.data_.inference_internal_projection.insert(projection_5.get_uid());
+        result.data_.inference_internal_projection_.insert(projection_5.get_uid());
 
         // 6. Strong excitatory projection going from ground truth classes.
         DeltaProjection projection_6{
@@ -223,7 +223,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             make_aligned_generator(num_possible_labels, pop_data[DOPAMINE].pd_.size_, default_synapse),
             pop_data[DOPAMINE].pd_.size_};
         result.network_.add_projection(projection_6);
-        result.data_.projections_from_classes.push_back(projection_6.get_uid());
+        result.data_.projections_from_classes_.push_back(projection_6.get_uid());
 
         // 7. Strong slow excitatory projection going from ground truth classes.
         auto slow_synapse = default_synapse;
@@ -233,7 +233,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             make_aligned_generator(num_possible_labels, pop_data[GATE].pd_.size_, slow_synapse),
             pop_data[GATE].pd_.size_};
         result.network_.add_projection(projection_7);
-        result.data_.projections_from_classes.push_back(projection_7.get_uid());
+        result.data_.projections_from_classes_.push_back(projection_7.get_uid());
 
         // 8. Strong inhibitory projection from ground truth input.
         auto inhibitory_synapse = default_synapse;
@@ -242,7 +242,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             knp::core::UID{false}, population_uids[GATE],
             make_exclusive_generator(num_possible_labels, inhibitory_synapse),
             num_possible_labels * (pop_data[GATE].pd_.size_ - 1)};
-        result.data_.projections_from_classes.push_back(projection_8.get_uid());
+        result.data_.projections_from_classes_.push_back(projection_8.get_uid());
         result.network_.add_projection(projection_8);
 
         // 9. Weak excitatory projection.
@@ -253,7 +253,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
             make_aligned_generator(pop_data[GATE].pd_.size_, pop_data[INPUT].pd_.size_, weak_excitatory_synapse),
             pop_data[INPUT].pd_.size_};
         result.network_.add_projection(projection_9);
-        result.data_.inference_internal_projection.insert(projection_9.get_uid());
+        result.data_.inference_internal_projection_.insert(projection_9.get_uid());
     }
 
     // Return created network.

@@ -104,7 +104,7 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
     // std::random_device rnd_device;
     int seed = 0;  // rnd_device();
     std::cout << "Seed " << seed << std::endl;
-    for (const auto &senders_receivers : network.data_.wta_data)
+    for (const auto &senders_receivers : network.data_.wta_data_)
     {
         knp::core::UID handler_uid;
         executor.add_spike_message_handler(
@@ -146,11 +146,11 @@ auto build_channel_map_train(
     knp::core::UID input_image_channel_classses;
 
     // Add input channel for each image input projection.
-    for (auto image_proj_uid : network.data_.projections_from_raster)
+    for (auto image_proj_uid : network.data_.projections_from_raster_)
         model.add_input_channel(input_image_channel_raster, image_proj_uid);
 
     // Add input channel for data labels.
-    for (auto target_proj_uid : network.data_.projections_from_classes)
+    for (auto target_proj_uid : network.data_.projections_from_classes_)
         model.add_input_channel(input_image_channel_classses, target_proj_uid);
 
     // Create and fill a channel map.
@@ -180,7 +180,7 @@ AnnotatedNetwork train_mnist_network(
 
     // Add observer.
     model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-        make_observer_function(result), example_network.data_.output_uids);
+        make_observer_function(result), example_network.data_.output_uids_);
 
     // Add all spikes observer.
     // These variables should have the same lifetime as model_executor, or else UB.
@@ -195,7 +195,7 @@ AnnotatedNetwork train_mnist_network(
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
         if (log_stream.is_open())
             add_aggregate_logger(
-                model, example_network.data_.population_names, model_executor, current_index, spike_accumulator,
+                model, example_network.data_.population_names_, model_executor, current_index, spike_accumulator,
                 log_stream);
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
@@ -206,7 +206,7 @@ AnnotatedNetwork train_mnist_network(
             model_executor.add_observer<knp::core::messaging::SpikeMessage>(
                 make_projection_observer_function(
                     weight_stream, logging_weights_period, model_executor,
-                    example_network.data_.projections_from_raster[0]),
+                    example_network.data_.projections_from_raster_[0]),
                 {});
         }
     }
@@ -223,8 +223,8 @@ AnnotatedNetwork train_mnist_network(
 
     std::cout << get_time_string() << ": learning finished\n";
     example_network.network_ = get_network_for_inference(
-        *model_executor.get_backend(), example_network.data_.inference_population_uids,
-        example_network.data_.inference_internal_projection);
+        *model_executor.get_backend(), example_network.data_.inference_population_uids_,
+        example_network.data_.inference_internal_projection_);
     return example_network;
 }
 
@@ -244,8 +244,8 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     knp::core::UID input_image_channel_uid;
     channel_map.insert({input_image_channel_uid, make_input_generator(spike_frames, learning_period)});
 
-    for (auto i : described_network.data_.output_uids) model.add_output_channel(o_channel_uid, i);
-    for (auto image_proj_uid : described_network.data_.projections_from_raster)
+    for (auto i : described_network.data_.output_uids_) model.add_output_channel(o_channel_uid, i);
+    for (auto image_proj_uid : described_network.data_.projections_from_raster_)
         model.add_input_channel(input_image_channel_uid, image_proj_uid);
     knp::framework::ModelExecutor model_executor(model, backend_loader.load(path_to_backend), std::move(channel_map));
 
@@ -258,14 +258,14 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
 
     // Add observer.
     model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-        make_observer_function(result), described_network.data_.output_uids);
+        make_observer_function(result), described_network.data_.output_uids_);
     std::ofstream log_stream;
     // These two variables should have the same lifetime as model_executor, or else UB.
     std::map<std::string, size_t> spike_accumulator;
     // cppcheck-suppress variableScope
     size_t current_index = 0;
     auto wta_uids = add_wta_handlers(described_network, model_executor);
-    auto all_senders_names = described_network.data_.population_names;
+    auto all_senders_names = described_network.data_.population_names_;
     for (const auto &uid : wta_uids)
     {
         all_senders_names.insert({uid, "WTA"});

@@ -36,15 +36,15 @@ struct AnnotatedNetwork
     knp::framework::Network network_;
     struct Annotation
     {
-        std::vector<knp::core::UID> output_uids;
-        std::vector<knp::core::UID> projections_from_raster;
-        std::vector<knp::core::UID> projections_from_classes;
-        std::set<knp::core::UID> inference_population_uids;
-        std::set<knp::core::UID> inference_internal_projection;
+        std::vector<knp::core::UID> output_uids_;
+        std::vector<knp::core::UID> projections_from_raster_;
+        std::vector<knp::core::UID> projections_from_classes_;
+        std::set<knp::core::UID> inference_population_uids_;
+        std::set<knp::core::UID> inference_internal_projection_;
 
         // For each compound network: a vector of senders and a vector of receivers.
-        std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>> wta_data;
-        std::map<knp::core::UID, std::string> population_names;
+        std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>> wta_data_;
+        std::map<knp::core::UID, std::string> population_names_;
     } data_;
 };
 
