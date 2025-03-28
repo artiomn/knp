@@ -32,7 +32,9 @@ int main(int argc, char **argv)
 {
     if (argc < 3)
     {
-        std::cerr << "Not enough parameters to run script: paths to both frames and targets are required" << std::endl;
+        std::cerr << "Not enough parameters.\n First parameter: path to frames file.\n "
+                     "Second parameter: path to labels file.\n Third parameter (optional) path to log output directory."
+                  << std::endl;
         return EXIT_FAILURE;
     }
     std::filesystem::path log_path;
