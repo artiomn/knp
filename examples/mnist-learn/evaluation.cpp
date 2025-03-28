@@ -54,25 +54,16 @@ private:
         int correcty_predicted = 0;
     };
 
-    [[nodiscard]] std::vector<int> calculate_winning_predictions() const;
     void write_predictions_to_file(
         const std::filesystem::path &out_file_path, const std::vector<Result> &prediction_results,
-        const std::vector<int> &winning_predictions, const std::vector<int> &predictions) const;
-
-    struct TargetClass
-    {
-        std::string str;
-    };
+        const std::vector<int> &predictions) const;
 
     const std::vector<int> &states_;
     std::vector<std::pair<int, int>> predicted_states_;
-    size_t tact = 0;
+    size_t tact_ = 0;
     const int state_duration_ = 20;
-    std::string prediction_file_;
-    std::vector<double> possible_predictions_;
     std::vector<int> prediction_votes_;
     std::vector<int> max_vote_;
-    std::vector<TargetClass> vtc_;
     int index_offset_ = 0;
 };
 
@@ -80,7 +71,7 @@ private:
 void Target::obtain_output_spikes(const knp::core::messaging::SpikeData &firing_neuron_indices)
 {
     for (auto i : firing_neuron_indices) ++prediction_votes_[i % get_num_targets()];
-    if (!((tact + 1) % state_duration_))
+    if (!((tact_ + 1) % state_duration_))
     {
         int starting_index = index_offset_;
         int j = starting_index;
@@ -100,56 +91,13 @@ void Target::obtain_output_spikes(const knp::core::messaging::SpikeData &firing_
         if (n_max) max_vote_[predicted_state] = std::max(max_vote_[predicted_state], n_max);
         std::fill(prediction_votes_.begin(), prediction_votes_.end(), 0);
     }
-    ++tact;
-}
-
-
-std::vector<int> Target::calculate_winning_predictions() const
-{
-    auto parameters = max_vote_;
-    auto best_parameters = parameters;
-    int num_correct_max = 0;
-    int current_class = 0;
-    do
-    {
-        // Fill predictions from states
-        std::vector<int> predictions;
-        predictions.reserve(predicted_states_.size());
-        for (size_t i = 0; i < predicted_states_.size(); ++i)
-        {
-            int predicted_value = -1;
-            if (predicted_states_[i].first != -1 &&
-                predicted_states_[i].second >= parameters[predicted_states_[i].first])
-                predicted_value = predicted_states_[i].first;
-
-            predictions.push_back(predicted_value);
-        }
-        // Calculate correct predictions
-        int num_correct = 0;
-        for (size_t i = 0; i < predictions.size(); ++i)
-            if (predictions[i] == states_[i]) ++num_correct;
-
-        if (num_correct > num_correct_max)
-        {
-            num_correct_max = num_correct;
-            best_parameters = parameters;
-        }
-        if (parameters[current_class])
-            --parameters[current_class];
-        else
-        {
-            parameters = best_parameters;
-            ++current_class;
-        }
-    } while (current_class < get_num_targets());
-
-    return best_parameters;
+    ++tact_;
 }
 
 
 void Target::write_predictions_to_file(
     const std::filesystem::path &out_file_path, const std::vector<Result> &prediction_results,
-    const std::vector<int> &winning_predictions, const std::vector<int> &predictions) const
+    const std::vector<int> &predictions) const
 {
     if (out_file_path.empty()) return;
     std::ofstream out_stream(out_file_path);
@@ -165,7 +113,7 @@ void Target::write_predictions_to_file(
         float recall = prediction_results[label].real ? prediction_results[label].correcty_predicted /
                                                             static_cast<float>(prediction_results[label].real)
                                                       : 0.F;
-        out_stream << label << ',' << winning_predictions[label] << ',' << precision << ',' << recall << ','
+        out_stream << label << ',' << precision << ',' << recall << ','
                    << (precision && recall ? 2 / (1 / precision + 1 / recall) : 0.F) << std::endl;
     }
     for (size_t i = 0; i < predicted_states_.size(); ++i)
@@ -178,14 +126,10 @@ int Target::finalize(const std::filesystem::path &out_file_path) const
 {
     if (none_of(max_vote_.begin(), max_vote_.end(), std::identity()))  // No predictions at all...
         return 0;
-    auto winning_predictions = calculate_winning_predictions();
     std::vector<int> predictions;
     for (size_t i = 0; i < predicted_states_.size(); ++i)
         predictions.push_back(
-            predicted_states_[i].first == -1 ||
-                    predicted_states_[i].second < winning_predictions[predicted_states_[i].first]
-                ? -1
-                : predicted_states_[i].first);
+            predicted_states_[i].first == -1 || predicted_states_[i].second < 1 ? -1 : predicted_states_[i].first);
     int num_errors = 0;
 
     std::vector<Result> prediction_results(get_num_targets());
@@ -202,7 +146,7 @@ int Target::finalize(const std::filesystem::path &out_file_path) const
         else
             ++num_true_negatives;
     }
-    write_predictions_to_file(out_file_path, prediction_results, winning_predictions, predictions);
+    write_predictions_to_file(out_file_path, prediction_results, predictions);
     return static_cast<int>(std::lround(10000.0 * (1 - static_cast<double>(num_errors) / predicted_states_.size())));
 }
 
