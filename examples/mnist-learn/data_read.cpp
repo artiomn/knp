@@ -31,7 +31,7 @@
  * @brief Read buffers from binary data file.
  * @param path_to_data path to binary data file.
  */
-std::vector<std::vector<unsigned char>> read_images_from_file(const std::string &path_to_data)
+std::vector<std::vector<unsigned char>> read_images_from_file(const std::filesystem::path &path_to_data)
 {
     std::ifstream file_stream(path_to_data, std::ios::binary);
     std::vector<unsigned char> buffer;
