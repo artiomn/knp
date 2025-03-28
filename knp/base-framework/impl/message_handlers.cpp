@@ -105,8 +105,10 @@ knp::core::messaging::SpikeData GroupWtaRandomHandler::operator()(
     auto group_interval = std::equal_range(
         spikes_per_group.begin(), spikes_per_group.end(), last_group,
         [](const auto &el1, const auto &el2) { return el1.size() > el2.size(); });
-    
-    assert(group_interval.first - spikes_per_group.begin() + 1 <= num_winners_);
+
+        assert(static_cast<size_t>(group_interval.first - spikes_per_group.begin() + 1) <= num_winners_ 
+        ? group_interval.first - spikes_per_group.begin() + 1 >= 0 
+        : false);
     // The approach could be more efficient, but I don't think it's necessary.
     std::shuffle(group_interval.first, group_interval.second, random_engine_);
     knp::core::messaging::SpikeData result;
