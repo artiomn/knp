@@ -27,7 +27,7 @@
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
-//
+// A list of short type names to make reading easier.
 using DeltaSynapseData = knp::synapse_traits::synapse_parameters<knp::synapse_traits::DeltaSynapse>;
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using BlifatPopulation = knp::core::Population<knp::neuron_traits::BLIFATNeuron>;
@@ -97,6 +97,7 @@ ResourceSynapseGenerator make_dense_generator(size_t from_size, const ResourceSy
 }
 
 
+// Make a 1-to-N or N-to-1 synapse generator depending on whether a presynaptic or a postsynaptic population is larger.
 DeltaProjection::SynapseGenerator make_aligned_generator(
     size_t prepopulation_size, size_t postpopulation_size, const DeltaSynapseData &default_synapse)
 {
@@ -104,19 +105,17 @@ DeltaProjection::SynapseGenerator make_aligned_generator(
         [prepopulation_size, postpopulation_size, default_synapse](size_t index)
     {
         size_t from_index;
-        size_t pack_size;
         size_t to_index;
+
         if (prepopulation_size >= postpopulation_size)
         {
             from_index = index;
-            pack_size = prepopulation_size / postpopulation_size;
-            to_index = index / pack_size;
+            to_index = index * postpopulation_size / prepopulation_size;
         }
         else
         {
             to_index = index;
-            pack_size = postpopulation_size / prepopulation_size;
-            from_index = index / pack_size;
+            from_index = index * prepopulation_size / postpopulation_size;
         }
         return DeltaProjection::Synapse{default_synapse, from_index, to_index};
     };
