@@ -21,7 +21,11 @@
 
 #pragma once
 
+#include <knp/core/core.h>
+#include <knp/core/messaging/messaging.h>
+
 #include <filesystem>
+#include <functional>
 #include <vector>
 
 constexpr int intensity_levels = 10;
@@ -56,3 +60,8 @@ std::vector<std::vector<bool>> read_spike_frames(
  * @return labels for training and testing.
  */
 Labels read_labels(const std::filesystem::path &classes_file, int learning_period, int offset = 0);
+
+
+// Create a spike message generator from an array of boolean frames.
+std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_input_generator(
+    const std::vector<std::vector<bool>> &spike_frames, int64_t offset);

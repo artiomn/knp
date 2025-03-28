@@ -25,7 +25,9 @@
 
 #include "data_read.h"
 #include "evaluation.h"
-#include "run_network.h"
+#include "inference.h"
+#include "logging.h"
+#include "train.h"
 
 
 int main(int argc, char **argv)

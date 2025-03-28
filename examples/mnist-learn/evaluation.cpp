@@ -28,6 +28,8 @@
 #include <string>
 #include <utility>
 
+#include "construct_network.h"
+
 
 constexpr int num_possible_labels = 10;
 

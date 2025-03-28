@@ -55,7 +55,7 @@ constexpr float threshold_weight_coeff = 0.023817F;
 constexpr int neurons_per_column = 15;
 
 // Ten possible digits, one column per each.
-constexpr int num_possible_labels = 10;
+constexpr int num_possible_labels = classes_in_mnist;
 
 // All columns are a part of the same population.
 constexpr int num_input_neurons = neurons_per_column * num_possible_labels;

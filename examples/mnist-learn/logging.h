@@ -30,6 +30,10 @@
 #include <string>
 #include <vector>
 
+
+constexpr int logging_aggregation_period = 4000;
+constexpr int logging_weights_period = 100000;
+
 /**
  * @brief Function object that receives messages and processes their data somehow.
  */
@@ -93,4 +97,12 @@ SpikeProcessor make_projection_observer_function(
 void add_aggregate_logger(
     const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &all_senders_names,
     knp::framework::ModelExecutor &model_executor, size_t &current_index,
-    std::map<std::string, size_t> &spike_accumulator, std::ofstream &log_stream, int aggregation_period);
+    std::map<std::string, size_t> &spike_accumulator, std::ofstream &log_stream,
+    int aggregation_period = logging_aggregation_period);
+
+
+/**
+ * @brief Converts current time to a string.
+ * @return time string.
+ */
+std::string get_time_string();

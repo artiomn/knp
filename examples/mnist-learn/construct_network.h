@@ -31,6 +31,12 @@
 #include <vector>
 
 
+/// How many steps to use for learning. 20 steps are used for a single image.
+constexpr int learning_period = 200000;
+/// Classes in MNIST.
+constexpr int classes_in_mnist = 10;
+
+
 struct AnnotatedNetwork
 {
     knp::framework::Network network_;

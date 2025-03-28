@@ -171,6 +171,15 @@ SpikeProcessor make_aggregate_observer(
 }
 
 
+std::string get_time_string()
+{
+    auto time_now = std::chrono::system_clock::now();
+    std::time_t c_time = std::chrono::system_clock::to_time_t(time_now);
+    std::string result(std::ctime(&c_time));
+    return result;
+}
+
+
 void add_aggregate_logger(
     const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &all_senders_names,
     knp::framework::ModelExecutor &model_executor, size_t &current_index,

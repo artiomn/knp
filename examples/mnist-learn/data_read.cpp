@@ -120,3 +120,22 @@ Labels read_labels(const std::filesystem::path &classes_file, int learning_perio
     }
     return labels;
 }
+
+
+std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_input_generator(
+    const std::vector<std::vector<bool>> &spike_frames, int64_t offset)
+{
+    auto generator = [&spike_frames, offset](knp::core::Step step)
+    {
+        knp::core::messaging::SpikeData message;
+        if ((step + offset) >= spike_frames.size()) return message;
+
+        for (size_t i = 0; i < spike_frames[step + offset].size(); ++i)
+        {
+            if (spike_frames[step + offset][i]) message.push_back(i);
+        }
+        return message;
+    };
+
+    return generator;
+}

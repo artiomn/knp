@@ -1,8 +1,8 @@
 /**
- * @file logging.h
- * @brief Functions for network construction.
+ * @file train.h
+ * @brief Functions for network training.
  * @kaspersky_support A. Vartenkov
- * @date 24.03.2025
+ * @date 28.03.2025
  * @license Apache 2.0
  * @copyright © 2025 AO Kaspersky Lab
  *
@@ -28,12 +28,6 @@
 
 #include "construct_network.h"
 
-/// How many steps to use for learning. 20 steps are used for a single image.
-constexpr int learning_period = 200000;
-
-/// How many steps to use for testing.
-constexpr int testing_period = 10000;
-
 /// How many subnetworks to use.
 constexpr int num_subnetworks = 1;
 
@@ -50,19 +44,3 @@ constexpr int num_subnetworks = 1;
 AnnotatedNetwork train_mnist_network(
     const std::filesystem::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const std::filesystem::path &log_path = "");
-
-
-/**
- * @brief Run inference on MNIST dataset.
- * @param path_to_backend path to backend.
- * @param described_network trained network with descriptions.
- * @param spike_frames images file.
- * @param log_path path to log folder.
- * @return output spikes.
- */
-std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
-    const std::filesystem::path &path_to_backend, AnnotatedNetwork &described_network,
-    const std::vector<std::vector<bool>> &spike_frames, const std::filesystem::path &log_path = "");
-
-/// Get current time as a string.
-std::string get_time_string();
