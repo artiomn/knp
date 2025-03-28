@@ -2,7 +2,7 @@
  * @file construct_network.h
  * @brief Functions for network construction.
  * @kaspersky_support A. Vartenkov
- * @date 30.08.2024
+ * @date 03.12.2024
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
  *

@@ -2,7 +2,7 @@
  * @file data_read.h
  * @brief Reading from dataset.
  * @kaspersky_support A. Vartenkov
- * @date 30.08.2024
+ * @date 06.12.2024
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
  *
