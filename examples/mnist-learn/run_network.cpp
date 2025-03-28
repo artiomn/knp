@@ -192,7 +192,6 @@ AnnotatedNetwork train_mnist_network(
     if (!log_path.empty())
     {
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
-        auto all_names = example_network.data_.population_names;
         if (log_stream.is_open())
             add_aggregate_logger(
                 model, example_network.data_.population_names, model_executor, current_index, spike_accumulator,
@@ -285,7 +284,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // Start model.
     std::cout << get_time_string() << ": inference started\n";
     model_executor.start(
-        [&spike_frames](size_t step)
+        [](size_t step)
         {
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
             return step != testing_period;
