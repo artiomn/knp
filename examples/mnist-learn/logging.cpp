@@ -169,3 +169,21 @@ SpikeProcessor make_aggregate_observer(
     };
     return observer_func;
 }
+
+
+void add_aggregate_logger(
+    const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &all_senders_names,
+    knp::framework::ModelExecutor &model_executor, size_t &current_index,
+    std::map<std::string, size_t> &spike_accumulator, std::ofstream &log_stream, int aggregation_period)
+{
+    std::vector<knp::core::UID> all_senders_uids;
+    for (const auto &pop : model.get_network().get_populations())
+    {
+        knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
+        all_senders_uids.push_back(pop_uid);
+    }
+    write_aggregated_log_header(log_stream, all_senders_names);
+    model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+        make_aggregate_observer(log_stream, aggregation_period, all_senders_names, spike_accumulator, current_index),
+        all_senders_uids);
+}

@@ -28,6 +28,9 @@
 #include <string>
 #include <utility>
 
+
+constexpr int num_possible_labels = 10;
+
 /**
  * @brief Prediction result structure.
  */
@@ -173,7 +176,7 @@ void process_inference_results(
     int testing_period)
 {
     auto j = spikes.begin();
-    Target target(10, classes_for_testing);
+    Target target(num_possible_labels, classes_for_testing);
     for (int tact = 0; tact < testing_period; ++tact)
     {
         knp::core::messaging::SpikeData firing_neuron_indices;

@@ -44,7 +44,8 @@ struct Labels
  * @param path_to_data path to coded input images file.
  * @return vector of spike-based frames.
  */
-std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &path_to_data);
+std::vector<std::vector<bool>> read_spike_frames(
+    const std::filesystem::path &path_to_data, int num_intensity_levels = intensity_levels);
 
 
 /**

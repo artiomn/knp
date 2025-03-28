@@ -67,20 +67,6 @@ SpikeProcessor make_observer_function(std::vector<InferenceResult> &result);
 
 
 /**
- * @brief Create a function that writes numbers of spikes into a file.
- * @param log_stream output file stream.
- * @param period aggregation period.
- * @param pop_names names of projections to be observed.
- * @param accumulator accumulator: number of spikes per projection.
- * @param curr_index current index.
- * @return a function that receives messages and writes aggregated data to a file.
- */
-SpikeProcessor make_aggregate_observer(
-    std::ofstream &log_stream, int period, const std::map<knp::core::UID, std::string> &pop_names,
-    std::map<std::string, size_t> &accumulator, size_t &curr_index);
-
-
-/**
  * @brief Create a function that writes projection weights and update times to file.
  * @param weights_log output file stream.
  * @param period how often to write: the weights are only saved if a step is N * period.
@@ -92,3 +78,19 @@ SpikeProcessor make_aggregate_observer(
 SpikeProcessor make_projection_observer_function(
     std::ofstream &weights_log, size_t period, knp::framework::ModelExecutor &model_executor,
     const knp::core::UID &uid);
+
+
+/**
+ * @brief Add a logger that calculates all spikes from a projection and writes them to a csv file.
+ * @param model network model.
+ * @param all_senders_names sender UID-name correspondence.
+ * @param model_executor model executor.
+ * @param current_index parameter to save integer state between runs.
+ * @param spike_accumulator parameter to save accumulated spikes between runs.
+ * @param log_stream output file stream.
+ * @param aggregation_period aggregation period.
+ */
+void add_aggregate_logger(
+    const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &all_senders_names,
+    knp::framework::ModelExecutor &model_executor, size_t &current_index,
+    std::map<std::string, size_t> &spike_accumulator, std::ofstream &log_stream, int aggregation_period);
