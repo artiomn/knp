@@ -74,6 +74,8 @@ struct default_values<BLIFATNeuron>
 
     /**
      * @brief The parameter is used for mechanisms that are implemented in specific neuron types.
+     * @note Current threshold value is composed from three parameters: static value, dynamic with a common algorithm
+     * and dynamic that is based on a specific neuron implementation. This is the third one.
      */
     constexpr static double additional_threshold_ = 0.;
 
