@@ -49,6 +49,7 @@ std::vector<std::vector<unsigned char>> read_images_from_file(const std::string 
 std::vector<std::vector<bool>> image_to_spikes(const std::vector<unsigned char> &image, std::vector<double> &state)
 {
     std::vector<std::vector<bool>> ret;
+    ret.reserve(frames_per_image);
     int i;
     for (i = 0; i < intensity_levels; ++i)
     {
@@ -74,6 +75,7 @@ std::vector<std::vector<bool>> read_spike_frames(const std::filesystem::path &pa
 {
     auto images = read_images_from_file(path_to_data);
     std::vector<std::vector<bool>> result;
+    result.reserve(images.size() * frames_per_image);
     std::vector<double> state(input_size, 0.);
     for (size_t img_num = 0; img_num < images.size(); ++img_num)
     {
