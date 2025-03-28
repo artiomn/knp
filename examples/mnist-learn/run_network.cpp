@@ -135,6 +135,32 @@ void add_aggregate_logger(
 }
 
 
+// Create channel map for training.
+auto build_channel_map_train(
+    const AnnotatedNetwork &network, knp::framework::Model &model, const std::vector<std::vector<bool>> &spike_frames,
+    const std::vector<std::vector<bool>> &spike_classes)
+{
+    // Create future channels uids randomly.
+    knp::core::UID input_image_channel_raster;
+    knp::core::UID input_image_channel_classses;
+
+    // Add input channel for each image input projection.
+    for (auto image_proj_uid : network.data_.projections_from_raster)
+        model.add_input_channel(input_image_channel_raster, image_proj_uid);
+
+    // Add input channel for data labels.
+    for (auto target_proj_uid : network.data_.projections_from_classes)
+        model.add_input_channel(input_image_channel_classses, target_proj_uid);
+
+    // Create and fill a channel map.
+    knp::framework::ModelLoader::InputChannelMap channel_map;
+    channel_map.insert({input_image_channel_raster, make_input_generator(spike_frames, 0)});
+    channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 0)});
+
+    return channel_map;
+}
+
+
 AnnotatedNetwork train_mnist_network(
     const fs::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const fs::path &log_path)
@@ -144,18 +170,8 @@ AnnotatedNetwork train_mnist_network(
     knp::framework::sonata::save_network(example_network.network_, "mnist_network");
     knp::framework::Model model(std::move(example_network.network_));
 
-    knp::core::UID input_image_channel_raster;
-    knp::core::UID input_image_channel_classses;
-
-    for (auto image_proj_uid : example_network.data_.projections_from_raster)
-        model.add_input_channel(input_image_channel_raster, image_proj_uid);
-    for (auto target_proj_uid : example_network.data_.projections_from_classes)
-        model.add_input_channel(input_image_channel_classses, target_proj_uid);
-
-    knp::framework::ModelLoader::InputChannelMap channel_map;
-
-    channel_map.insert({input_image_channel_raster, make_input_generator(spike_frames, 0)});
-    channel_map.insert({input_image_channel_classses, make_input_generator(spike_classes, 0)});
+    knp::framework::ModelLoader::InputChannelMap channel_map =
+        build_channel_map_train(example_network, model, spike_frames, spike_classes);
 
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(model, backend_loader.load(path_to_backend), std::move(channel_map));
@@ -175,19 +191,12 @@ AnnotatedNetwork train_mnist_network(
     // All loggers go here
     if (!log_path.empty())
     {
-        std::vector<knp::core::UID> all_populations_uids;
-        for (const auto &pop : model.get_network().get_populations())
-        {
-            knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
-            all_populations_uids.push_back(pop_uid);
-        }
-
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
         auto all_names = example_network.data_.population_names;
-        for (const auto &uid : wta_uids) all_names.insert({uid, "WTA"});
-
         if (log_stream.is_open())
-            add_aggregate_logger(model, all_names, model_executor, current_index, spike_accumulator, log_stream);
+            add_aggregate_logger(
+                model, example_network.data_.population_names, model_executor, current_index, spike_accumulator,
+                log_stream);
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
 
