@@ -115,6 +115,26 @@ std::vector<knp::core::UID> add_wta_handlers(const AnnotatedNetwork &network, kn
 }
 
 
+// Add a logger that calculates all spikes from a projection and writes them to a csv file.
+void add_aggregate_logger(
+    const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &all_senders_names,
+    knp::framework::ModelExecutor &model_executor, size_t &current_index,
+    std::map<std::string, size_t> &spike_accumulator, std::ofstream &log_stream)
+{
+    std::vector<knp::core::UID> all_senders_uids;
+    for (const auto &pop : model.get_network().get_populations())
+    {
+        knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
+        all_senders_uids.push_back(pop_uid);
+    }
+    write_aggregated_log_header(log_stream, all_senders_names);
+    model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+        make_aggregate_observer(
+            log_stream, logging_aggregation_period, all_senders_names, spike_accumulator, current_index),
+        all_senders_uids);
+}
+
+
 AnnotatedNetwork train_mnist_network(
     const fs::path &path_to_backend, const std::vector<std::vector<bool>> &spike_frames,
     const std::vector<std::vector<bool>> &spike_classes, const fs::path &log_path)
@@ -161,21 +181,16 @@ AnnotatedNetwork train_mnist_network(
             knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
             all_populations_uids.push_back(pop_uid);
         }
+
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
         auto all_names = example_network.data_.population_names;
         for (const auto &uid : wta_uids) all_names.insert({uid, "WTA"});
 
         if (log_stream.is_open())
-        {
-            write_aggregated_log_header(log_stream, all_names);
-            model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-                make_aggregate_observer(
-                    log_stream, logging_aggregation_period, example_network.data_.population_names, spike_accumulator,
-                    current_index),
-                all_populations_uids);
-        }
+            add_aggregate_logger(model, all_names, model_executor, current_index, spike_accumulator, log_stream);
         else
             std::cout << "Couldn't open log file at " << log_path << std::endl;
+
         weight_stream.open(log_path / "weights.log", std::ofstream::out);
         if (weight_stream.is_open())
         {
@@ -255,18 +270,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     }
     if (log_stream.is_open())
     {
-        std::vector<knp::core::UID> all_senders_uids;
-        for (const auto &pop : model.get_network().get_populations())
-        {
-            knp::core::UID pop_uid = std::visit([](const auto &p) { return p.get_uid(); }, pop);
-            all_senders_uids.push_back(pop_uid);
-        }
-        write_aggregated_log_header(log_stream, all_senders_names);
-        model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-            make_aggregate_observer(
-                log_stream, logging_aggregation_period, described_network.data_.population_names, spike_accumulator,
-                current_index),
-            all_senders_uids);
+        add_aggregate_logger(model, all_senders_names, model_executor, current_index, spike_accumulator, log_stream);
     }
 
     // Start model.
