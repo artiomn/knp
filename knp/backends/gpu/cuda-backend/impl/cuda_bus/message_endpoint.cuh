@@ -2,7 +2,7 @@
  * @file message_endpoint.h
  * @brief Message endpoint interface.
  * @kaspersky_support Artiom N.
- * @date 23.01.2023
+ * @date 23.01.2025
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
  *
@@ -26,20 +26,14 @@
 #include <knp/core/subscription.h>
 #include <knp/core/uid.h>
 
-#include <any>
-#include <chrono>
-#include <functional>
-#include <map>
-#include <memory>
-#include <numeric>
-#include <string>
-#include <unordered_set>
-#include <utility>
 #include <variant>
 #include <vector>
 
 #include <boost/mp11.hpp>
 #include <boost/noncopyable.hpp>
+
+#include "cuda_common.cuh"
+#include "message_bus.cuh"
 
 
 /**
@@ -47,12 +41,6 @@
  */
 namespace knp::backends::gpu::impl
 {
-/**
- * @class boost::noncopyable
- * @brief Ensure that objects cannot be copied.
- * @see <a href="https://www.boost.org/doc/libs/1_80_0/boost/core/noncopyable.hpp">boost::noncopyable description</a>
- */
-
 /**
  * @brief The MessageEndpoint class is a definition of message endpoints.
  * @details You can use message endpoints to receive or send messages.
@@ -74,7 +62,7 @@ public:
      * types as defined in `AllSubscriptions`.
      * @see ALL_MESSAGES.
      */
-    using SubscriptionVariant = boost::mp11::mp_rename<AllSubscriptions, std::variant>;
+    using SubscriptionVariant = boost::mp11::mp_rename<AllSubscriptions, cuda::std::variant>;
 
 public:
     /**

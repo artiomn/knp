@@ -27,7 +27,6 @@
 #include <memory>
 
 #include <cuda/std/variant>
-#include <cuda/std/variant>
 
 #include "message_endpoint.cuh"
 
@@ -86,7 +85,7 @@ public:
     _CCCL_DEVICE size_t route_messages();
 
 private:
-    std::vector<knp::core::messaging::MessageVariant> messages_to_route_;
+    thrust::device_vector<knp::core::messaging::MessageVariant> messages_to_route_;
 
     // This is a list of endpoint data:
     // First vector is a pointer to a set of messages the endpoint is sending.
