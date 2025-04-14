@@ -1,0 +1,96 @@
+//
+// Created by vartenkov on 01.04.25.
+//
+
+#pragma once
+#include <knp/core/message_endpoint.h>
+#include <knp/core/messaging/messaging.h>
+#include <knp/core/population.h>
+
+#include <mutex>
+#include <vector>
+
+
+namespace knp::backends::cpu
+{
+
+template <class BasicLifNeuron>
+void impact_neuron(
+    knp::neuron_traits::neuron_parameters<BasicLifNeuron> &neuron, const knp::synapse_traits::OutputType &synapse_type,
+    float impact_value)
+{
+    switch (synapse_type)
+    {
+        case knp::synapse_traits::OutputType::EXCITATORY:
+            neuron.potential_ += impact_value;
+            break;
+        case knp::synapse_traits::OutputType::INHIBITORY_CURRENT:
+            neuron.potential_ -= impact_value;
+            break;
+        default:
+            break;
+    }
+}
+
+
+template <class BasicLifNeuron>
+void calculate_pre_input_state_lif(knp::core::Population<BasicLifNeuron> &population);
+
+
+/**
+ * @brief Single-threaded neuron impact processing
+ * @tparam BasicLifNeuron neuron type.
+ * @param population population to be impacted.
+ * @param messages vector of synapse impacts.
+ */
+template <class BasicLifNeuron>
+void process_inputs_lif(
+    knp::core::Population<BasicLifNeuron> &population,
+    const std::vector<knp::core::messaging::SynapticImpactMessage> &messages)
+{
+    for (const auto &msg : messages)
+    {
+        for (const knp::core::messaging::SynapticImpact &impact : msg.impacts_)
+        {
+            impact_neuron(population[impact.postsynaptic_neuron_index_], impact.synapse_type_, impact.impact_value_);
+        }
+    }
+}
+
+
+template <class BasicLifNeuron>
+knp::core::messaging::SpikeData calculate_spikes_lif(knp::core::Population<BasicLifNeuron> &population);
+
+
+template <class BasicLifNeuron>
+void calculate_post_spiking_state_lif(knp::core::Population<BasicLifNeuron> &population);
+
+
+template <class BasicLifNeuron>
+knp::core::messaging::SpikeData calculate_lif_population_data(
+    knp::core::Population<BasicLifNeuron> &population,
+    const std::vector<knp::core::messaging::SynapticImpactMessage> &messages)
+{
+    calculate_pre_input_state_lif(population);
+    process_inputs_lif(population, messages);
+    knp::core::messaging::SpikeData spikes = calculate_spikes_lif(population);
+    calculate_post_spiking_state_lif(population);
+    return spikes;
+}
+
+
+template <class BasicLifNeuron>
+std::optional<knp::core::messaging::SpikeMessage> calculate_lif_population_impl(
+    knp::core::Population<BasicLifNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n)
+{
+    std::vector<knp::core::messaging::SynapticImpactMessage> messages =
+        endpoint.unload_messages<knp::core::messaging::SynapticImpactMessage>(population.get_uid());
+    knp::core::messaging::SpikeMessage message_out{{population.get_uid(), step_n}, {}};
+    message_out.neuron_indexes_ = calculate_lif_population_data(population, messages);
+    if (message_out.neuron_indexes_.empty())
+    {
+        return {};
+    }
+    return message_out;
+}
+}  // namespace knp::backends::cpu
