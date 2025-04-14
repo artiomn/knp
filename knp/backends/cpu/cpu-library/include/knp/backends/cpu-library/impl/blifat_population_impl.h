@@ -84,7 +84,7 @@ void process_spiking_neurons(
  * @note We might want to impact a neuron with a whole message if it continues to have shared values.
  */
 template <class BlifatLikeNeuron>
-void impact_neuron(
+void impact_blifat_neuron(
     typename knp::core::Population<BlifatLikeNeuron>::NeuronParameters &neuron,
     const knp::synapse_traits::OutputType &synapse_type, float impact_value)
 {
@@ -126,7 +126,7 @@ void process_inputs(
         for (const auto &impact : message.impacts_)
         {
             auto &neuron = population[impact.postsynaptic_neuron_index_];
-            impact_neuron<BlifatLikeNeuron>(neuron, impact.synapse_type_, impact.impact_value_);
+            impact_blifat_neuron<BlifatLikeNeuron>(neuron, impact.synapse_type_, impact.impact_value_);
             if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
             {
                 if (impact.synapse_type_ == synapse_traits::OutputType::EXCITATORY)
