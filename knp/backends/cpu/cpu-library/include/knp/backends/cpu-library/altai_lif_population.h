@@ -40,7 +40,7 @@ namespace knp::backends::cpu
  * @param population population to be calculated.
  * @param endpoint endpoint for message exchange.
  * @param step_n current step.
- * @return
+ * @return message if a message was sent by function.
  */
 template <class LifNeuron>
 std::optional<knp::core::messaging::SpikeMessage> calculate_lif_population(
