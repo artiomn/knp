@@ -111,8 +111,7 @@ void calculate_post_spiking_state_lif(knp::core::Population<BasicLifNeuron> &pop
  * @brief Common calculation algorithm for all LIF-like neurons.
  * @tparam BasicLifNeuron LIF neuron type.
  * @param population population of LIF neurons.
- * @param endpoint endpoint for message exchange.
- * @param step_n current step.
+ * @param messages input messages.
  * @return spiked neuron indexes.
  */
 template <class BasicLifNeuron>
