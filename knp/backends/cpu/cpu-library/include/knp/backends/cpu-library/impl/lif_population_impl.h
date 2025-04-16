@@ -26,10 +26,20 @@
 #include <mutex>
 #include <vector>
 
-
+/**
+ * @brief CPU backend namespace.
+ */
 namespace knp::backends::cpu
 {
 
+
+/**
+ * @brief LIF neuron reaction to input types.
+ * @tparam BasicLifNeuron LIF neuron type.
+ * @param neuron the neuron receiving the impact.
+ * @param synapse_type synapse type.
+ * @param impact_value synaptic impact value.
+ */
 template <class BasicLifNeuron>
 void impact_neuron(
     knp::neuron_traits::neuron_parameters<BasicLifNeuron> &neuron, const knp::synapse_traits::OutputType &synapse_type,
@@ -48,7 +58,11 @@ void impact_neuron(
     }
 }
 
-
+/**
+ * @brief Calculate neuron state before it starts accepting inputs.
+ * @tparam BasicLifNeuron LIF neuron type.
+ * @param population the population that is being processed.
+ */
 template <class BasicLifNeuron>
 void calculate_pre_input_state_lif(knp::core::Population<BasicLifNeuron> &population);
 
@@ -74,14 +88,33 @@ void process_inputs_lif(
 }
 
 
+/**
+ * @brief Calculate which neurons should emit spikes.
+ * @tparam BasicLifNeuron LIF neuron type.
+ * @param population the population that is being processed.
+ * @return spiked neuron indexes.
+ */
 template <class BasicLifNeuron>
 knp::core::messaging::SpikeData calculate_spikes_lif(knp::core::Population<BasicLifNeuron> &population);
 
 
+/**
+ * @brief Does changes to population state that happen after all spikes were emitted.
+ * @tparam BasicLifNeuron LIF neuron type.
+ * @param population the population that is being processed.
+ */
 template <class BasicLifNeuron>
 void calculate_post_spiking_state_lif(knp::core::Population<BasicLifNeuron> &population);
 
 
+/**
+ * @brief Common calculation algorithm for all LIF-like neurons.
+ * @tparam BasicLifNeuron LIF neuron type.
+ * @param population population of LIF neurons.
+ * @param endpoint endpoint for message exchange.
+ * @param step_n current step.
+ * @return spiked neuron indexes.
+ */
 template <class BasicLifNeuron>
 knp::core::messaging::SpikeData calculate_lif_population_data(
     knp::core::Population<BasicLifNeuron> &population,
@@ -95,6 +128,15 @@ knp::core::messaging::SpikeData calculate_lif_population_data(
 }
 
 
+/**
+ * @brief Full LIF population step calculation.
+ * @tparam BasicLifNeuron LIF neuron type.
+ * @param population population to be processed.
+ * @param endpoint endpoint for message exchange.
+ * @param step_n current step.
+ * @return spike message if it was emitted.
+ * @note This function emits the message it returns, you don't need to do it again.
+ */
 template <class BasicLifNeuron>
 std::optional<knp::core::messaging::SpikeMessage> calculate_lif_population_impl(
     knp::core::Population<BasicLifNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n)
