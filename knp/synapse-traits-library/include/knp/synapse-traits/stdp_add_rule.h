@@ -21,8 +21,6 @@
 
 #pragma once
 
-#include <knp/core/core.h>
-
 #include <cinttypes>
 #include <vector>
 
@@ -34,7 +32,6 @@
  */
 namespace knp::synapse_traits
 {
-
 /**
  * @brief STDP additive rule parameters.
  * @note Parameters for the `W(x)` function by Zhang et al. 1998.
@@ -60,12 +57,12 @@ struct STDPAdditiveRule
     /**
      * @brief Indexes of network execution steps on which spikes on the synapse were generated.
      */
-    std::vector<knp::core::Step> presynaptic_spike_times_;
+    std::vector<uint64_t> presynaptic_spike_times_;
 
     /**
      * @brief Indexes of network execution steps on which spikes on the axon were generated.
      */
-    std::vector<knp::core::Step> postsynaptic_spike_times_;
+    std::vector<uint64_t> postsynaptic_spike_times_;
 };
 
 }  // namespace knp::synapse_traits

@@ -36,6 +36,7 @@
 namespace knp::backends::cpu
 {
 
+using knp::core::Step;
 using knp::core::UID;
 using knp::core::messaging::SpikeMessage;
 
