@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include <knp/core/core.h>
+
 #include <cinttypes>
 #include <vector>
 
