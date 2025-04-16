@@ -65,7 +65,8 @@ public:
     }
 
     [[nodiscard]] float stdp_delta_w(
-        const std::vector<uint32_t> &presynaptic_spikes, const std::vector<uint32_t> &postsynaptic_spikes) const
+        const std::vector<knp::core::Step> &presynaptic_spikes,
+        const std::vector<knp::core::Step> &postsynaptic_spikes) const
     {
         // Gerstner and al. 1996, Kempter et al. 1999.
 
@@ -85,7 +86,8 @@ public:
     }
 
     [[nodiscard]] float operator()(
-        const std::vector<uint32_t> &presynaptic_spikes, const std::vector<uint32_t> &postsynaptic_spikes) const
+        const std::vector<knp::core::Step> &presynaptic_spikes,
+        const std::vector<knp::core::Step> &postsynaptic_spikes) const
     {
         return stdp_delta_w(presynaptic_spikes, postsynaptic_spikes);
     }
@@ -101,8 +103,8 @@ private:
 template <class DeltaLikeSynapse>
 inline void append_spike_times(
     knp::core::Projection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection, const SpikeMessage &message,
-    const std::function<std::vector<size_t>(uint32_t)> &synapse_index_getter,
-    std::vector<uint32_t> knp::synapse_traits::STDPAdditiveRule<DeltaLikeSynapse>::*spike_queue)
+    const std::function<std::vector<size_t>(knp::core::messaging::SpikeIndex)> &synapse_index_getter,
+    std::vector<knp::core::Step> knp::synapse_traits::STDPAdditiveRule<DeltaLikeSynapse>::*spike_queue)
 {
     // Fill synapses spike queue.
     for (auto neuron_index : message.neuron_indexes_)
@@ -125,7 +127,7 @@ inline void append_spike_times(
 inline void append_spike_times(
     knp::core::Projection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
     const std::vector<SpikeMessage> &spikes, const std::function<std::vector<size_t>(uint32_t)> &syn_index_getter,
-    std::vector<uint32_t> knp::synapse_traits::STDPAdditiveRule<knp::synapse_traits::DeltaSynapse>::*spike_queue)
+    std::vector<knp::core::Step> knp::synapse_traits::STDPAdditiveRule<knp::synapse_traits::DeltaSynapse>::*spike_queue)
 {
     for (const auto &msg : spikes)
     {
@@ -237,12 +239,14 @@ struct WeightUpdateSTDP<synapse_traits::STDP<synapse_traits::STDPAdditiveRule, D
 {
     using Synapse = synapse_traits::STDP<synapse_traits::STDPAdditiveRule, DeltaLikeSynapse>;
     static void init_projection(
-        knp::core::Projection<Synapse> &projection, std::vector<SpikeMessage> &all_messages, uint64_t step)
+        knp::core::Projection<Synapse> &projection, std::vector<SpikeMessage> &all_messages, knp::core::Step step)
     {
         register_additive_stdp_spikes(projection, all_messages);
     }
 
-    static void init_synapse(const knp::synapse_traits::synapse_parameters<Synapse> &projection, uint64_t step) {}
+    static void init_synapse(const knp::synapse_traits::synapse_parameters<Synapse> &projection, knp::core::Step step)
+    {
+    }
 
     static void modify_weights(knp::core::Projection<Synapse> &projection)
     {

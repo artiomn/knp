@@ -48,26 +48,22 @@ struct STDPAdditiveRule
     /**
      * @brief Time constant in milliseconds intended to increase the weight.
      */
-    // cppcheck-suppress unusedStructMember
     float tau_plus_ = 10;
 
     /**
      * @brief Time constant in milliseconds intended to decrease the weight.
      */
-    // cppcheck-suppress unusedStructMember
     float tau_minus_ = 10;
 
     /**
      * @brief Indexes of network execution steps on which spikes on the synapse were generated.
      */
-    // cppcheck-suppress unusedStructMember
-    std::vector<uint32_t> presynaptic_spike_times_;
+    std::vector<knp::core::Step> presynaptic_spike_times_;
 
     /**
      * @brief Indexes of network execution steps on which spikes on the axon were generated.
      */
-    // cppcheck-suppress unusedStructMember
-    std::vector<uint32_t> postsynaptic_spike_times_;
+    std::vector<knp::core::Step> postsynaptic_spike_times_;
 };
 
 }  // namespace knp::synapse_traits

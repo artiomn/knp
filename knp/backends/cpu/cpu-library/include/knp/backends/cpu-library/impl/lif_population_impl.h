@@ -107,6 +107,7 @@ std::optional<knp::core::messaging::SpikeMessage> calculate_lif_population_impl(
     {
         return {};
     }
+    endpoint.send_message(message_out);
     return message_out;
 }
 }  // namespace knp::backends::cpu

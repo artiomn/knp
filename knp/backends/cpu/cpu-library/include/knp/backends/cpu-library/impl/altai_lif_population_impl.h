@@ -87,10 +87,10 @@ knp::core::messaging::SpikeData calculate_spikes_lif<knp::neuron_traits::AltAILI
     knp::core::messaging::SpikeData spikes;
     for (knp::core::messaging::SpikeIndex i = 0; i < population.size(); ++i)
     {
+        bool was_reset = false;
         auto &neuron = population[i];
         if (neuron.potential_ >= neuron.activation_threshold_)
         {
-            bool was_reset = false;
             spikes.push_back(i);
             if (neuron.is_diff_) neuron.potential_ -= neuron.activation_threshold_;
             if (neuron.is_reset_)
@@ -98,20 +98,20 @@ knp::core::messaging::SpikeData calculate_spikes_lif<knp::neuron_traits::AltAILI
                 neuron.potential_ = neuron.potential_reset_value_;
                 was_reset = true;
             }
-            if (neuron.potential_ <= -neuron.negative_activation_threshold_ && !was_reset)
+        }
+        if (neuron.potential_ <= -static_cast<float>(neuron.negative_activation_threshold_) && !was_reset)
+        {
+            // Might probably want a negative spike, but we don't have any of the sort in KNP. Not a large problem,
+            // just requires some conversion.
+            if (neuron.saturate_)
             {
-                // Might probably want a negative spike, but we don't have any of the sort in KNP. Not a large problem,
-                // just requires some conversion.
-                if (neuron.saturate_)
-                {
-                    neuron.potential_ = neuron.negative_activation_threshold_;
-                    continue;
-                }
-                if (neuron.is_reset_)
-                    neuron.potential_ = -neuron.potential_reset_value_;
-                else if (neuron.is_diff_)
-                    neuron.potential_ -= neuron.negative_activation_threshold_;
+                neuron.potential_ = -static_cast<float>(neuron.negative_activation_threshold_);
+                continue;
             }
+            if (neuron.is_reset_)
+                neuron.potential_ = -neuron.potential_reset_value_;
+            else if (neuron.is_diff_)
+                neuron.potential_ += neuron.negative_activation_threshold_;
         }
     }
     return spikes;
