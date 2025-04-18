@@ -58,6 +58,7 @@ void impact_neuron(
     }
 }
 
+
 /**
  * @brief Calculate neuron state before it starts accepting inputs.
  * @tparam BasicLifNeuron LIF neuron type.

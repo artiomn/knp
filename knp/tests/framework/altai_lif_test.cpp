@@ -76,7 +76,6 @@ NeuronLog run_altai_neuron(
     backend._init();
     auto &pop = *backend.begin_populations();
     NeuronLog result;
-    //std::vector<int16_t> result;
     auto &neuron_ref = std::get<knp::core::Population<knp::neuron_traits::AltAILIF>>(pop)[neuron_index];
     for (size_t step = 0; step < steps; ++step)
     {

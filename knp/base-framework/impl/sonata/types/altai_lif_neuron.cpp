@@ -43,8 +43,10 @@ std::string get_neuron_type_name<neuron_traits::AltAILIF>()
     return "knp:AltAILIF";
 }
 
+
 void save_static(const core::Population<neuron_traits::AltAILIF> &population, HighFive::Group &group)
 {
+    SPDLOG_TRACE("Saving AltAI-LIF neurons static parameters.");
     PUT_NEURON_TO_DATASET(population, is_diff_, group);
     PUT_NEURON_TO_DATASET(population, is_reset_, group);
     PUT_NEURON_TO_DATASET(population, leak_rev_, group);
@@ -59,6 +61,7 @@ void save_static(const core::Population<neuron_traits::AltAILIF> &population, Hi
 
 void save_dynamic(const core::Population<neuron_traits::AltAILIF> &population, HighFive::Group &group0)
 {
+    SPDLOG_TRACE("Saving AltAI-LIF neurons dynamic parameters.");
     auto dyn_group = group0.createGroup(dynamic_subgroup_name);
     PUT_NEURON_TO_DATASET(population, potential_, dyn_group);
 }
@@ -68,6 +71,7 @@ template <>
 void add_population_to_h5<core::Population<neuron_traits::AltAILIF>>(
     HighFive::File &file_h5, const core::Population<neuron_traits::AltAILIF> &population)
 {
+    SPDLOG_DEBUG("Saving AltAI-LIF population to sonata...");
     auto group0 = initialize_adding_population(population, file_h5);
     save_static(population, group0);
     save_dynamic(population, group0);
@@ -77,6 +81,7 @@ void add_population_to_h5<core::Population<neuron_traits::AltAILIF>>(
 void load_static_parameters(
     const HighFive::Group &group0, std::vector<neuron_traits::neuron_parameters<neuron_traits::AltAILIF>> &target)
 {
+    SPDLOG_TRACE("Loading static AltAI-LIF parameters.");
     const size_t group_size = target.size();
     LOAD_NEURONS_PARAMETER(target, neuron_traits::AltAILIF, is_diff_, group0, group_size);
     LOAD_NEURONS_PARAMETER(target, neuron_traits::AltAILIF, is_reset_, group0, group_size);
@@ -93,6 +98,7 @@ void load_static_parameters(
 void load_dynamic_parameters(
     const HighFive::Group &group0, std::vector<neuron_traits::neuron_parameters<neuron_traits::AltAILIF>> &target)
 {
+    SPDLOG_TRACE("Loading AltAI-LIF neurons dynamic parameters.");
     const size_t group_size = target.size();
     auto dyn_group = group0.getGroup(dynamic_subgroup_name);
     LOAD_NEURONS_PARAMETER(target, neuron_traits::AltAILIF, potential_, dyn_group, group_size);
