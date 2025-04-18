@@ -49,25 +49,6 @@ using Projection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 }  // namespace knp::testing
 
 
-//std::vector<int16_t> run_altai_neuron(
-//    const knp::neuron_traits::neuron_parameters<knp::neuron_traits::AltAILIF> &neuron, size_t num_steps)
-//{
-//    knp::core::Population<knp::neuron_traits::AltAILIF> population{[&neuron](size_t) { return neuron; }, 1};
-//    knp::testing::TestingBackendST backend;
-//    backend.load_populations({population});
-//    backend._init();
-//    auto &pop = *backend.begin_populations();
-//    std::vector<int16_t> result;
-//    auto &neuron_ref = *std::get<knp::core::Population<knp::neuron_traits::AltAILIF>>(pop).begin();
-//    for (size_t step = 0; step < num_steps; ++step)
-//    {
-//        result.push_back(static_cast<int16_t>(neuron_ref.potential_));
-//        backend._step();
-//    }
-//    return result;
-//}
-
-
 struct NeuronLog
 {
     std::vector<int16_t> potential_;
@@ -214,54 +195,4 @@ TEST(AltAiSuite, SingleNeuronImpactTest)
     const std::vector<size_t> expected_spikes{0, 6, 8};
     ASSERT_EQ(result.potential_, expected_potential);
     ASSERT_EQ(result.spikes_, expected_spikes);
-}
-
-
-TEST(AltAiTestSuite, NeuronMechanicsTest)
-{
-    // // Create a single-neuron neural network: input -> input_projection -> population <=> loop_projection.
-    // knp::testing::STestingBack backend;
-    //
-    // knp::testing::Population population{knp::testing::neuron_generator, 1};
-    // knp::testing::Projection loop_projection =
-    //         knp::testing::Projection {population.get_uid(), population.get_uid(), knp::testing::synapse_generator,
-    //         1};
-    // knp::testing::Projection input_projection = knp::testing::Projection {
-    //         knp::core::UID{false}, population.get_uid(), knp::testing::input_projection_gen, 1};
-    // knp::core::UID const input_uid = std::visit([](const auto &proj) { return proj.get_uid(); }, input_projection);
-    //
-    // backend.load_populations({population});
-    // backend.load_projections({input_projection, loop_projection});
-    //
-    // backend._init();
-    // auto endpoint = backend.get_message_bus().create_endpoint();
-    //
-    // const knp::core::UID in_channel_uid, out_channel_uid;
-    //
-    // // Create input and output.
-    // backend.subscribe<knp::core::messaging::SpikeMessage>(input_uid, {in_channel_uid});
-    // endpoint.subscribe<knp::core::messaging::SpikeMessage>(out_channel_uid, {population.get_uid()});
-    //
-    // std::vector<knp::core::Step> results;
-    //
-    // for (knp::core::Step step = 0; step < 20; ++step)
-    // {
-    //     // Send inputs on steps 0, 5, 10, 15.
-    //     if (step % 5 == 0)
-    //     {
-    //         knp::core::messaging::SpikeMessage message{{in_channel_uid, step}, {0}};
-    //         endpoint.send_message(message);
-    //     }
-    //     backend._step();
-    //     endpoint.receive_all_messages();
-    //     // Write the steps on which the network sends a spike.
-    //     if (!endpoint.unload_messages<knp::core::messaging::SpikeMessage>(out_channel_uid).empty())
-    //     {
-    //         results.push_back(step);
-    //     }
-    // }
-    //
-    // // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).
-    // const std::vector<knp::core::Step> expected_results = {1, 6, 7, 11, 12, 13, 16, 17, 18, 19};
-    // ASSERT_EQ(results, expected_results);
 }

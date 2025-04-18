@@ -49,7 +49,6 @@ HighFive::Group initialize_adding_population(const Population &population, HighF
     HighFive::Group population_group = file_h5.createGroup("nodes/" + std::string{population.get_uid()});
 
     std::vector<size_t> neuron_ids;
-    // std::vector<int> neuron_type_ids(population.size(), get_neuron_type_id<neuron_traits::BLIFATNeuron>());
     neuron_ids.reserve(population.size());
     for (size_t i = 0; i < population.size(); ++i) neuron_ids.push_back(i);
 
@@ -60,8 +59,7 @@ HighFive::Group initialize_adding_population(const Population &population, HighF
     population_group.createDataSet(
         "node_type_id",
         std::vector<size_t>(population.size(), get_neuron_type_id<typename Population::PopulationNeuronType>()));
-    auto group0 = population_group.createGroup("0");
-    return group0;
+    return population_group.createGroup("0");
 }
 
 }  // namespace knp::framework::sonata
