@@ -74,13 +74,6 @@ void process_inputs_lif<knp::neuron_traits::AltAILIF>(
 
 
 template <>
-void calculate_post_spiking_state_lif<knp::neuron_traits::AltAILIF>(
-    knp::core::Population<knp::neuron_traits::AltAILIF> &population)
-{
-}
-
-
-template <>
 knp::core::messaging::SpikeData calculate_spikes_lif<knp::neuron_traits::AltAILIF>(
     knp::core::Population<knp::neuron_traits::AltAILIF> &population)
 {

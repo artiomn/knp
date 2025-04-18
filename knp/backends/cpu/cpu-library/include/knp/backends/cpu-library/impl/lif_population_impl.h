@@ -99,15 +99,6 @@ knp::core::messaging::SpikeData calculate_spikes_lif(knp::core::Population<Basic
 
 
 /**
- * @brief Does changes to population state that happen after all spikes were emitted.
- * @tparam BasicLifNeuron LIF neuron type.
- * @param population the population that is being processed.
- */
-template <class BasicLifNeuron>
-void calculate_post_spiking_state_lif(knp::core::Population<BasicLifNeuron> &population);
-
-
-/**
  * @brief Common calculation algorithm for all LIF-like neurons.
  * @tparam BasicLifNeuron LIF neuron type.
  * @param population population of LIF neurons.
@@ -122,7 +113,6 @@ knp::core::messaging::SpikeData calculate_lif_population_data(
     calculate_pre_input_state_lif(population);
     process_inputs_lif(population, messages);
     knp::core::messaging::SpikeData spikes = calculate_spikes_lif(population);
-    calculate_post_spiking_state_lif(population);
     return spikes;
 }
 
