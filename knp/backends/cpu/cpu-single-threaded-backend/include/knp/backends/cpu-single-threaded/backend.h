@@ -55,8 +55,9 @@ public:
     /**
      * @brief List of neuron types supported by the single-threaded CPU backend.
      */
-    using SupportedNeurons =
-        boost::mp11::mp_list<knp::neuron_traits::BLIFATNeuron, knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron>;
+    using SupportedNeurons = boost::mp11::mp_list<
+        knp::neuron_traits::BLIFATNeuron, knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron,
+        knp::neuron_traits::AltAILIF>;
 
     /**
      * @brief List of synapse types supported by the single-threaded CPU backend.
@@ -101,7 +102,6 @@ private:
     struct ProjectionWrapper
     {
         ProjectionVariants arg_;
-        // cppcheck-suppress unusedStructMember
         std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
     };
 
@@ -335,6 +335,16 @@ protected:
      */
     std::optional<core::messaging::SpikeMessage> calculate_population(
         knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population);
+
+    /**
+     * @brief Calculate population of 'AltAILIF' neurons.
+     * @note Population state will be changed during calculation.
+     * @param population  population to calculate.
+     * @return optional 'SpikeMessage'.
+     */
+    std::optional<core::messaging::SpikeMessage> calculate_population(
+        knp::core::Population<knp::neuron_traits::AltAILIF> &population);
+
     /**
      * @brief Calculate projection of delta synapses.
      * @note Projection will be changed during calculation.
@@ -363,7 +373,6 @@ protected:
         SynapticMessageQueue &message_queue);
 
 private:
-    // cppcheck-suppress unusedStructMember
     PopulationContainer populations_;
     ProjectionContainer projections_;
 };

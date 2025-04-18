@@ -31,6 +31,7 @@
 #include "../highfive.h"
 #include "../load_network.h"
 #include "../save_network.h"
+#include "saving_initialization.h"
 #include "type_id_defines.h"
 
 
@@ -67,14 +68,15 @@ void save_static(const core::Population<knp::neuron_traits::BLIFATNeuron> &popul
 }
 
 
-void save_dynamic(const core::Population<knp::neuron_traits::BLIFATNeuron> &population, HighFive::Group &group)
+void save_dynamic(const core::Population<knp::neuron_traits::BLIFATNeuron> &population, HighFive::Group &group0)
 {
-    PUT_NEURON_TO_DATASET(population, dynamic_threshold_, group);
-    PUT_NEURON_TO_DATASET(population, potential_, group);
-    PUT_NEURON_TO_DATASET(population, pre_impact_potential_, group);
-    PUT_NEURON_TO_DATASET(population, bursting_phase_, group);
-    PUT_NEURON_TO_DATASET(population, total_blocking_period_, group);
-    PUT_NEURON_TO_DATASET(population, dopamine_value_, group);
+    auto dynamic_group = group0.createGroup(dynamic_subgroup_name);
+    PUT_NEURON_TO_DATASET(population, dynamic_threshold_, dynamic_group);
+    PUT_NEURON_TO_DATASET(population, potential_, dynamic_group);
+    PUT_NEURON_TO_DATASET(population, pre_impact_potential_, dynamic_group);
+    PUT_NEURON_TO_DATASET(population, bursting_phase_, dynamic_group);
+    PUT_NEURON_TO_DATASET(population, total_blocking_period_, dynamic_group);
+    PUT_NEURON_TO_DATASET(population, dopamine_value_, dynamic_group);
 }
 
 
@@ -82,33 +84,47 @@ template <>
 void add_population_to_h5<core::Population<knp::neuron_traits::BLIFATNeuron>>(
     HighFive::File &file_h5, const core::Population<knp::neuron_traits::BLIFATNeuron> &population)
 {
-    SPDLOG_TRACE("Adding population {} to HDF5...", std::string(population.get_uid()));
-
-    // Check that an external function has created "nodes" group.
-    if (!file_h5.exist("nodes"))
-    {
-        throw std::runtime_error("File does not contain the \"nodes\" group.");
-    }
-
-    HighFive::Group population_group = file_h5.createGroup("nodes/" + std::string{population.get_uid()});
-
-    std::vector<size_t> neuron_ids;
-    // std::vector<int> neuron_type_ids(population.size(), get_neuron_type_id<neuron_traits::BLIFATNeuron>());
-    neuron_ids.reserve(population.size());
-    for (size_t i = 0; i < population.size(); ++i) neuron_ids.push_back(i);
-
-    population_group.createDataSet("node_id", neuron_ids);
-    population_group.createDataSet("node_group_index", neuron_ids);
-    population_group.createDataSet("node_group_id", std::vector<size_t>(population.size(), 0));
-    population_group.createDataSet(
-        "node_type_id", std::vector<size_t>(population.size(), get_neuron_type_id<neuron_traits::BLIFATNeuron>()));
-    auto group0 = population_group.createGroup("0");
-
+    SPDLOG_DEBUG("Saving BLIFAT nodes...");
+    auto group0 = initialize_adding_population(population, file_h5);
     save_static(population, group0);
+    save_dynamic(population, group0);
+}
 
-    auto dynamic_group0 = group0.createGroup("dynamics_params");
-    // Dynamic.
-    save_dynamic(population, dynamic_group0);
+
+void load_static_parameters(
+    std::vector<neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron>> &target, const HighFive::Group &group0)
+{
+    const size_t group_size = target.size();
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, n_time_steps_since_last_firing_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, activation_threshold_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, threshold_decay_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, threshold_increment_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, postsynaptic_trace_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, postsynaptic_trace_decay_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, postsynaptic_trace_increment_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, inhibitory_conductance_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, inhibitory_conductance_decay_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, potential_decay_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, bursting_period_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, reflexive_weight_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, reversal_inhibitory_potential_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, absolute_refractory_period_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, potential_reset_value_, group0, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, min_potential_, group0, group_size);
+}
+
+
+void load_dynamic_parameters(
+    std::vector<neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron>> &target, const HighFive::Group &group0)
+{
+    const size_t group_size = target.size();
+    auto dyn_group = group0.getGroup(dynamic_subgroup_name);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, dynamic_threshold_, dyn_group, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, potential_, dyn_group, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, pre_impact_potential_, dyn_group, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, bursting_phase_, dyn_group, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, total_blocking_period_, dyn_group, group_size);
+    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, dopamine_value_, dyn_group, group_size);
 }
 
 
@@ -116,37 +132,14 @@ template <>
 core::Population<neuron_traits::BLIFATNeuron> load_population<neuron_traits::BLIFATNeuron>(
     const HighFive::Group &nodes_group, const std::string &population_name)
 {
-    SPDLOG_DEBUG("Loading nodes...");
-    auto group = nodes_group.getGroup(population_name).getGroup("0");
+    SPDLOG_DEBUG("Loading BLIFAT nodes...");
+    auto group0 = nodes_group.getGroup(population_name).getGroup("0");
     const size_t group_size = nodes_group.getGroup(population_name).getDataSet("node_id").getDimensions().at(0);
 
     // TODO: Load default neuron from JSON file.
     std::vector<neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron>> target(group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, n_time_steps_since_last_firing_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, activation_threshold_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, threshold_decay_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, threshold_increment_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, postsynaptic_trace_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, postsynaptic_trace_decay_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, postsynaptic_trace_increment_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, inhibitory_conductance_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, inhibitory_conductance_decay_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, potential_decay_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, bursting_period_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, reflexive_weight_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, reversal_inhibitory_potential_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, absolute_refractory_period_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, potential_reset_value_, group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, min_potential_, group, group_size);
-
-    // Dynamic.
-    auto dyn_group = group.getGroup("dynamics_params");
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, dynamic_threshold_, dyn_group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, potential_, dyn_group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, pre_impact_potential_, dyn_group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, bursting_phase_, dyn_group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, total_blocking_period_, dyn_group, group_size);
-    LOAD_NEURONS_PARAMETER(target, neuron_traits::BLIFATNeuron, dopamine_value_, dyn_group, group_size);
+    load_static_parameters(target, group0);
+    load_dynamic_parameters(target, group0);
 
     const knp::core::UID uid{boost::lexical_cast<boost::uuids::uuid>(population_name)};
     core::Population<neuron_traits::BLIFATNeuron> out_population(

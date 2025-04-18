@@ -20,6 +20,7 @@
  */
 
 
+#include <knp/backends/cpu-library/altai_lif_population.h>
 #include <knp/backends/cpu-library/blifat_population.h>
 #include <knp/backends/cpu-library/delta_synapse_projection.h>
 #include <knp/backends/cpu-library/init.h>
@@ -219,6 +220,15 @@ std::optional<core::messaging::SpikeMessage> SingleThreadedCPUBackend::calculate
 {
     SPDLOG_TRACE("Calculate BLIFAT population {}.", std::string(population.get_uid()));
     return knp::backends::cpu::calculate_blifat_population(population, get_message_endpoint(), get_step());
+}
+
+
+std::optional<core::messaging::SpikeMessage> SingleThreadedCPUBackend::calculate_population(
+    core::Population<neuron_traits::AltAILIF> &population)
+{
+    SPDLOG_TRACE("Calculate AltAI-LIF population {}.", std::string(population.get_uid()));
+    return knp::backends::cpu::calculate_lif_population<neuron_traits::AltAILIF>(
+        population, get_message_endpoint(), get_step());
 }
 
 

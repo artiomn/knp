@@ -51,7 +51,7 @@ core::Projection<Synapse> load_projection(const HighFive::Group &edges_group, co
     {                                                                                                              \
         const auto values =                                                                                        \
             read_parameter(h5_group, #parameter, pop_size, neuron_traits::default_values<neuron_type>::parameter); \
-        for (size_t i = 0; i < target.size(); ++i) target[i].parameter = values[i];                                \
+        for (size_t i = 0; i < std::min(values.size(), target.size()); ++i) target[i].parameter = values[i];       \
     } while (false)
 
 
@@ -60,5 +60,5 @@ core::Projection<Synapse> load_projection(const HighFive::Group &edges_group, co
     {                                                                                                                 \
         const auto values =                                                                                           \
             read_parameter(h5_group, #parameter, proj_size, synapse_traits::default_values<synapse_type>::parameter); \
-        for (size_t i = 0; i < target.size(); ++i) target[i].parameter = values[i];                                   \
+        for (size_t i = 0; i < std::min(values.size(), target.size()); ++i) target[i].parameter = values[i];          \
     } while (false)

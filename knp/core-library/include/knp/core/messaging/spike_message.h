@@ -33,6 +33,7 @@
 namespace knp::core::messaging
 {
 
+// TODO: bind this to population size. Don't forget to change protobuf if changing this.
 /**
  * @brief Spike index type in the form of a 32-bit unsigned integer.
  */
