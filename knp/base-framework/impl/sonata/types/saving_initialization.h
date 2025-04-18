@@ -1,6 +1,6 @@
 /**
- * @file common_procedures.h
- * @brief Type-independent procedures for saving and loading.
+ * @file saving_initialization.h
+ * @brief Type-independent procedures for saving initialization.
  * @kaspersky_support A. Vartenkov
  * @date 01.04.2025
  * @license Apache 2.0

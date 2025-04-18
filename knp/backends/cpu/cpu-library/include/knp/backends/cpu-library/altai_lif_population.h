@@ -18,14 +18,13 @@
  * limitations under the License.
  */
 #pragma once
+#include <knp/backends/cpu-library/impl/altai_lif_population_impl.h>
+#include <knp/backends/cpu-library/impl/lif_population_impl.h>
 #include <knp/core/message_endpoint.h>
 #include <knp/core/messaging/messaging.h>
 #include <knp/core/population.h>
 
 #include <optional>
-
-#include "impl/altai_lif_population_impl.h"
-#include "impl/lif_population_impl.h"
 
 
 /**

@@ -40,8 +40,8 @@ void calculate_pre_input_state_lif<knp::neuron_traits::AltAILIF>(
     for (auto &neuron : population)
     {
         neuron.potential_ = std::round(neuron.potential_);
-        neuron.potential_ =
-            neuron.potential_reset_value_ * neuron.do_not_save_ + neuron.potential_ * !neuron.do_not_save_;
+
+        neuron.potential_ = neuron.do_not_save_ ? static_cast<float>(neuron.potential_reset_value_) : neuron.potential_;
     }
 }
 
@@ -50,8 +50,8 @@ void leak_potential(knp::core::Population<knp::neuron_traits::AltAILIF> &populat
 {
     for (auto &neuron : population)
     {
-        // -1 if leak_rev is true and potential < 0, 1 otherwise. Not using if-s.
-        int sign = -2 * neuron.leak_rev_ * (neuron.potential_ < 0) + 1;
+        // -1 if leak_rev is true and potential < 0, 1 otherwise.
+        const int sign = (neuron.leak_rev_ && neuron.potential_ < 0) ? -1 : 1;
         neuron.potential_ += neuron.potential_leak_ * sign;
     }
 }
