@@ -116,9 +116,6 @@ TEST(AltAiSuite, NeuronPotentialLeakRev)
     base_neuron.potential_ = starting_potential;
     base_neuron.leak_rev_ = true;
 
-
-    // Potentials should be: 100, 75, 50, 25, 0, -25, 0, -25, etc.
-    // auto results = run_altai_neuron(base_neuron, num_steps);
     auto results = run_altai_neuron(base_neuron, num_steps, {}, neuron_num, neuron_ind);
     const std::vector<int16_t> expected_results = {100, 75, 50, 25, 0, -25, 0, -25, 0, -25};
     ASSERT_EQ(results.potential_, expected_results);
