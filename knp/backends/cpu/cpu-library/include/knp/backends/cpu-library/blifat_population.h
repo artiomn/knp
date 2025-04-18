@@ -39,7 +39,7 @@ template <class BlifatLikeNeuron>
 std::optional<core::messaging::SpikeMessage> calculate_blifat_population(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n)
 {
-    return calculate_blifat_population_impl(population, endpoint, step_n);
+    return calculate_blifat_like_population_impl(population, endpoint, step_n);
 }
 
 
@@ -60,7 +60,7 @@ std::optional<core::messaging::SpikeMessage> calculate_resource_stdp_population(
     ProjectionContainer &container, knp::core::MessageEndpoint &endpoint, size_t step_n)
 {
     using StdpSynapseType = synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, BaseSynapseType>;
-    auto message_opt = calculate_blifat_population_impl(population, endpoint, step_n);
+    auto message_opt = calculate_blifat_like_population_impl(population, endpoint, step_n);
     auto working_projections = find_projection_by_type_and_postsynaptic<StdpSynapseType, ProjectionContainer>(
         container, population.get_uid(), true);
     do_STDP_resource_plasticity(population, working_projections, message_opt, step_n);
@@ -82,7 +82,7 @@ std::optional<knp::core::messaging::SpikeMessage> calculate_blifat_population(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n,
     std::mutex &mutex)
 {
-    return calculate_blifat_population_impl(population, endpoint, step_n, mutex);
+    return calculate_blifat_like_population_impl(population, endpoint, step_n, mutex);
 }
 
 }  // namespace knp::backends::cpu
