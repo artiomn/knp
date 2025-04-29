@@ -84,7 +84,7 @@ void process_spiking_neurons(
  * @note We might want to impact a neuron with a whole message if it continues to have shared values.
  */
 template <class BlifatLikeNeuron>
-void impact_neuron(
+void impact_blifat_like_neuron(
     typename knp::core::Population<BlifatLikeNeuron>::NeuronParameters &neuron,
     const knp::synapse_traits::OutputType &synapse_type, float impact_value)
 {
@@ -126,7 +126,7 @@ void process_inputs(
         for (const auto &impact : message.impacts_)
         {
             auto &neuron = population[impact.postsynaptic_neuron_index_];
-            impact_neuron<BlifatLikeNeuron>(neuron, impact.synapse_type_, impact.impact_value_);
+            impact_blifat_like_neuron<BlifatLikeNeuron>(neuron, impact.synapse_type_, impact.impact_value_);
             if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
             {
                 if (impact.synapse_type_ == synapse_traits::OutputType::EXCITATORY)
@@ -237,8 +237,9 @@ bool calculate_neuron_post_input_state(typename knp::core::Population<BlifatLike
         neuron.potential_ = neuron.reversal_inhibitory_potential_;
     }
 
+    // Three components of neuron threshold: "static", "common dynamic" and "implementation-specific dynamic".
     if ((neuron.n_time_steps_since_last_firing_ > neuron.absolute_refractory_period_) &&
-        (neuron.potential_ >= neuron.activation_threshold_ + neuron.dynamic_threshold_))
+        (neuron.potential_ >= neuron.activation_threshold_ + neuron.dynamic_threshold_ + neuron.additional_threshold_))
     {
         SPDLOG_TRACE("Neuron spiked.");
         // Spike.
@@ -321,7 +322,7 @@ void calculate_neurons_post_input_state_part(
  * @return indexes of spiked neurons.
  */
 template <class BlifatLikeNeuron>
-knp::core::messaging::SpikeData calculate_blifat_population_data(
+knp::core::messaging::SpikeData calculate_blifat_like_population_data(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint)
 {
     SPDLOG_DEBUG("Calculating BLIFAT population {}...", std::string{population.get_uid()});
@@ -338,10 +339,10 @@ knp::core::messaging::SpikeData calculate_blifat_population_data(
 
 
 template <class BlifatLikeNeuron>
-std::optional<core::messaging::SpikeMessage> calculate_blifat_population_impl(
+std::optional<core::messaging::SpikeMessage> calculate_blifat_like_population_impl(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n)
 {
-    auto neuron_indexes{calculate_blifat_population_data(population, endpoint)};
+    auto neuron_indexes{calculate_blifat_like_population_data(population, endpoint)};
     std::optional<knp::core::messaging::SpikeMessage> message_opt = {};
     if (!neuron_indexes.empty())
     {
@@ -363,11 +364,11 @@ std::optional<core::messaging::SpikeMessage> calculate_blifat_population_impl(
  * @return indexes of spiked neurons.
  */
 template <class BlifatLikeNeuron>
-std::optional<knp::core::messaging::SpikeMessage> calculate_blifat_population_impl(
+std::optional<knp::core::messaging::SpikeMessage> calculate_blifat_like_population_impl(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n,
     std::mutex &mutex)
 {
-    auto neuron_indexes{calculate_blifat_population_data(population, endpoint)};
+    auto neuron_indexes{calculate_blifat_like_population_data(population, endpoint)};
     if (!neuron_indexes.empty())
     {
         knp::core::messaging::SpikeMessage res_message{{population.get_uid(), step_n}, neuron_indexes};

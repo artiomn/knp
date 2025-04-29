@@ -38,7 +38,6 @@ file(GLOB_RECURSE ${PROJECT_NAME}_headers include/knp/backends/cpu-library/*.h)
 
 knp_add_library("${PROJECT_NAME}"
         INTERFACE
-        include/knp/backends/cpu-library/impl/synaptic_resource_stdp_impl.h
         ${${PROJECT_NAME}_headers})
 add_library(KNP::Backends::CPU::Library ALIAS "${PROJECT_NAME}")
 

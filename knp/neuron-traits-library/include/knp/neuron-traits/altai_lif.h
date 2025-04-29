@@ -89,7 +89,7 @@ struct default_values<AltAILIF>
      * @brief The parameter defines the default value for `potential_` state of AltAILIF neuron.
      * @details Additional packet is sent to AltAI-1 for each neuron with non-zero initial `potential_` value.
      */
-    constexpr static int16_t potential_ = 0;
+    constexpr static float potential_ = 0;
 
     /**
      * @brief The parameter defines the default value for `activation_threshold_` of AltAILIF neuron.
@@ -215,7 +215,7 @@ struct neuron_parameters<AltAILIF>
     /**
      * @brief The parameter defines the neuron potential value.
      */
-    int16_t potential_ = default_values<AltAILIF>::potential_;
+    float potential_ = default_values<AltAILIF>::potential_;
 
     /**
      * @brief The parameter defines the threshold value of neuron potential, after exceeding which a positive spike can
