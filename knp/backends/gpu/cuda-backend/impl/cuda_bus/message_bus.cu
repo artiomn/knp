@@ -2,7 +2,7 @@
  * @file message_bus.cu
  * @brief Message bus implementation.
  * @kaspersky_support Artiom N.
- * @date 21.02.2023
+ * @date 21.02.2025
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
  *
@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#include "message_bus.cuh"
 #include <knp/meta/macro.h>
+#include "message_bus.cuh"
 
 #include <zmq.hpp>
 
@@ -32,29 +32,43 @@ CUDAMessageBus::~CUDAMessageBus() = default;
 CUDAMessageBus::CUDAMessageBus(CUDAMessageBus &&) noexcept = default;
 
 
-void CUDAMessageBus::update()
+template <typename MessageType>
+_CCCL_DEVICE Subscription<MessageType> &CUDAMessageBus::subscribe(const UID &receiver, const std::vector<UID> &senders)
 {
-    std::lock_guard lock(mutex_);
-    // This function is called before routing messages.
-    auto iter = endpoint_data_.begin();
-    while (iter != endpoint_data_.end())
+    for (const auto &subscr : subscriptions_)
     {
-        auto send_container_ptr = std::get<0>(*iter).lock();
-        // Clear up all pointers to expired endpoints.
-        if (!send_container_ptr)
+        if (subscr.get_receiver_uid() == receiver)
         {
-            endpoint_data_.erase(iter++);
-            continue;
+            return;
         }
-
-        // Read all sent messages to an internal buffer.
-        messages_to_route_.insert(
-            messages_to_route_.end(), std::make_move_iterator(send_container_ptr->begin()),
-            std::make_move_iterator(send_container_ptr->end()));
-        send_container_ptr->clear();
-        ++iter;
     }
+
+    subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
 }
+
+
+template <typename MessageType>
+_CCCL_DEVICE bool CUDAMessageBus::unsubscribe(const UID &receiver)
+{
+}
+
+
+_CCCL_DEVICE void CUDAMessageBus::remove_receiver(const UID &receiver)
+{
+}
+
+
+_CCCL_DEVICE void CUDAMessageBus::send_message(const knp::core::messaging::MessageVariant &message)
+{
+
+}
+
+
+template <class MessageType>
+_CCCL_DEVICE std::vector<MessageType> CUDAMessageBus::unload_messages(const knp::core::UID &receiver_uid)
+{
+}
+
 
 
 size_t CUDAMessageBus::step()
@@ -97,15 +111,28 @@ core::MessageEndpoint CUDAMessageBus::create_endpoint()
 }
 
 
-CUDAMessageEndpoint CUDAMessageBus::create_endpoint()
-{
-    return impl_->create_endpoint();
-}
-
-
 size_t CUDAMessageBus::step()
 {
-    return impl_->step();
+    const std::lock_guard lock(mutex_);
+    if (messages_to_route_.empty()) return 0;  // No more messages left for endpoints to receive.
+    // Sending a message to every endpoint.
+    auto message = std::move(messages_to_route_.back());
+    // Remove message from container.
+    messages_to_route_.pop_back();
+    const knp::core::UID sender_uid = std::visit([](const auto &msg) { return msg.header_.sender_uid_; }, message);
+    for (auto endpoint_data_containers : endpoint_data_)
+    {
+        auto recv_ptr = std::get<1>(endpoint_data_containers).lock();
+        auto allowed_senders_ptr = std::get<2>(endpoint_data_containers).lock();
+        // Skip all endpoints deleted after previous update(). They will be deleted at the next update().
+        if ((!recv_ptr) || (!allowed_senders_ptr)) continue;
+        if (allowed_senders_ptr->find(sender_uid) != allowed_senders_ptr->end())
+        {
+            recv_ptr->emplace_back(message);
+        }
+    }
+
+    return 1;
 }
 
 
@@ -123,5 +150,6 @@ size_t CUDAMessageBus::route_messages()
 
     return count;
 }
+
 
 }  // namespace knp::backends::gpu::impl

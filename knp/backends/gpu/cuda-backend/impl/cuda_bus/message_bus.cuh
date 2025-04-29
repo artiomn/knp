@@ -21,14 +21,18 @@
 
 #pragma once
 
-#include <cub/config.cuh>
-
 #include <functional>
 #include <memory>
 
 #include <cuda/std/variant>
+#include <thrust/device_vector.h>
 
-#include "message_endpoint.cuh"
+#include <knp/core/uid.h>
+
+#include <cub/config.cuh>
+#include "subscription.cuh"
+#include "cuda_common.cuh"
+#include "message_bus.cuh"
 
 
 /**
@@ -66,13 +70,6 @@ public:
 
 public:
     /**
-     * @brief Create a new endpoint that sends and receives messages through the message bus.
-     * @return new endpoint.
-     * @see MessageEndpoint.
-     */
-    [[nodiscard]] _CCCL_DEVICE MessageEndpoint create_endpoint();
-
-    /**
      * @brief Route some messages.
      * @return number of messages routed during the step.
      */
@@ -84,17 +81,70 @@ public:
      */
     _CCCL_DEVICE size_t route_messages();
 
-private:
-    thrust::device_vector<knp::core::messaging::MessageVariant> messages_to_route_;
+public:
+    /**
+     * @brief Add a subscription to messages of the specified type from senders with given UIDs.
+     * @note If the subscription for the specified receiver and message type already exists, the method updates the list
+     * of senders in the subscription.
+     * @tparam MessageType type of messages to which the receiver subscribes via the subscription.
+     * @param receiver receiver UID.
+     * @param senders vector of sender UIDs.
+     * @return number of senders added to the subscription.
+     */
+    template <typename MessageType>
+    _CCCL_DEVICE Subscription<MessageType> &subscribe(const UID &receiver, const std::vector<UID> &senders);
 
-    // This is a list of endpoint data:
-    // First vector is a pointer to a set of messages the endpoint is sending.
-    // Second vector is a set of messages endpoint is receiving.
-    // Third set contains message senders, and is kept updated by endpoints when they add or remove them.
-    ::list<std::tuple<
-        std::weak_ptr<std::vector<messaging::MessageVariant>>, std::weak_ptr<std::vector<messaging::MessageVariant>>,
-        std::weak_ptr<std::unordered_set<knp::core::UID, knp::core::uid_hash>>>>
-        endpoint_data_;
+    /**
+     * @brief Unsubscribe from messages of a specified type.
+     * @tparam MessageType type of messages to which the receiver is subscribed.
+     * @param receiver receiver UID.
+     * @return true if a subscription was deleted, false otherwise.
+     */
+    template <typename MessageType>
+    _CCCL_DEVICE bool unsubscribe(const UID &receiver);
+
+    /**
+     * @brief Remove all subscriptions for a receiver with given UID.
+     * @param receiver receiver UID.
+     */
+    _CCCL_DEVICE void remove_receiver(const UID &receiver);
+
+    /**
+     * @brief Send a message to the message bus.
+     * @param message message to send.
+     */
+    _CCCL_DEVICE void send_message(const knp::core::messaging::MessageVariant &message);
+
+    /**
+     * @brief Read messages of the specified type received via subscription.
+     * @note After reading the messages, the method clears them from the subscription.
+     * @tparam MessageType type of messages to read.
+     * @param receiver_uid receiver UID.
+     * @return vector of messages.
+     */
+    template <class MessageType>
+    _CCCL_DEVICE std::vector<MessageType> unload_messages(const knp::core::UID &receiver_uid);
+
+public:
+    /**
+     * @brief Type of subscription container.
+     */
+    using SubscriptionContainer = std::map<std::pair<size_t, UID>, SubscriptionVariant>;
+
+    /**
+     * @brief Get access to subscription container of the endpoint.
+     * @return Reference to subscription container.
+     */
+    const SubscriptionContainer &get_subscriptions() const { return subscriptions_; }
+
+private:
+    /**
+     * @brief Container that stores all the subscriptions for the current endpoint.
+     */
+    SubscriptionContainer subscriptions_;
+
+    thrust::device_vector<MessageVariant> messages_to_route_;
+
     std::mutex mutex_;
 };
 

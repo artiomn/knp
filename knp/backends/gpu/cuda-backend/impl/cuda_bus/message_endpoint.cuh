@@ -23,8 +23,6 @@
 
 #include <knp/core/messaging/message_envelope.h>
 #include <knp/core/messaging/messaging.h>
-#include <knp/core/subscription.h>
-#include <knp/core/uid.h>
 
 #include <variant>
 #include <vector>
@@ -32,8 +30,6 @@
 #include <boost/mp11.hpp>
 #include <boost/noncopyable.hpp>
 
-#include "cuda_common.cuh"
-#include "message_bus.cuh"
 
 
 /**
@@ -105,85 +101,6 @@ public:
      */
     virtual ~MessageEndpoint();
 
-public:
-    /**
-     * @brief Add a subscription to messages of the specified type from senders with given UIDs.
-     * @note If the subscription for the specified receiver and message type already exists, the method updates the list
-     * of senders in the subscription.
-     * @tparam MessageType type of messages to which the receiver subscribes via the subscription.
-     * @param receiver receiver UID.
-     * @param senders vector of sender UIDs.
-     * @return number of senders added to the subscription.
-     */
-
-    template <typename MessageType>
-    Subscription<MessageType> &subscribe(const UID &receiver, const std::vector<UID> &senders);
-
-    /**
-     * @brief Unsubscribe from messages of a specified type.
-     * @tparam MessageType type of messages to which the receiver is subscribed.
-     * @param receiver receiver UID.
-     * @return true if a subscription was deleted, false otherwise.
-     */
-    template <typename MessageType>
-    bool unsubscribe(const UID &receiver);
-
-    /**
-     * @brief Remove all subscriptions for a receiver with given UID.
-     * @param receiver receiver UID.
-     */
-    void remove_receiver(const UID &receiver);
-
-    /**
-     * @brief Send a message to the message bus.
-     * @param message message to send.
-     */
-    void send_message(const knp::core::messaging::MessageVariant &message);
-
-    /**
-     * @brief Receive a message from the message bus.
-     * @return `true` if a message was received, `false` if no message was received.
-     */
-    bool receive_message();
-
-    /**
-     * @brief Receive all messages that were sent to the endpoint.
-     * @param sleep_duration time interval in milliseconds between the moments of receiving messages.
-     * @return number of received messages.
-     */
-    size_t receive_all_messages(const std::chrono::milliseconds &sleep_duration = std::chrono::milliseconds(0));
-
-    /**
-     * @brief Read messages of the specified type received via subscription.
-     * @note After reading the messages, the method clears them from the subscription.
-     * @tparam MessageType type of messages to read.
-     * @param receiver_uid receiver UID.
-     * @return vector of messages.
-     */
-    template <class MessageType>
-    std::vector<MessageType> unload_messages(const knp::core::UID &receiver_uid);
-
-public:
-    /**
-     * @brief Type of subscription container.
-     */
-    using SubscriptionContainer = std::map<std::pair<size_t, UID>, SubscriptionVariant>;
-
-    /**
-     * @brief Get access to subscription container of the endpoint.
-     * @return Reference to subscription container.
-     */
-    const SubscriptionContainer &get_endpoint_subscriptions() const { return subscriptions_; }
-
-    /**
-     * @brief Get senders list.
-     * @return weak pointer to unordered set of sender UIDs.
-     */
-    auto get_senders_ptr()
-    {
-        std::weak_ptr<std::unordered_set<knp::core::UID, knp::core::uid_hash>> result{senders_};
-        return result;
-    }
 
 protected:
     /**
@@ -197,22 +114,6 @@ protected:
      */
     MessageEndpoint() = default;
 
-private:
-    /**
-     * @brief Container that stores all the subscriptions for the current endpoint.
-     */
-    SubscriptionContainer subscriptions_;
-
-    /**
-     * @brief A set that contains all senders that this endpoint receives messages from.
-     */
-    std::shared_ptr<std::unordered_set<knp::core::UID, knp::core::uid_hash>> senders_ =
-        std::make_shared<std::unordered_set<knp::core::UID, knp::core::uid_hash>>();
-
-    /**
-     * @brief Update list of senders.
-     */
-    void update_senders();
 };
 
 }  // namespace knp::backends::gpu::impl

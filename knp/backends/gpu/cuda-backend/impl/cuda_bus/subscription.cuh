@@ -20,17 +20,17 @@
  */
 
 #pragma once
-#include <knp/core/uid.h>
 
-#include <algorithm>
-#include <string>
-#include <unordered_set>
-#include <vector>
+#include <cuda/std/back_insert_iterator.h>
 
-#include <boost/functional/hash.hpp>
+#include <thrust/copy.h>
+#include <thrust/device_vector.h>
+#include <thrust/find.h>
+
+#include "cuda_common.cuh"
 
 
-namespace knp::core
+namespace knp::backends::gpu::cuda
 {
 
 /**
@@ -48,12 +48,12 @@ public:
     /**
      * @brief Internal container for messages of the specified message type.
      */
-    using MessageContainerType = std::vector<MessageType>;
+    using MessageContainerType = thrust::device_vector<MessageType>;
 
     /**
      * @brief Internal container for UIDs.
      */
-    using UidSet = std::unordered_set<knp::core::UID, knp::core::uid_hash>;
+    using UidSet = thrust::device_vector<UID>;
     // Subscription(const Subscription &) = delete;
 
 public:
@@ -62,45 +62,61 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    Subscription(const UID &receiver, const std::vector<UID> &senders) : receiver_(receiver) { add_senders(senders); }
+    _CCCL_DEVICE Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) : receiver_(receiver) { add_senders(senders); }
 
     /**
      * @brief Get list of sender UIDs.
      * @return senders UIDs.
      */
-    [[nodiscard]] const UidSet &get_senders() const { return senders_; }
+    [[nodiscard]] _CCCL_DEVICE const UidSet &get_senders() const { return senders_; }
 
     /**
      * @brief Get UID of the entity that receives messages via the subscription.
      * @return UID.
      */
-    [[nodiscard]] UID get_receiver_uid() const { return receiver_; }
+    [[nodiscard]] _CCCL_DEVICE UID get_receiver_uid() const { return receiver_; }
 
     /**
      * @brief Unsubscribe from a sender.
      * @details If a sender is not associated with the subscription, the method doesn't do anything.
      * @param uid sender UID.
-     * @return number of senders deleted from subscription.
+     * @return true if sender was deleted from subscription.
      */
-    size_t remove_sender(const UID &uid) { return senders_.erase(uid); }
+    _CCCL_DEVICE bool remove_sender(const UID &uid)
+    {
+        auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
+        if (senders_.end() == erase_iter) return false;
+        senders_.erase(erase_iter);
+        return true;
+    }
 
     /**
      * @brief Add a sender with the given UID to the subscription.
      * @details If a sender is already associated with the subscription, the method doesn't do anything.
      * @param uid UID of the new sender.
-     * @return number of senders added.
+     * @return true if sender added.
      */
-    size_t add_sender(const UID &uid) { return senders_.insert(uid).second; }
+    _CCCL_DEVICE bool add_sender(const UID &uid)
+    {
+        if (has_sender(uid)) return false;
+
+        senders_.push_back(uid);
+
+        return true;
+    }
 
     /**
      * @brief Add several senders to the subscription.
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    size_t add_senders(const std::vector<UID> &senders)
+    _CCCL_DEVICE size_t add_senders(const thrust::device_vector<UID> &senders)
     {
-        size_t size_before = senders_.size();
-        std::copy(senders.begin(), senders.end(), std::inserter(senders_, senders_.end()));
+        const size_t size_before = senders_.size();
+
+        senders_.reserve(size_before + senders.size());
+        thrust::copy(thrust::device, senders.begin(), senders.end(), cuda::back_inserter(senders_));
+
         return senders_.size() - size_before;
     }
 
@@ -109,35 +125,38 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] bool has_sender(const UID &uid) const { return senders_.find(uid) != senders_.end(); }
+    [[nodiscard]] _CCCL_DEVICE bool has_sender(const UID &uid) const
+    {
+        return thrust::find(thrust::device, senders_.begin(), senders_.end(), uid) != senders_.end();
+    }
 
 public:
     /**
      * @brief Add a message to the subscription.
      * @param message message to add.
      */
-    void add_message(MessageType &&message) { messages_.push_back(message); }
+    _CCCL_DEVICE void add_message(MessageType &&message) { messages_.push_back(message); }
     /**
      * @brief Add a message to the subscription.
      * @param message constant message to add.
      */
-    void add_message(const MessageType &message) { messages_.push_back(message); }
+    _CCCL_DEVICE void add_message(const MessageType &message) { messages_.push_back(message); }
 
     /**
      * @brief Get all messages.
      * @return reference to message container.
      */
-    MessageContainerType &get_messages() { return messages_; }
+    _CCCL_DEVICE MessageContainerType &get_messages() { return messages_; }
     /**
      * @brief Get all messages.
      * @return constant reference to message container.
      */
-    const MessageContainerType &get_messages() const { return messages_; }
+    _CCCL_DEVICE const MessageContainerType &get_messages() const { return messages_; }
 
     /**
      * @brief Remove all stored messages.
      */
-    void clear_messages() { messages_.clear(); }
+    _CCCL_DEVICE void clear_messages() { messages_.clear(); }
 
 private:
     /**
@@ -148,7 +167,7 @@ private:
     /**
      * @brief Set of sender UIDs.
      */
-    std::unordered_set<knp::core::UID, knp::core::uid_hash> senders_;
+    UidSet senders_;
     /**
      * @brief Message storage.
      */
