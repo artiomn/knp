@@ -230,7 +230,7 @@ public:
     /**
      * @brief Type of projection container.
      */
-    using ProjectionContainer = thrust::host_vector<ProjectionWrapper>;
+    using ProjectionContainer = thrust::host_vector<ProjectionVariants>;
 
     /**
      * @brief Types of non-constant population iterators.
@@ -401,8 +401,7 @@ public:
      */
     void stop_learning() override
     {
-        for (ProjectionWrapper &wrapper : projections_)
-            std::visit([](auto &entity) { entity.lock_weights(); }, wrapper.arg_);
+        for (auto &proj : projections_) std::visit([](auto &entity) { entity.lock_weights(); }, proj);
     }
 
     /**
@@ -414,8 +413,7 @@ public:
          * @todo Probably only need to use `start_learning` for some of projections: the ones that were locked with
          * `lock()`.
          */
-        for (ProjectionWrapper &wrapper : projections_)
-            std::visit([](auto &entity) { entity.unlock_weights(); }, wrapper.arg_);
+        for (auto &proj : projections_) std::visit([](auto &entity) { entity.unlock_weights(); }, proj);
     }
 
     /**

@@ -25,7 +25,7 @@
 /**
  * @brief Messaging namespace.
  */
-namespace  knp::backends::gpu::impl::messaging
+namespace  knp::backends::gpu::cuda
 {
 /**
  * @brief Common header for messages.
@@ -42,4 +42,4 @@ struct MessageHeader
     std::uint64_t send_time_;
 };
 
-}  // namespace knp::core::messaging
+}  // namespace knp::backends::gpu::cuda

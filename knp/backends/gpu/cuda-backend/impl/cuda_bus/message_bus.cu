@@ -19,61 +19,94 @@
  * limitations under the License.
  */
 
+#include <thrust/remove.h>
 #include <knp/meta/macro.h>
 #include "message_bus.cuh"
 
-#include <zmq.hpp>
 
-
-namespace knp::backends::gplu::impl
+namespace knp::backends::gpu::cuda
 {
-CUDAMessageBus::~CUDAMessageBus() = default;
-
-CUDAMessageBus::CUDAMessageBus(CUDAMessageBus &&) noexcept = default;
-
 
 template <typename MessageType>
-_CCCL_DEVICE Subscription<MessageType> &CUDAMessageBus::subscribe(const UID &receiver, const std::vector<UID> &senders)
+_CCCL_DEVICE bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
 {
     for (const auto &subscr : subscriptions_)
     {
-        if (subscr.get_receiver_uid() == receiver)
+        const bool is_sub_exists = std::visit(
+            [&receiver](auto &arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
+            },
+            subscr);
+
+        // TODO: Check, that senders contain all senders in the formal parameter or `senders` has something new?
+        if (is_sub_exists)
         {
-            return;
+            return false;
         }
     }
 
     subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
+
+    return true;
 }
 
 
 template <typename MessageType>
 _CCCL_DEVICE bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
+    auto sub_iter = thrust::find_if(thrust::device, subscriptions_.begin(), subscriptions_.end(),
+    [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
+    {
+        return std::visit([&receiver](const auto &arg)
+        {
+            using T = std::decay_t<decltype(arg)>;
+            return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
+        }, subscr);
+
+    });
+
+    if (subscriptions_.end() == sub_iter) return false;
+
+    subscriptions_.erase(sub_iter);
+
+    return true;
 }
 
 
 _CCCL_DEVICE void CUDAMessageBus::remove_receiver(const UID &receiver)
 {
+/*    auto rm_iter = thrust::remove_if(thrust::device, subscriptions_.begin(), subscriptions_.end(),
+    [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
+    {
+        return std::visit([&receiver](const auto &arg)
+        {
+            using T = std::decay_t<decltype(arg)>;
+            return arg.get_receiver_uid() == receiver;
+        }, subscr);
+    });
+
+    subscriptions_.erase(rm_iter);*/
 }
 
 
-_CCCL_DEVICE void CUDAMessageBus::send_message(const knp::core::messaging::MessageVariant &message)
+_CCCL_DEVICE void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 {
 
 }
 
 
 template <class MessageType>
-_CCCL_DEVICE std::vector<MessageType> CUDAMessageBus::unload_messages(const knp::core::UID &receiver_uid)
+_CCCL_DEVICE std::vector<MessageType> CUDAMessageBus::unload_messages(const UID &receiver_uid)
 {
 }
 
 
 
-size_t CUDAMessageBus::step()
+_CCCL_DEVICE size_t CUDAMessageBus::step()
 {
-    const std::lock_guard lock(mutex_);
+/*    const std::lock_guard lock(mutex_);
     if (messages_to_route_.empty()) return 0;  // No more messages left for endpoints to receive.
     // Sending a message to every endpoint.
     auto message = std::move(messages_to_route_.back());
@@ -91,29 +124,8 @@ size_t CUDAMessageBus::step()
             recv_ptr->emplace_back(message);
         }
     }
-
-    return 1;
-}
-
-
-core::MessageEndpoint CUDAMessageBus::create_endpoint()
-{
-    const std::lock_guard lock(mutex_);
-
-    using VT = std::vector<messaging::MessageVariant>;
-
-    auto messages_to_send_v{std::make_shared<VT>()};
-    auto recv_messages_v{std::make_shared<VT>()};
-
-    auto endpoint = MessageEndpointCPU(std::make_shared<MessageEndpointCPUImpl>(messages_to_send_v, recv_messages_v));
-    endpoint_data_.emplace_back(messages_to_send_v, recv_messages_v, endpoint.get_senders_ptr());
-    return std::move(endpoint);
-}
-
-
-size_t CUDAMessageBus::step()
-{
-    const std::lock_guard lock(mutex_);
+*/
+    /*const std::lock_guard lock(mutex_);
     if (messages_to_route_.empty()) return 0;  // No more messages left for endpoints to receive.
     // Sending a message to every endpoint.
     auto message = std::move(messages_to_route_.back());
@@ -130,16 +142,15 @@ size_t CUDAMessageBus::step()
         {
             recv_ptr->emplace_back(message);
         }
-    }
+    }*/
 
     return 1;
 }
 
 
-size_t CUDAMessageBus::route_messages()
+_CCCL_DEVICE size_t CUDAMessageBus::route_messages()
 {
     size_t count = 0;
-    impl_->update();
     size_t num_messages = step();
 
     while (num_messages != 0)

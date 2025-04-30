@@ -21,13 +21,16 @@
 
 #pragma once
 
-#include <cuda/std/back_insert_iterator.h>
+#include <boost/mp11.hpp>
+#include <cuda/std/iterator>
 
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
 #include <thrust/find.h>
+#include <thrust/execution_policy.h>
 
 #include "cuda_common.cuh"
+#include "messaging.cuh"
 
 
 namespace knp::backends::gpu::cuda
@@ -62,7 +65,8 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    _CCCL_DEVICE Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) : receiver_(receiver) { add_senders(senders); }
+    _CCCL_DEVICE Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
+        receiver_(receiver) { add_senders(senders); }
 
     /**
      * @brief Get list of sender UIDs.
@@ -115,7 +119,7 @@ public:
         const size_t size_before = senders_.size();
 
         senders_.reserve(size_before + senders.size());
-        thrust::copy(thrust::device, senders.begin(), senders.end(), cuda::back_inserter(senders_));
+        thrust::copy(thrust::device, senders.begin(), senders.end(), ::cuda::std::back_inserter(senders_));
 
         return senders_.size() - size_before;
     }
@@ -174,4 +178,22 @@ private:
     MessageContainerType messages_;
 };
 
-}  // namespace knp::core
+
+/**
+ * @brief List of subscription types based on message types specified in `messaging::AllMessages`.
+ */
+using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllMessages>;
+
+/**
+ * @brief Subscription variant that contains any subscription type specified in `AllSubscriptions`.
+ * @details `SubscriptionVariant` takes the value of `std::variant<SubscriptionType_1,..., SubscriptionType_n>`,
+ * where `SubscriptionType_[1..n]` is the subscription type specified in `AllSubscriptions`. \n For example, if
+ * `AllSubscriptions` contains SpikeMessage and SynapticImpactMessage types, then `SubscriptionVariant =
+ * std::variant<SpikeMessage, SynapticImpactMessage>`. \n `SubscriptionVariant` retains the same order of message
+ * types as defined in `AllSubscriptions`.
+ * @see ALL_MESSAGES.
+ */
+using SubscriptionVariant = boost::mp11::mp_rename<AllSubscriptions, ::cuda::std::variant>;
+
+
+} // namespace knp::backends::gpu::cuda

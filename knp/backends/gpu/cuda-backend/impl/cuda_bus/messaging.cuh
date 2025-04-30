@@ -1,8 +1,8 @@
 /**
- * @file spike_message.h
- * @brief Spike message class for CUDA.
+ * @file messages.h
+ * @brief Messages file for CUDA.
  * @kaspersky_support Artiom N.
- * @date 28.03.2025
+ * @date 20.04.2025
  * @license Apache 2.0
  * @copyright © 2025 AO Kaspersky Lab
  *
@@ -21,41 +21,23 @@
 
 #pragma once
 
+#include <boost/mp11.hpp>
+#include <cuda/std/variant>
+
 #include "message_header.cuh"
+#include "spike_message.cuh"
+#include "synaptic_impact_message.cuh"
 
 
 /**
  * @brief CUDA messaging namespace.
  */
-namespace knp::backends::gpu::impl
+namespace knp::backends::gpu::cuda
 {
+#define ALL_MESSAGES SpikeMessage, SynapticImpactMessage
 
-/**
- * @brief Spike index type in the form of a 32-bit unsigned integer.
- */
-using SpikeIndex = uint32_t;
+using AllMessages = boost::mp11::mp_list<ALL_MESSAGES>;
 
+using MessageVariant = boost::mp11::mp_rename<AllMessages, ::cuda::std::variant>;
 
-/**
- * @brief List of spike indexes.
- */
-using SpikeData = std::device_vector<SpikeIndex>;
-
-
-/**
- * @brief Structure of the spike message.
- */
-struct SpikeMessage
-{
-    /**
-     * @brief Message header.
-     */
-    MessageHeader header_;
-
-    /**
-     * @brief Indexes of the recently spiked neurons.
-     */
-    SpikeData neuron_indexes_;
-};
-
-}  // namespace knp::backends::gpu::impl
+}  // namespace knp::backends::gpu::cuda

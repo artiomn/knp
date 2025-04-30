@@ -124,9 +124,9 @@ void CUDABackend::_step()
                         knp::meta::always_false_v<T>,
                         "Projection is not supported by the CUDA backend.");
                 }
-                calculate_projection(arg, projection.messages_);
+//                calculate_projection(arg, projection.messages_);
             },
-            projection.arg_);
+            projection);
     }
 
     get_message_bus().route_messages();
@@ -175,7 +175,7 @@ void CUDABackend::load_projections(const std::vector<ProjectionVariants> &projec
 
     for (const auto &projection : projections)
     {
-        projections_.push_back(ProjectionWrapper{projection});
+        projections_.push_back(projection);
     }
 
     device_projections_.clear();

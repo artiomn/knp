@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include <thrust/device_vector.h>
+#include <cuda/std/array>
 
 
 namespace knp::backends::gpu::cuda
 {
-using UID = thrust::device_vector<std::uint8_t> uid_{16};
+using UID = ::cuda::std::array<std::uint8_t, 16>;
 }

@@ -32,42 +32,19 @@
 #include <cub/config.cuh>
 #include "subscription.cuh"
 #include "cuda_common.cuh"
-#include "message_bus.cuh"
+#include "messaging.cuh"
 
 
 /**
  * @brief Namespace for CUDA message bus implementations.
  */
-namespace knp::backends::gpu::impl
+namespace knp::backends::gpu::cuda
 {
 /**
  * @brief The MessageBus class is a definition of an interface to a message bus.
  */
 class CUDAMessageBus
 {
-public:
-    /**
-     * @brief Create a message bus with default implementation.
-     * @return message bus.
-     */
-    static CUDAMessageBus _CCCL_DEVICE construct_bus() { return CUDAMessageBus(); }
-
-    /**
-     * @brief Default message bus constructor is deleted.
-     * @note Use one of the static functions above.
-     */
-    _CCCL_DEVICE CUDAMessageBus() = delete;
-
-    /**
-     * @brief Move constructor.
-     */
-    _CCCL_DEVICE CUDAMessageBus(CUDAMessageBus &&) noexcept;
-
-    /**
-     * @brief Message bus destructor.
-     */
-    _CCCL_DEVICE ~CUDAMessageBus();
-
 public:
     /**
      * @brief Route some messages.
@@ -92,7 +69,7 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    _CCCL_DEVICE Subscription<MessageType> &subscribe(const UID &receiver, const std::vector<UID> &senders);
+    _CCCL_DEVICE bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders);
 
     /**
      * @brief Unsubscribe from messages of a specified type.
@@ -113,7 +90,7 @@ public:
      * @brief Send a message to the message bus.
      * @param message message to send.
      */
-    _CCCL_DEVICE void send_message(const knp::core::messaging::MessageVariant &message);
+    _CCCL_DEVICE void send_message(const cuda::MessageVariant &message);
 
     /**
      * @brief Read messages of the specified type received via subscription.
@@ -123,13 +100,13 @@ public:
      * @return vector of messages.
      */
     template <class MessageType>
-    _CCCL_DEVICE std::vector<MessageType> unload_messages(const knp::core::UID &receiver_uid);
+    _CCCL_DEVICE std::vector<MessageType> unload_messages(const UID &receiver_uid);
 
 public:
     /**
      * @brief Type of subscription container.
      */
-    using SubscriptionContainer = std::map<std::pair<size_t, UID>, SubscriptionVariant>;
+    using SubscriptionContainer = thrust::device_vector<SubscriptionVariant>;
 
     /**
      * @brief Get access to subscription container of the endpoint.
@@ -143,7 +120,7 @@ private:
      */
     SubscriptionContainer subscriptions_;
 
-    thrust::device_vector<MessageVariant> messages_to_route_;
+    thrust::device_vector<cuda::MessageVariant> messages_to_route_;
 
     std::mutex mutex_;
 };

@@ -27,7 +27,7 @@
 #include <limits>
 #include <map>
 #include <unordered_map>
-#include <thrust/device_vector>
+#include <thrust/device_vector.h>
 
 #include "message_header.cuh"
 
@@ -35,7 +35,7 @@
 /**
  * @brief Messaging namespace.
  */
-namespace knp::backends::gpu::impl
+namespace knp::backends::gpu::cuda
 {
 
 /**
@@ -119,4 +119,4 @@ struct SynapticImpactMessage
  */
 bool operator==(const SynapticImpactMessage &sm1, const SynapticImpactMessage &sm2);
 
-}  // namespace knp::backends::gpu::impl
+} // namespace knp::backends::gpu::cuda

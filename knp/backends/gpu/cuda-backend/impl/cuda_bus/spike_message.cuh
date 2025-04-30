@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <vector>
+#include <thrust/device_vector.h>
 
 #include "message_header.cuh"
 
@@ -29,7 +29,7 @@
 /**
  * @brief Messaging namespace.
  */
-namespace knp::backend::gpu::impl
+namespace knp::backends::gpu::cuda
 {
 
 /**
@@ -52,7 +52,7 @@ struct SpikeMessage
     /**
      * @brief Message header.
      */
-    MessageHeader header_;
+    cuda::MessageHeader header_;
 
     /**
      * @brief Indexes of the recently spiked neurons.
