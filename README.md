@@ -90,6 +90,8 @@ To work with the platform, the following software must be installed on the devic
   - python3-loguru
   - python3-tqdm
   - TensorFlow 2.13.1
+ 
+Only versions of repository with release tags have release quality. If you use the source code from master branch or a build compiled from master branch, you may get code and build with errors and vulnerabilities.
 
 ## Installing the platform
 
