@@ -83,6 +83,20 @@ SupportedVariants convert_variant(const AllVariants &input)
 }
 
 
+template <class ProjectionType>
+constexpr bool is_forcing()
+{
+    return false;
+}
+
+
+template <>
+constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
+{
+    return true;
+}
+
+
 void CUDABackend::_step()
 {
     SPDLOG_DEBUG("Starting step #{}...", get_step());
@@ -250,42 +264,212 @@ void CUDABackend::_init()
 std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
     core::Population<knp::neuron_traits::BLIFATNeuron> &population)
 {
-    SPDLOG_TRACE("Calculate BLIFAT population {}.", std::string(population.get_uid()));
-    return std::nullopt;  // knp::backends::cpu::calculate_blifat_population(population, get_message_endpoint(),
-                          // get_step());}
+    std::vector<core::messaging::SynapticImpactMessage> messages =
+        endpoint.unload_messages<core::messaging::SynapticImpactMessage>(population.get_uid());
+
+    for (size_t i = 0; i < population.size(); ++i)
+    {
+        auto &neuron = population[i];
+        ++neuron.n_time_steps_since_last_firing_;
+
+        neuron.dynamic_threshold_ *= neuron.threshold_decay_;
+        neuron.postsynaptic_trace_ *= neuron.postsynaptic_trace_decay_;
+        neuron.inhibitory_conductance_ *= neuron.inhibitory_conductance_decay_;
+
+        /*
+        if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
+        {
+            neuron.dopamine_value_ = 0.0;
+            neuron.is_being_forced_ = false;
+        }
+        */
+
+        if (neuron.bursting_phase_ && !--neuron.bursting_phase_)
+        {
+            neuron.potential_ = neuron.potential_ * neuron.potential_decay_ + neuron.reflexive_weight_;
+        }
+        else
+        {
+            neuron.potential_ *= neuron.potential_decay_;
+        }
+        neuron.pre_impact_potential_ = neuron.potential_;
+    }
+
+    // process_inputs(population, messages);
+    for (const auto &message : messages)
+    {
+        for (const auto &impact : message.impacts_)
+        {
+            auto &neuron = population[impact.postsynaptic_neuron_index_];
+
+            // impact_neuron<BlifatLikeNeuron>(neuron, impact.synapse_type_, impact.impact_value_);
+            switch (impact.synapse_type_)
+            {
+                case knp::synapse_traits::OutputType::EXCITATORY:
+                    neuron.potential_ += impact.impact_value_;
+                    break;
+                case knp::synapse_traits::OutputType::INHIBITORY_CURRENT:
+                    neuron.potential_ -= impact.impact_value_;
+                    break;
+                case knp::synapse_traits::OutputType::INHIBITORY_CONDUCTANCE:
+                    neuron.inhibitory_conductance_ += impact.impact_value_;
+                    break;
+                case knp::synapse_traits::OutputType::DOPAMINE:
+                    neuron.dopamine_value_ += impact.impact_value_;
+                    break;
+                case knp::synapse_traits::OutputType::BLOCKING:
+                    neuron.total_blocking_period_ = static_cast<unsigned int>(impact.impact_value_);
+                    break;
+            }
+
+            if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
+            {
+                if (impact.synapse_type_ == synapse_traits::OutputType::EXCITATORY)
+                {
+                    neuron.is_being_forced_ |= message.is_forcing_;
+                }
+            }
+        }
+    }
+    //
+
+    knp::core::messaging::SpikeData neuron_indexes;
+
+    // calculate_neurons_post_input_state(population, neuron_indexes);
+    for (size_t index = 0; index < population.size(); ++index)
+    {
+        bool spike = false;
+        auto &neuron = population[index];
+
+        if (neuron.total_blocking_period_ <= 0)
+        {
+            // TODO: Make it more readable, don't be afraid to use if operators.
+            // Restore potential that the neuron had before impacts.
+            neuron.potential_ = neuron.pre_impact_potential_;
+            bool was_negative = neuron.total_blocking_period_ < 0;
+            // If it is negative, increase by 1.
+            neuron.total_blocking_period_ += was_negative;
+            // If it is now zero, but was negative before, increase it to max, else leave it as is.
+            neuron.total_blocking_period_ +=
+                std::numeric_limits<int64_t>::max() * ((neuron.total_blocking_period_ == 0) && was_negative);
+        }
+        else
+        {
+            neuron.total_blocking_period_ -= 1;
+        }
+
+        if (neuron.inhibitory_conductance_ < 1.0)
+        {
+            neuron.potential_ -=
+                (neuron.potential_ - neuron.reversal_inhibitory_potential_) * neuron.inhibitory_conductance_;
+        }
+        else
+        {
+            neuron.potential_ = neuron.reversal_inhibitory_potential_;
+        }
+
+        if ((neuron.n_time_steps_since_last_firing_ > neuron.absolute_refractory_period_) &&
+            (neuron.potential_ >= neuron.activation_threshold_ + neuron.dynamic_threshold_))
+        {
+            // Spike.
+            neuron.dynamic_threshold_ += neuron.threshold_increment_;
+            neuron.postsynaptic_trace_ += neuron.postsynaptic_trace_increment_;
+
+            neuron.potential_ = neuron.potential_reset_value_;
+            neuron.bursting_phase_ = neuron.bursting_period_;
+            neuron.n_time_steps_since_last_firing_ = 0;
+            spike = true;
+        }
+
+        if (neuron.potential_ < neuron.min_potential_)
+        {
+            neuron.potential_ = neuron.min_potential_;
+        }
+
+        if (spike)
+        {
+            neuron_indexes.push_back(index);
+        }
+    }
+
+    if (!neuron_indexes.empty())
+    {
+        knp::core::messaging::SpikeMessage res_message{{population.get_uid(), step_n}, neuron_indexes};
+        endpoint.send_message(res_message);
+        return res_message;
+    }
+    return {};
 }
 
 
-std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
-    knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population)
-{
-    SPDLOG_TRACE("Calculate resource-based STDP-compatible BLIFAT population {}.", std::string(population.get_uid()));
-    return std::nullopt;
-}
+// std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
+//     knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population)
+//{
+//    SPDLOG_TRACE("Calculate resource-based STDP-compatible BLIFAT population {}.", std::string(population.get_uid()));
+//    return std::nullopt;
+//}
 
 
 void CUDABackend::calculate_projection(
     knp::core::Projection<knp::synapse_traits::DeltaSynapse> &projection, SynapticMessageQueue &message_queue)
 {
-    SPDLOG_TRACE("Calculate delta synapse projection {}.", std::string(projection.get_uid()));
+    auto messages = endpoint.unload_messages<core::messaging::SpikeMessage>(projection.get_uid());
+
+    // auto out_iter = calculate_delta_synapse_projection_data(projection, messages, future_messages, get_step());
+    //
+    using SynapseType = typename ProjectionType::ProjectionSynapseType;
+    WeightUpdateSTDP<SynapseType>::init_projection(projection, messages, step_n);
+
+    for (const auto &message : messages)
+    {
+        const auto &message_data = message.neuron_indexes_;
+        for (const auto &spiked_neuron_index : message_data)
+        {
+            auto synapses = projection.find_synapses(spiked_neuron_index, ProjectionType::Search::by_presynaptic);
+            for (auto synapse_index : synapses)
+            {
+                auto &synapse = projection[synapse_index];
+                WeightUpdateSTDP<SynapseType>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
+                const auto &synapse_params = sp_getter(std::get<core::synapse_data>(synapse));
+
+                // The message is sent on step N - 1, received on step N.
+                size_t future_step = synapse_params.delay_ + step_n - 1;
+                knp::core::messaging::SynapticImpact impact{
+                    synapse_index, synapse_params.weight_, synapse_params.output_type_,
+                    static_cast<uint32_t>(std::get<core::source_neuron_id>(synapse)),
+                    static_cast<uint32_t>(std::get<core::target_neuron_id>(synapse))};
+
+                auto iter = future_messages.find(future_step);
+                if (iter != future_messages.end())
+                {
+                    iter->second.impacts_.push_back(impact);
+                }
+                else
+                {
+                    knp::core::messaging::SynapticImpactMessage message_out{
+                        {projection.get_uid(), step_n},
+                        projection.get_presynaptic(),
+                        projection.get_postsynaptic(),
+                        is_forcing<ProjectionType>(),
+                        {impact}};
+                    future_messages.insert(std::make_pair(future_step, message_out));
+                }
+            }
+        }
+    }
+    WeightUpdateSTDP<SynapseType>::modify_weights(projection);
+    return future_messages.find(step_n);
+    //
+
+    if (out_iter != future_messages.end())
+    {
+        // Send a message and remove it from the queue.
+        endpoint.send_message(out_iter->second);
+        future_messages.erase(out_iter);
+    }
+
     // knp::backends::cpu::calculate_delta_synapse_projection(
     //    projection, get_message_endpoint(), message_queue, get_step());
-}
-
-
-void CUDABackend::calculate_projection(
-    knp::core::Projection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
-    SynapticMessageQueue &message_queue)
-{
-    SPDLOG_TRACE("Calculate AdditiveSTDPDelta synapse projection {}.", std::string(projection.get_uid()));
-}
-
-
-void CUDABackend::calculate_projection(
-    knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
-    SynapticMessageQueue &message_queue)
-{
-    SPDLOG_TRACE("Calculate STDPSynapticResource synapse projection {}.", std::string(projection.get_uid()));
 }
 
 

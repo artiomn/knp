@@ -21,15 +21,16 @@
 
 #pragma once
 
-#include <functional>
-#include <memory>
-
-#include <cuda/std/variant>
 #include <thrust/device_vector.h>
 
 #include <knp/core/uid.h>
-
 #include <cub/config.cuh>
+
+#include <cuda/std/variant>
+
+#include <functional>
+#include <memory>
+
 #include "subscription.cuh"
 #include "cuda_common.cuh"
 #include "messaging.cuh"
@@ -100,7 +101,7 @@ public:
      * @return vector of messages.
      */
     template <class MessageType>
-    _CCCL_DEVICE std::vector<MessageType> unload_messages(const UID &receiver_uid);
+    _CCCL_DEVICE thrust::device_vector<MessageType> unload_messages(const UID &receiver_uid);
 
 public:
     /**
@@ -125,4 +126,4 @@ private:
     std::mutex mutex_;
 };
 
-}  // namespace knp::backends::gpu::impl
+}  // namespace knp::backends::gpu::cuda

@@ -443,14 +443,6 @@ protected:
         knp::core::Population<knp::neuron_traits::BLIFATNeuron> &population);
 
     /**
-     * @brief Calculate population of `SynapticResourceSTDPNeuron` neurons.
-     * @note Population will be changed during calculation.
-     * @param population population to calculate.
-     * @return optional `SpikeMessage`.
-     */
-    std::optional<core::messaging::SpikeMessage> calculate_population(
-        knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population);
-    /**
      * @brief Calculate projection of delta synapses.
      * @note Projection will be changed during calculation.
      * @param projection projection to calculate.
@@ -458,24 +450,6 @@ protected:
      */
     void calculate_projection(
         knp::core::Projection<knp::synapse_traits::DeltaSynapse> &projection, SynapticMessageQueue &message_queue);
-    /**
-     * @brief Calculate projection of `AdditiveSTDPDeltaSynapse` synapses.
-     * @note Projection will be changed during calculation.
-     * @param projection projection to calculate.
-     * @param message_queue message queue to send to projection for calculation.
-     */
-    void calculate_projection(
-        knp::core::Projection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
-        SynapticMessageQueue &message_queue);
-    /**
-     * @brief Calculate projection of `SynapticResourceSTDPDeltaSynapse` synapses.
-     * @note Projection will be changed during calculation.
-     * @param projection projection to calculate.
-     * @param message_queue message queue to send to projection for calculation.
-     */
-    void calculate_projection(
-        knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
-        SynapticMessageQueue &message_queue);
 
 private:
     // cppcheck-suppress unusedStructMember

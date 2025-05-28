@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#include <thrust/remove.h>
+#include <cuda/std/detail/libcxx/include/algorithm>
 #include <knp/meta/macro.h>
 #include "message_bus.cuh"
 
@@ -32,11 +32,12 @@ _CCCL_DEVICE bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::d
 {
     for (const auto &subscr : subscriptions_)
     {
-        const bool is_sub_exists = std::visit(
+        const bool is_sub_exists = ::cuda::std::visit(
             [&receiver](auto &arg)
             {
                 using T = std::decay_t<decltype(arg)>;
-                return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
+                return std::is_same<MessageType, typename T::MessageType>::value &&
+                       (arg.get_receiver_uid() == receiver);
             },
             subscr);
 
@@ -64,7 +65,6 @@ _CCCL_DEVICE bool CUDAMessageBus::unsubscribe(const UID &receiver)
             using T = std::decay_t<decltype(arg)>;
             return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
         }, subscr);
-
     });
 
     if (subscriptions_.end() == sub_iter) return false;
@@ -77,28 +77,28 @@ _CCCL_DEVICE bool CUDAMessageBus::unsubscribe(const UID &receiver)
 
 _CCCL_DEVICE void CUDAMessageBus::remove_receiver(const UID &receiver)
 {
-/*    auto rm_iter = thrust::remove_if(thrust::device, subscriptions_.begin(), subscriptions_.end(),
-    [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
+    for (auto sub_iter = subscriptions_.begin(); sub_iter != subscriptions_.end(); ++sub_iter)
     {
-        return std::visit([&receiver](const auto &arg)
+/*        ::cuda::std::visit([&receiver](auto &&arg)
         {
-            using T = std::decay_t<decltype(arg)>;
             return arg.get_receiver_uid() == receiver;
-        }, subscr);
-    });
+        }, *sub_iter);
+*/
+    }
 
-    subscriptions_.erase(rm_iter);*/
+/*    if (subscriptions_.end() == sub_iter) return;
+
+    subscriptions_.erase(sub_iter);*/
 }
 
 
 _CCCL_DEVICE void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 {
-
 }
 
 
 template <class MessageType>
-_CCCL_DEVICE std::vector<MessageType> CUDAMessageBus::unload_messages(const UID &receiver_uid)
+_CCCL_DEVICE thrust::device_vector<MessageType> CUDAMessageBus::unload_messages(const UID &receiver_uid)
 {
 }
 
@@ -163,4 +163,4 @@ _CCCL_DEVICE size_t CUDAMessageBus::route_messages()
 }
 
 
-}  // namespace knp::backends::gpu::impl
+}  // namespace knp::backends::gpu::cuda
