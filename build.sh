@@ -74,8 +74,9 @@ while getopts "rcvsh" o; do
       SINGLE_PROCESS=1
     ;;
     *)
-      usage
-      exit 1
+      shift $((OPTIND-1))
+      CMAKE_ADD_OPTS="${CMAKE_ADD_OPTS} $*"
+      break;
     ;;
   esac
 done
