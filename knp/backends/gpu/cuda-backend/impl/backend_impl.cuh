@@ -29,6 +29,11 @@
 #include <knp/neuron-traits/all_traits.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include <thrust/device_free.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+
 #include <memory>
 #include <string>
 #include <tuple>
@@ -41,21 +46,132 @@
 #include <boost/dll/alias.hpp>
 #include <boost/mp11.hpp>
 
+#include "cuda_bus/message_bus.cuh"
+
 /**
  * @brief Namespace for single-threaded backend.
  */
-namespace knp::backends::gpu
+namespace knp::backends::gpu::cuda
 {
 
-namespace cuda
+/**
+ * @brief The CUDAPopulation class is a definition of a CUDA neurons population.
+ */
+template <typename NeuronType>
+struct CUDAPopulation
 {
-class CUDABackendImpl;
-}
+    /**
+     * @brief Type of the population neurons.
+     */
+    using PopulationNeuronType = NeuronType;
+    /**
+     * @brief Population of neurons with the specified neuron type.
+     */
+    using PopulationType = CUDAPopulation<NeuronType>;
+    /**
+     * @brief Neuron parameters and their values for the specified neuron type.
+     */
+    using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
+
+    /**
+     * @brief Constructor.
+     * @param population source population.
+     */
+    explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
+        : uid_{population.get_uid().tag.begin(), population.get_uid().tag.end()},
+          neurons_{population.get_neurons_parameters()}
+    {
+    }
+
+    /**
+     * @brief UID.
+     */
+    thrust::device_vector<std::uint8_t> uid_{16};
+    /**
+     * @brief Neurons.
+     */
+    thrust::device_vector<NeuronParameters> neurons_;
+};
+
+
+/**
+ * @brief The CUDAProjection class is a definition of a CUDA synapses.
+ */
+template <typename SynapseType>
+struct CUDAProjection
+{
+    /**
+     * @brief Type of the projection synapses.
+     */
+    using ProjectionSynapseType = SynapseType;
+    /**
+     * @brief Projection of synapses with the specified synapse type.
+     */
+    using ProjectionType = CUDAProjection<SynapseType>;
+    /**
+     * @brief Parameters of the specified synapse type.
+     */
+    using SynapseParameters = typename synapse_traits::synapse_parameters<SynapseType>;
+
+    /**
+     * @brief Synapse description structure that contains synapse parameters and indexes of the associated neurons.
+     */
+    using Synapse = std::tuple<SynapseParameters, uint32_t, uint32_t>;
+
+    /**
+     * @brief Constructor.
+     * @param projection source projection.
+     */
+    explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
+        : uid_(projection.get_uid().tag.begin(), projection.get_uid().tag.end()),
+          presynaptic_uid_(projection.get_presynaptic().tag.begin(), projection.get_presynaptic().tag.end()),
+          postsynaptic_uid_(projection.get_postsynaptic().tag.begin(), projection.get_postsynaptic().tag.end()),
+          is_locked_(thrust::device_malloc<bool>(1))
+    {
+        *is_locked_ = projection.is_locked();
+    }
+    /**
+     * @brief Destructor.
+     */
+    ~CUDAProjection() { thrust::device_free(is_locked_); }
+
+    /**
+     * @brief UID.
+     */
+    thrust::device_vector<std::uint8_t> uid_{16};
+
+    /**
+     * @brief UID of the population that sends spikes to the projection (presynaptic population)
+     */
+    thrust::device_vector<std::uint8_t> presynaptic_uid_{16};
+
+    /**
+     * @brief UID of the population that receives synapse responses from this projection (postsynaptic population).
+     */
+    thrust::device_vector<std::uint8_t> postsynaptic_uid_{16};
+
+    /**
+     * @brief Return `false` if the weight change for synapses is not locked.
+     */
+    thrust::device_ptr<bool> is_locked_;
+
+    /**
+     * @brief Container of synapse parameters.
+     */
+    thrust::device_vector<SynapseParameters> synapses_;
+
+    /**
+     * @brief Messages container.
+     */
+    // cppcheck-suppress unusedStructMember
+    std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
+};
+
 
 /**
  * @brief The CUDABackend class is a definition of an interface to the CUDA GPU backend.
  */
-class KNP_DECLSPEC CUDABackend : public knp::core::Backend
+class CUDABackendImpl
 {
 public:
     /**
@@ -100,15 +216,22 @@ public:
      */
     using ProjectionVariants = boost::mp11::mp_rename<SupportedProjections, std::variant>;
 
+private:
+    using SupportedCUDAPopulations = boost::mp11::mp_transform<CUDAPopulation, SupportedNeurons>;
+    using CUDAPopulationVariants = boost::mp11::mp_rename<SupportedCUDAPopulations, std::variant>;
+
+    using SupportedCUDAProjections = boost::mp11::mp_transform<CUDAProjection, SupportedSynapses>;
+    using CUDAProjectionVariants = boost::mp11::mp_rename<SupportedCUDAProjections, std::variant>;
+
 public:
     /**
      * @brief Type of population container.
      */
-    using PopulationContainer = std::vector<PopulationVariants>;
+    using PopulationContainer = thrust::host_vector<PopulationVariants>;
     /**
      * @brief Type of projection container.
      */
-    using ProjectionContainer = std::vector<ProjectionVariants>;
+    using ProjectionContainer = thrust::host_vector<ProjectionVariants>;
 
     /**
      * @brief Types of non-constant population iterators.
@@ -131,47 +254,9 @@ public:
 
 public:
     /**
-     * @brief Default constructor for CUDA backend.
-     */
-    CUDABackend();
-    /**
      * @brief Destructor for CUDA backend.
      */
-    ~CUDABackend() override;
-
-public:
-    /**
-     * @brief Create an object of the single-threaded CUDA backend.
-     * @return shared pointer to backend object.
-     */
-    static std::shared_ptr<CUDABackend> create();
-
-public:
-    /**
-     * @brief Define if plasticity is supported.
-     * @return `true` if plasticity is supported, `false` if plasticity is not supported.
-     */
-    [[nodiscard]] bool plasticity_supported() const override { return false; }
-    /**
-     * @brief Get type names of supported neurons.
-     * @return vector of supported neuron type names.
-     */
-    [[nodiscard]] std::vector<std::string> get_supported_neurons() const override;
-    /**
-     * @brief Get type names of supported synapses.
-     * @return vector of supported synapse type names.
-     */
-    [[nodiscard]] std::vector<std::string> get_supported_synapses() const override;
-    /**
-     * @brief Get indexes of supported projections.
-     * @return type indexes.
-     */
-    [[nodiscard]] std::vector<size_t> get_supported_projection_indexes() const override;
-    /**
-     * @brief Get indexes of supported populations.
-     * @return type indexes.
-     */
-    [[nodiscard]] std::vector<size_t> get_supported_population_indexes() const override;
+    ~CUDABackendImpl() = default;
 
 public:
     /**
@@ -191,14 +276,14 @@ public:
      * @throw exception if the `projections` parameter contains unsupported projection types.
      * @param projections projections to add.
      */
-    void load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections) override;
+    void load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections);
 
     /**
      * @brief Add populations to backend.
      * @throw exception if the `populations` parameter contains unsupported population types.
      * @param populations populations to add.
      */
-    void load_all_populations(const std::vector<knp::core::AllPopulationsVariant> &populations) override;
+    void load_all_populations(const std::vector<knp::core::AllPopulationsVariant> &populations);
 
 public:
     /**
@@ -252,13 +337,13 @@ public:
      * @brief Remove projections with given UIDs from the backend.
      * @param uids UIDs of projections to remove.
      */
-    void remove_projections(const std::vector<knp::core::UID> &uids) override {}
+    void remove_projections(const std::vector<knp::core::UID> &uids) {}
 
     /**
      * @brief Remove populations with given UIDs from the backend.
      * @param uids UIDs of populations to remove.
      */
-    void remove_populations(const std::vector<knp::core::UID> &uids) override {}
+    void remove_populations(const std::vector<knp::core::UID> &uids) {}
 
 public:
     /**
@@ -266,29 +351,35 @@ public:
      * @return list of devices.
      * @see Device.
      */
-    [[nodiscard]] std::vector<std::unique_ptr<knp::core::Device>> get_devices() const override;
+    [[nodiscard]] std::vector<std::unique_ptr<knp::core::Device>> get_devices() const;
 
 public:
     /**
      * @copydoc knp::core::Backend::_step()
      */
-    void _step() override;
+    void _step();
 
     /**
      * @brief Stop training by locking all projections.
      */
-    void stop_learning() override;
+    void stop_learning()
+    {
+        for (auto &proj : projections_) std::visit([](auto &entity) { entity.lock_weights(); }, proj);
+    }
 
     /**
      * @brief Resume training by unlocking all projections.
      */
-    void start_learning() override;
+    void start_learning()
+    {
+        /**
+         * @todo Probably only need to use `start_learning` for some of projections: the ones that were locked with
+         * `lock()`.
+         */
+        for (auto &proj : projections_) std::visit([](auto &entity) { entity.unlock_weights(); }, proj);
+    }
 
-    /**
-     * @brief Get a set of iterators for projections and populations.
-     * @return `DataRanges` structure containing iterators.
-     */
-    [[nodiscard]] DataRanges get_network_data() const override { return {}; }
+    // [[nodiscard]] DataRanges get_network_data() const { return {}; }
 
 protected:
     /**
@@ -299,7 +390,7 @@ protected:
     /**
      * @copydoc knp::core::Backend::_init()
      */
-    void _init() override;
+    void _init();
 
     /**
      * @brief Calculate population of BLIFAT neurons.
@@ -307,7 +398,7 @@ protected:
      * @param population population to calculate.
      * @return copy of a spike message if population is emitting one.
      */
-    std::optional<core::messaging::SpikeMessage> calculate_population(
+    __device__ std::optional<core::messaging::SpikeMessage> calculate_population(
         knp::core::Population<knp::neuron_traits::BLIFATNeuron> &population);
 
     /**
@@ -316,16 +407,20 @@ protected:
      * @param projection projection to calculate.
      * @param message_queue message queue to send to projection for calculation.
      */
-    void calculate_projection(
+    __device__ void calculate_projection(
         knp::core::Projection<knp::synapse_traits::DeltaSynapse> &projection, SynapticMessageQueue &message_queue);
 
 private:
     // cppcheck-suppress unusedStructMember
     PopulationContainer populations_;
-    // cppcheck-suppress unusedStructMember
     ProjectionContainer projections_;
 
-    std::unique_ptr<cuda::CUDABackendImpl> impl_;
+    // cppcheck-suppress unusedStructMember
+    std::vector<CUDAPopulationVariants> device_populations_;
+    // cppcheck-suppress unusedStructMember
+    std::vector<CUDAProjectionVariants> device_projections_;
+
+    knp::backends::gpu::cuda::CUDAMessageBus message_bus_;
 };
 
-}  // namespace knp::backends::gpu
+}  // namespace knp::backends::gpu::cuda
