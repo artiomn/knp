@@ -161,6 +161,18 @@ void CUDABackend::_step()
 }
 
 
+void CUDABackend::stop_learning()
+{
+    SPDLOG_DEBUG("Stopping learning");
+}
+
+
+void CUDABackend::start_learning()
+{
+    SPDLOG_DEBUG("Starting learning");
+}
+
+
 void CUDABackend::load_populations(const std::vector<PopulationVariants> &populations)
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
