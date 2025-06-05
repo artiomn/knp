@@ -366,6 +366,17 @@ template <class DeltaLikeSynapse>
 struct WeightUpdateSTDP<synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>>
 {
     using Synapse = synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>;
+    static void init_projection_part(
+        const knp::core::Projection<Synapse> &projection, const std::vector<core::messaging::SpikeMessage> &messages,
+        uint64_t part_begin, uint64_t part_end, uint64_t step)
+    {
+    }
+
+    static void modify_weights_part(
+        const knp::core::Projection<Synapse> &projection, uint64_t part_begin, uint64_t part_end)
+    {
+    }
+
     static void init_projection(
         const knp::core::Projection<Synapse> &projection, const std::vector<core::messaging::SpikeMessage> &messages,
         uint64_t step)
@@ -402,4 +413,6 @@ void do_STDP_resource_plasticity(
     // 3. Renormalize resources if needed.
     knp::backends::cpu::renormalize_resource(working_projections, population, step);
 }
+
+
 }  // namespace knp::backends::cpu

@@ -24,6 +24,7 @@
 #include <knp/core/message_bus.h>
 #include <knp/core/projection.h>
 #include <knp/synapse-traits/delta.h>
+#include <knp/synapse-traits/stdp_synaptic_resource_rule.h>
 
 #include <spdlog/spdlog.h>
 
@@ -132,15 +133,16 @@ template <class DeltaLikeSynapse>
 void calculate_projection_part_impl(
     knp::core::Projection<DeltaLikeSynapse> &projection,
     const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
-    size_t part_start, size_t part_size, std::mutex &mutex)
+    uint64_t part_start, uint64_t part_size, std::mutex &mutex)
 {
     size_t part_end = std::min(part_start + part_size, projection.size());
     std::vector<std::pair<uint64_t, knp::core::messaging::SynapticImpact>> container;
+    // TODO: ADD THIS HERE!
+    // WeightUpdateSTDP<DeltaLikeSynapse>::init_projection_part(projection, messages, step_n);
     for (size_t synapse_index = part_start; synapse_index < part_end; ++synapse_index)
     {
         auto &synapse = projection[synapse_index];
         // update_step(synapse.params_, step_n);
-        // TODO: Move update logic here too.
         auto iter = message_in_data.find(std::get<core::source_neuron_id>(synapse));
         if (iter == message_in_data.end())
         {

@@ -22,6 +22,7 @@
 #include <knp/core/messaging/messaging.h>
 #include <knp/core/projection.h>
 
+#include <unordered_map>
 #include <vector>
 
 /**
@@ -29,19 +30,39 @@
  */
 namespace knp::backends::cpu
 {
-
 template <class DeltaLikeSynapse>
 struct WeightUpdateSTDP
 {
+    static void init_projection_part(
+        const knp::core::Projection<DeltaLikeSynapse> &projection,
+        const std::vector<core::messaging::SpikeMessage> &messages, uint64_t part_begin, uint64_t part_end,
+        uint64_t step)
+    {
+    }
+
+
+    static void init_projection_part(
+        const knp::core::Projection<DeltaLikeSynapse> &projection,
+        const std::unordered_map<uint64_t, size_t> &message_data, uint64_t part_begin, uint64_t part_end, uint64_t step)
+    {
+    }
+
+
+    static void init_synapse(knp::synapse_traits::synapse_parameters<DeltaLikeSynapse> &params, uint64_t step) {}
+
+
+    static void modify_weights_part(
+        const knp::core::Projection<DeltaLikeSynapse> &projection, uint64_t part_begin, uint64_t part_end)
+    {
+    }
+
+
     static void init_projection(
         const knp::core::Projection<DeltaLikeSynapse> &projection,
         const std::vector<core::messaging::SpikeMessage> &messages, uint64_t step)
     {
     }
 
-    static void init_synapse(const knp::synapse_traits::synapse_parameters<DeltaLikeSynapse> &projection, uint64_t step)
-    {
-    }
 
     static void modify_weights(const knp::core::Projection<DeltaLikeSynapse> &projection) {}
 };
