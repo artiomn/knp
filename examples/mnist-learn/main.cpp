@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 
     // Defines path to backend, on which to run a network.
     std::filesystem::path path_to_backend =
-        std::filesystem::path(argv[0]).parent_path() / "knp-cpu-single-threaded-backend";
+        std::filesystem::path(argv[0]).parent_path() / "knp-cpu-multi-threaded-backend";
 
     // Read data from corresponding files.
     auto spike_frames = read_spike_frames(argv[1]);

@@ -117,6 +117,49 @@ TEST(MultiThreadCpuSuite, SmallestNetwork)
 }
 
 
+TEST(MultiThreadCpuSuite, SmallestResourceNetwork)
+{
+    // Create a single-neuron neural network: input -> input_projection -> population <=> loop_projection.
+
+    namespace kt = knp::testing;
+    kt::MTestingBack backend;
+
+    kt::ResourceBlifatPopulation population{kt::neuron_res_generator, 1};
+    auto loop_projection =
+        kt::ResourceDeltaProjection{population.get_uid(), population.get_uid(), kt::loop_res_projection_gen, 1};
+    auto input_projection =
+        kt::ResourceDeltaProjection{knp::core::UID{false}, population.get_uid(), kt::input_res_projection_gen, 1};
+    knp::core::UID input_uid = input_projection.get_uid();
+    backend.load_populations({population});
+    backend.load_projections({input_projection, loop_projection});
+
+    auto endpoint = backend.get_message_bus().create_endpoint();
+
+    knp::core::UID in_channel_uid;
+    knp::core::UID out_channel_uid;
+
+    // Create input and output.
+    backend.subscribe<knp::core::messaging::SpikeMessage>(input_uid, {in_channel_uid});
+    endpoint.subscribe<knp::core::messaging::SpikeMessage>(out_channel_uid, {population.get_uid()});
+
+    std::vector<knp::core::Step> results;
+
+    backend._init();
+
+    for (knp::core::Step step = 0; step < 20; ++step)
+    {
+        // Send inputs on steps 0, 5, 10, 15.
+        send_messages_smallest_network(in_channel_uid, endpoint, step);
+        backend._step();
+        if (receive_messages_smallest_network(out_channel_uid, endpoint)) results.push_back(step);
+    }
+
+    // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).
+    const std::vector<knp::core::Step> expected_results = {1, 6, 7, 11, 12, 13, 16, 17, 18, 19};
+    ASSERT_EQ(results, expected_results);
+}
+
+
 TEST(MultiThreadCpuSuite, NeuronsGettingTest)
 {
     const knp::testing::MTestingBack backend;

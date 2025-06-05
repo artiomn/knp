@@ -33,6 +33,7 @@
 
 #include <functional>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/mp11.hpp>
@@ -159,6 +160,15 @@ std::vector<knp::core::messaging::SpikeMessage> MultiThreadedCPUBackend::calcula
         }
     }
     calc_pool_->join();
+    // TODO: MPSTDP: Add Stdp here.
+    //    for (auto &population : populations_)
+    // {
+    //     auto working_projections = find_projection_by_type_and_postsynaptic
+    // }
+    // auto working_projections = find_projection_by_type_and_postsynaptic<StdpSynapseType, ProjectionContainer>(
+    //         container, population.get_uid(), true);
+    // do_STDP_resource_plasticity(population, working_projections, message_opt, step_n);
+
     return spike_container;
 }
 
