@@ -21,6 +21,8 @@
 
 #include <knp/backends/cpu-library/blifat_population.h>
 #include <knp/backends/cpu-library/delta_synapse_projection.h>
+#include <knp/backends/cpu-library/impl/altai_lif_population_impl.h>
+#include <knp/backends/cpu-library/impl/synaptic_resource_stdp_impl.h>
 #include <knp/backends/cpu-library/init.h>
 #include <knp/backends/cpu-multi-threaded/backend.h>
 #include <knp/backends/thread_pool/thread_pool.h>
@@ -154,21 +156,30 @@ std::vector<knp::core::messaging::SpikeMessage> MultiThreadedCPUBackend::calcula
                         std::ref(pop), std::ref(message), neuron_index, population_part_size_, std::ref(ep_mutex_));
                 },
                 population);
-#if defined(_MSC_VER)
-#    pragma warning(pop)
-#endif
         }
     }
     calc_pool_->join();
-    // TODO: MPSTDP: Add Stdp here.
-    //    for (auto &population : populations_)
-    // {
-    //     auto working_projections = find_projection_by_type_and_postsynaptic
-    // }
-    // auto working_projections = find_projection_by_type_and_postsynaptic<StdpSynapseType, ProjectionContainer>(
-    //         container, population.get_uid(), true);
-    // do_STDP_resource_plasticity(population, working_projections, message_opt, step_n);
-
+    for (size_t pop_id = 0; pop_id < populations_.size(); ++pop_id)
+    {
+        auto &message = spike_container[pop_id];
+        std::visit(
+            [this, &message, pop_id](auto &pop)
+            {
+                using T = std::decay_t<decltype(pop)>;
+                auto call_finalize = [](T &pop_ref, knp::core::messaging::SpikeMessage &message_ref,
+                                        ProjectionContainer &proj_ref, knp::core::Step step)
+                {
+                    knp::backends::cpu::finalize_population<typename T::PopulationNeuronType, ProjectionContainer>(
+                        pop_ref, message_ref, proj_ref, step);
+                };
+                calc_pool_->post(call_finalize, std::ref(pop), std::ref(message), std::ref(projections_), get_step());
+            },
+            populations_[pop_id]);
+#if defined(_MSC_VER)
+#    pragma warning(pop)
+#endif
+    }
+    calc_pool_->join();
     return spike_container;
 }
 

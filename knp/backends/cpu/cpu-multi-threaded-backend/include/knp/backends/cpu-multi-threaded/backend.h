@@ -351,6 +351,8 @@ private:
     void calculate_populations_pre_impact();
     // Processing messages, one thread per population, probably very hard to go deeper unless atomic neuron params.
     void calculate_populations_impact();
+    // Do STDP logic for populations that support it. One thread per population.
+    void do_STDP();
     // Calculating post input changes and outputs.
     std::vector<knp::core::messaging::SpikeMessage> calculate_populations_post_impact();
     PopulationContainer populations_;
