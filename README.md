@@ -309,3 +309,4 @@ This is an open source project. If you are interested in making a code contribut
 
 Copyright © 2024 AO Kaspersky Lab
 Licensed under the Apache 2.0 License. See the `LICENSE.txt` file in the root directory for details.
+.
