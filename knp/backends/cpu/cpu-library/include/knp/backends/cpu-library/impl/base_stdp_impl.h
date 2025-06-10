@@ -40,14 +40,6 @@ struct WeightUpdateSTDP
     {
     }
 
-
-    static void init_projection_part(
-        const knp::core::Projection<DeltaLikeSynapse> &projection,
-        const std::unordered_map<uint64_t, size_t> &message_data, uint64_t part_begin, uint64_t part_end, uint64_t step)
-    {
-    }
-
-
     static void init_synapse(knp::synapse_traits::synapse_parameters<DeltaLikeSynapse> &params, uint64_t step) {}
 
 

@@ -32,7 +32,9 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
+#include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <boost/mp11.hpp>
@@ -59,7 +61,7 @@ std::vector<knp::core::Projection<SynapseType> *> find_projection_by_type_and_po
 {
     using ProjectionType = knp::core::Projection<SynapseType>;
     std::vector<knp::core::Projection<SynapseType> *> result;
-    constexpr auto type_index = boost::mp11::mp_find<synapse_traits::AllSynapses, SynapseType>();
+    constexpr uint64_t type_index = boost::mp11::mp_find<synapse_traits::AllSynapses, SynapseType>();
     for (auto &projection : projections)
     {
         if (projection.arg_.index() != type_index)
@@ -366,17 +368,6 @@ template <class DeltaLikeSynapse>
 struct WeightUpdateSTDP<synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>>
 {
     using Synapse = synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>;
-    static void init_projection_part(
-        const knp::core::Projection<Synapse> &projection, const std::vector<core::messaging::SpikeMessage> &messages,
-        uint64_t part_begin, uint64_t part_end, uint64_t step)
-    {
-    }
-
-    static void modify_weights_part(
-        const knp::core::Projection<Synapse> &projection, uint64_t part_begin, uint64_t part_end)
-    {
-    }
-
     static void init_projection(
         const knp::core::Projection<Synapse> &projection, const std::vector<core::messaging::SpikeMessage> &messages,
         uint64_t step)
@@ -391,6 +382,40 @@ struct WeightUpdateSTDP<synapse_traits::STDP<synapse_traits::STDPSynapticResourc
     static void modify_weights(const knp::core::Projection<Synapse> &projection) {}
 };
 
+
+template <class DeltaLikeSynapse>
+struct WeightUpdateStdpMp
+{
+    using Synapse = DeltaLikeSynapse;
+    static void init_projection_part(
+        const knp::core::Projection<Synapse> &projection,
+        const std::unordered_map<knp::core::Step, size_t> &message_data, uint64_t step)
+    {
+    }
+
+    static void init_synapse(knp::synapse_traits::synapse_parameters<Synapse> &params, uint64_t step) {}
+
+    static void modify_weights_part(const knp::core::Projection<Synapse> &projection) {}
+};
+
+
+template <class DeltaLikeSynapse>
+struct WeightUpdateStdpMp<synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>>
+{
+    using Synapse = synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>;
+    static void init_projection_part(
+        const knp::core::Projection<Synapse> &projection,
+        const std::unordered_map<knp::core::Step, size_t> &message_data, uint64_t step)
+    {
+    }
+
+    static void init_synapse(knp::synapse_traits::synapse_parameters<Synapse> &params, uint64_t step)
+    {
+        params.rule_.last_spike_step_ = step;
+    }
+
+    static void modify_weights_part(const knp::core::Projection<Synapse> &projection) {}
+};
 
 template <class NeuronType, class SynapseType>
 void do_STDP_resource_plasticity(

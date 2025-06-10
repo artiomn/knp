@@ -22,6 +22,8 @@
 #include <knp/backends/cpu-library/blifat_population.h>
 #include <knp/backends/cpu-library/delta_synapse_projection.h>
 #include <knp/backends/cpu-library/impl/altai_lif_population_impl.h>
+#include <knp/backends/cpu-library/impl/blifat_population_impl.h>
+#include <knp/backends/cpu-library/impl/blifat_rstdp_population_impl.h>
 #include <knp/backends/cpu-library/impl/synaptic_resource_stdp_impl.h>
 #include <knp/backends/cpu-library/init.h>
 #include <knp/backends/cpu-multi-threaded/backend.h>
@@ -40,9 +42,53 @@
 
 #include <boost/mp11.hpp>
 
+namespace knp::backends::cpu
+{
+template <>
+void finalize_population<
+    knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron,
+    multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer>(
+    knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
+    const knp::core::messaging::SpikeMessage &message,
+    multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer &projections, knp::core::Step step)
+{
+    // using NeuronType = knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron;
+    using SynapseType = knp::synapse_traits::SynapticResourceSTDPDeltaSynapse;
+    // auto working_projections = cpu::find_projection_by_type_and_postsynaptic<
+    //         SynapseType, ProjContainer>(
+    //         projections, population.get_uid(), true);
+
+    std::vector<knp::core::Projection<SynapseType> *> working_projections;
+    constexpr uint64_t type_index =
+        boost::mp11::mp_find<backends::multi_threaded_cpu::MultiThreadedCPUBackend::SupportedSynapses, SynapseType>();
+    for (auto &projection : projections)
+    {
+        if (projection.arg_.index() != type_index)
+        {
+            continue;
+        }
+
+        auto *projection_ptr = &(std::get<type_index>(projection.arg_));
+        if (projection_ptr->is_locked())
+        {
+            continue;
+        }
+
+        if (projection_ptr->get_postsynaptic() == population.get_uid())
+        {
+            working_projections.push_back(projection_ptr);
+        }
+    }
+
+    do_STDP_resource_plasticity<knp::neuron_traits::BLIFATNeuron, knp::synapse_traits::DeltaSynapse>(
+        population, working_projections, message, step);
+}
+}  //namespace knp::backends::cpu
 
 namespace knp::backends::multi_threaded_cpu
 {
+
+
 MultiThreadedCPUBackend::MultiThreadedCPUBackend(
     size_t thread_count, size_t population_part_size, size_t projection_part_size)
     : population_part_size_(population_part_size),
@@ -163,7 +209,7 @@ std::vector<knp::core::messaging::SpikeMessage> MultiThreadedCPUBackend::calcula
     {
         auto &message = spike_container[pop_id];
         std::visit(
-            [this, &message, pop_id](auto &pop)
+            [this, &message](auto &pop)
             {
                 using T = std::decay_t<decltype(pop)>;
                 auto call_finalize = [](T &pop_ref, knp::core::messaging::SpikeMessage &message_ref,
