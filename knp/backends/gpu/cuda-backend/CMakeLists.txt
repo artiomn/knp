@@ -52,6 +52,7 @@ source_group(source REGULAR_EXPRESSION "impl/.*")
 knp_add_library("${PROJECT_NAME}"
     STATIC
         impl/backend.cu
+        impl/backend_impl.cu
         impl/gpu_cuda_device.cu
         impl/cuda_bus/message_bus.cuh
         impl/cuda_bus/message_bus.cu
@@ -71,6 +72,8 @@ set_target_properties(
         SOVERSION "${CMAKE_PROJECT_VERSION_MAJOR}"
         CUDA_SEPARABLE_COMPILATION ON
         CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
+target_compile_options("${PROJECT_NAME}" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --expt-relaxed-constexpr>)
 
 if (KNP_INSTALL)
     knp_get_component_name("${PROJECT_NAME}" COMPONENT_NAME)

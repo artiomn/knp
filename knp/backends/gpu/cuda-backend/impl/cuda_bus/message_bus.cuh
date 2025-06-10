@@ -101,7 +101,10 @@ public:
      * @return vector of messages.
      */
     template <class MessageType>
-    _CCCL_DEVICE thrust::device_vector<MessageType> unload_messages(const UID &receiver_uid);
+    _CCCL_DEVICE void unload_messages(const cuda::UID &receiver_uid,
+                                      thrust::device_vector<MessageType> &result_messages)
+    {
+    }
 
 public:
     /**

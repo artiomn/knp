@@ -97,13 +97,6 @@ _CCCL_DEVICE void CUDAMessageBus::send_message(const cuda::MessageVariant &messa
 }
 
 
-template <class MessageType>
-_CCCL_DEVICE thrust::device_vector<MessageType> CUDAMessageBus::unload_messages(const UID &receiver_uid)
-{
-}
-
-
-
 _CCCL_DEVICE size_t CUDAMessageBus::step()
 {
 /*    const std::lock_guard lock(mutex_);

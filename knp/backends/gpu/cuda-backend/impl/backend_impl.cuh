@@ -21,8 +21,7 @@
 
 #pragma once
 
-#include <knp/core/backend.h>
-#include <knp/core/impexp.h>
+#include <knp/core/messaging/messaging.h>
 #include <knp/core/population.h>
 #include <knp/core/projection.h>
 #include <knp/devices/gpu_cuda.h>
@@ -33,6 +32,7 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <thrust/tuple.h>
 
 #include <memory>
 #include <string>
@@ -45,6 +45,7 @@
 #include <boost/config.hpp>
 #include <boost/dll/alias.hpp>
 #include <boost/mp11.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include "cuda_bus/message_bus.cuh"
 
@@ -53,6 +54,19 @@
  */
 namespace knp::backends::gpu::cuda
 {
+
+inline cuda::UID uid_to_cuda(const knp::core::UID &source)
+{
+    cuda::UID result;
+
+    for (size_t i = 0; i < source.tag.size(); ++i)
+    {
+        result[i] = *(source.tag.begin() + i);
+    }
+
+    return result;
+}
+
 
 /**
  * @brief The CUDAPopulation class is a definition of a CUDA neurons population.
@@ -78,7 +92,7 @@ struct CUDAPopulation
      * @param population source population.
      */
     explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
-        : uid_{population.get_uid().tag.begin(), population.get_uid().tag.end()},
+        : uid_{uid_to_cuda(population.get_uid())},
           neurons_{population.get_neurons_parameters()}
     {
     }
@@ -86,7 +100,7 @@ struct CUDAPopulation
     /**
      * @brief UID.
      */
-    thrust::device_vector<std::uint8_t> uid_{16};
+    cuda::UID uid_;
     /**
      * @brief Neurons.
      */
@@ -116,16 +130,16 @@ struct CUDAProjection
     /**
      * @brief Synapse description structure that contains synapse parameters and indexes of the associated neurons.
      */
-    using Synapse = std::tuple<SynapseParameters, uint32_t, uint32_t>;
+    using Synapse = thrust::tuple<SynapseParameters, uint32_t, uint32_t>;
 
     /**
      * @brief Constructor.
      * @param projection source projection.
      */
     explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
-        : uid_(projection.get_uid().tag.begin(), projection.get_uid().tag.end()),
-          presynaptic_uid_(projection.get_presynaptic().tag.begin(), projection.get_presynaptic().tag.end()),
-          postsynaptic_uid_(projection.get_postsynaptic().tag.begin(), projection.get_postsynaptic().tag.end()),
+        : uid_(uid_to_cuda(projection.get_uid())),
+          presynaptic_uid_(uid_to_cuda(projection.get_presynaptic())),
+          postsynaptic_uid_(uid_to_cuda(projection.get_postsynaptic())),
           is_locked_(thrust::device_malloc<bool>(1))
     {
         *is_locked_ = projection.is_locked();
@@ -138,17 +152,17 @@ struct CUDAProjection
     /**
      * @brief UID.
      */
-    thrust::device_vector<std::uint8_t> uid_{16};
+    cuda::UID uid_;
 
     /**
      * @brief UID of the population that sends spikes to the projection (presynaptic population)
      */
-    thrust::device_vector<std::uint8_t> presynaptic_uid_{16};
+    cuda::UID presynaptic_uid_;
 
     /**
      * @brief UID of the population that receives synapse responses from this projection (postsynaptic population).
      */
-    thrust::device_vector<std::uint8_t> postsynaptic_uid_{16};
+    cuda::UID postsynaptic_uid_;
 
     /**
      * @brief Return `false` if the weight change for synapses is not locked.
@@ -158,7 +172,7 @@ struct CUDAProjection
     /**
      * @brief Container of synapse parameters.
      */
-    thrust::device_vector<SynapseParameters> synapses_;
+    thrust::device_vector<Synapse> synapses_;
 
     /**
      * @brief Messages container.
@@ -347,17 +361,9 @@ public:
 
 public:
     /**
-     * @brief Get a list of devices supported by the backend.
-     * @return list of devices.
-     * @see Device.
-     */
-    [[nodiscard]] std::vector<std::unique_ptr<knp::core::Device>> get_devices() const;
-
-public:
-    /**
      * @copydoc knp::core::Backend::_step()
      */
-    void _step();
+    __device__ void _step();
 
     /**
      * @brief Stop training by locking all projections.
@@ -398,8 +404,10 @@ protected:
      * @param population population to calculate.
      * @return copy of a spike message if population is emitting one.
      */
-    __device__ std::optional<core::messaging::SpikeMessage> calculate_population(
-        knp::core::Population<knp::neuron_traits::BLIFATNeuron> &population);
+    __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
+        CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
+        thrust::device_vector<cuda::SynapticImpactMessage> &messages,
+        std::uint64_t step_n);
 
     /**
      * @brief Calculate projection of delta synapses.
@@ -408,7 +416,10 @@ protected:
      * @param message_queue message queue to send to projection for calculation.
      */
     __device__ void calculate_projection(
-        knp::core::Projection<knp::synapse_traits::DeltaSynapse> &projection, SynapticMessageQueue &message_queue);
+        CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
+        thrust::device_vector<cuda::SpikeMessage> messages,
+        SynapticMessageQueue &message_queue,
+        std::uint64_t step_n);
 
 private:
     // cppcheck-suppress unusedStructMember
@@ -421,6 +432,8 @@ private:
     std::vector<CUDAProjectionVariants> device_projections_;
 
     knp::backends::gpu::cuda::CUDAMessageBus message_bus_;
+
+    cuda::SpikeData neuron_indexes;
 };
 
 }  // namespace knp::backends::gpu::cuda
