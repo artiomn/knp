@@ -137,8 +137,7 @@ void calculate_projection_part_impl(
 {
     size_t part_end = std::min(part_start + part_size, projection.size());
     std::vector<std::pair<uint64_t, knp::core::messaging::SynapticImpact>> container;
-    // TODO: ADD THIS HERE!
-    // WeightUpdateSTDP<DeltaLikeSynapse>::init_projection_part(projection, messages, step_n);
+    WeightUpdateStdpMp<DeltaLikeSynapse>::init_projection_part(projection, message_in_data, step_n);
     for (size_t synapse_index = part_start; synapse_index < part_end; ++synapse_index)
     {
         auto &synapse = projection[synapse_index];
@@ -152,6 +151,7 @@ void calculate_projection_part_impl(
         // Add new impact.
         // The message is sent on step N - 1, received on step N.
         uint64_t key = std::get<core::synapse_data>(synapse).delay_ + step_n - 1;
+        WeightUpdateStdpMp<DeltaLikeSynapse>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
 
         knp::core::messaging::SynapticImpact impact{
             synapse_index, std::get<core::synapse_data>(synapse).weight_ * iter->second,
@@ -185,6 +185,7 @@ void calculate_projection_part_impl(
             future_messages.insert(std::make_pair(value.first, message_out));
         }
     }
+    WeightUpdateStdpMp<DeltaLikeSynapse>::modify_weights_part(projection);
 }
 
 

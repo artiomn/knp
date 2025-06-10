@@ -15,14 +15,19 @@ namespace knp::backends::cpu
 /**
  * Do synaptic resource plasticity.
  */
-template <class BlifatLikeNeuron, class ProjectionContainer>
-void finalize_population(
-    knp::core::Population<knp::neuron_traits::SynapticResourceSTDPNeuron<BlifatLikeNeuron>> &population,
-    const knp::core::messaging::SpikeMessage &message, ProjectionContainer &projections, knp::core::Step step)
-{
-    using NeuronType = knp::neuron_traits::SynapticResourceSTDPNeuron<BlifatLikeNeuron>;
-    auto working_projections = find_projection_by_type_and_postsynaptic<NeuronType, ProjectionContainer>(
-        projections, population.get_uid(), true);
-    do_STDP_resource_plasticity(population, working_projections, message, step);
-}
+//template <>
+//void finalize_population<knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron>,
+//    knp::backends::multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer>(
+//        knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
+//        const knp::core::messaging::SpikeMessage &message,
+//        knp::backends::multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer &projections,
+//        knp::core::Step step)
+//{
+//    using NeuronType = knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron;
+//    using ProjContainer = knp::backends::multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer;
+//    auto working_projections = find_projection_by_type_and_postsynaptic<
+//            NeuronType, ProjContainer>(
+//            projections, population.get_uid(), true);
+//    do_STDP_resource_plasticity(population, working_projections, message, step);
+// }
 }  // namespace knp::backends::cpu
