@@ -42,12 +42,10 @@ struct WeightUpdateSTDP
 
     static void init_synapse(knp::synapse_traits::synapse_parameters<DeltaLikeSynapse> &params, uint64_t step) {}
 
-
     static void modify_weights_part(
         const knp::core::Projection<DeltaLikeSynapse> &projection, uint64_t part_begin, uint64_t part_end)
     {
     }
-
 
     static void init_projection(
         const knp::core::Projection<DeltaLikeSynapse> &projection,

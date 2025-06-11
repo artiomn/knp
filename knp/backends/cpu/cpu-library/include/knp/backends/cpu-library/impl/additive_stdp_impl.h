@@ -170,6 +170,7 @@ void register_additive_stdp_spikes_part(
     std::vector<SpikeMessage> stdp_only_messages;
     stdp_only_messages.reserve(all_messages.size());
 
+    // TODO: Remove cycles.
     for (auto &msg : all_messages)
     {
         const auto &stdp_pop_iter = stdp_pops.find(msg.header_.sender_uid_);

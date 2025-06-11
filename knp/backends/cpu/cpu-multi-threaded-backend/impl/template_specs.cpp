@@ -1,5 +1,5 @@
 /**
- * @file template_specializations.cpp
+ * @file template_specs.cpp
  * @brief Multi-threaded CPU backend-specific template specializations.
  * @kaspersky_support Vartenkov A.
  * @date 11.06.2025
@@ -37,6 +37,7 @@ void finalize_population<
     std::vector<knp::core::Projection<SynapseType> *> working_projections;
     constexpr uint64_t type_index =
         boost::mp11::mp_find<backends::multi_threaded_cpu::MultiThreadedCPUBackend::SupportedSynapses, SynapseType>();
+
     for (auto &projection : projections)
     {
         if (projection.arg_.index() != type_index)
