@@ -32,7 +32,9 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
+#include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <boost/mp11.hpp>
@@ -381,6 +383,40 @@ struct WeightUpdateSTDP<synapse_traits::STDP<synapse_traits::STDPSynapticResourc
 };
 
 
+template <class DeltaLikeSynapse>
+struct WeightUpdateStdpMp
+{
+    using Synapse = DeltaLikeSynapse;
+    static void init_projection_part(
+        const knp::core::Projection<Synapse> &projection,
+        const std::unordered_map<knp::core::Step, size_t> &message_data, uint64_t step)
+    {
+    }
+
+    static void init_synapse(knp::synapse_traits::synapse_parameters<Synapse> &params, uint64_t step) {}
+
+    static void modify_weights_part(const knp::core::Projection<Synapse> &projection) {}
+};
+
+
+template <class DeltaLikeSynapse>
+struct WeightUpdateStdpMp<synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>>
+{
+    using Synapse = synapse_traits::STDP<synapse_traits::STDPSynapticResourceRule, DeltaLikeSynapse>;
+    static void init_projection_part(
+        const knp::core::Projection<Synapse> &projection,
+        const std::unordered_map<knp::core::Step, size_t> &message_data, uint64_t step)
+    {
+    }
+
+    static void init_synapse(knp::synapse_traits::synapse_parameters<Synapse> &params, uint64_t step)
+    {
+        params.rule_.last_spike_step_ = step;
+    }
+
+    static void modify_weights_part(const knp::core::Projection<Synapse> &projection) {}
+};
+
 template <class NeuronType, class SynapseType>
 void do_STDP_resource_plasticity(
     knp::core::Population<knp::neuron_traits::SynapticResourceSTDPNeuron<NeuronType>> &population,
@@ -402,4 +438,6 @@ void do_STDP_resource_plasticity(
     // 3. Renormalize resources if needed.
     knp::backends::cpu::renormalize_resource(working_projections, population, step);
 }
+
+
 }  // namespace knp::backends::cpu

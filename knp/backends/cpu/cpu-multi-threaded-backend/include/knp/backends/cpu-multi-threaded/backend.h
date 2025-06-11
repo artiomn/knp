@@ -78,12 +78,14 @@ public:
     /**
      * @brief List of neuron types supported by the multi-threaded CPU backend.
      */
-    using SupportedNeurons = boost::mp11::mp_list<knp::neuron_traits::BLIFATNeuron>;
+    using SupportedNeurons =
+        boost::mp11::mp_list<knp::neuron_traits::BLIFATNeuron, knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron>;
 
     /**
      * @brief List of synapse types supported by the multi-threaded CPU backend.
      */
-    using SupportedSynapses = boost::mp11::mp_list<knp::synapse_traits::DeltaSynapse>;
+    using SupportedSynapses =
+        boost::mp11::mp_list<knp::synapse_traits::DeltaSynapse, knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
     /**
      * @brief List of supported population types based on neuron types specified in `SupportedNeurons`.
@@ -119,7 +121,6 @@ private:
     struct ProjectionWrapper
     {
         ProjectionVariants arg_;
-        // cppcheck-suppress unusedStructMember
         std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
     };
 
@@ -350,14 +351,13 @@ private:
     void calculate_populations_pre_impact();
     // Processing messages, one thread per population, probably very hard to go deeper unless atomic neuron params.
     void calculate_populations_impact();
+    // Do STDP logic for populations that support it. One thread per population.
+    void do_STDP();
     // Calculating post input changes and outputs.
     std::vector<knp::core::messaging::SpikeMessage> calculate_populations_post_impact();
-    // cppcheck-suppress unusedStructMember
     PopulationContainer populations_;
     ProjectionContainer projections_;
-    // cppcheck-suppress unusedStructMember
     const size_t population_part_size_;
-    // cppcheck-suppress unusedStructMember
     const size_t projection_part_size_;
     std::unique_ptr<cpu_executors::ThreadPool> calc_pool_;
     std::mutex ep_mutex_;

@@ -315,6 +315,17 @@ void calculate_neurons_post_input_state_part(
 
 
 /**
+ * Anything that works after the population has been calculated goes here. Mostly for STDP and other learning.
+ */
+template <class BlifatLikeNeuron, class ProjectionContainer>
+void finalize_population(
+    knp::core::Population<BlifatLikeNeuron> &population, const knp::core::messaging::SpikeMessage &message,
+    ProjectionContainer &projections, knp::core::Step step)
+{
+}
+
+
+/**
  * @brief Process BLIFAT neuron population and return spiked neuron indexes.
  * @tparam BlifatLikeNeuron type of neuron which inference can be calculated the same as BLIFAT.
  * @param population population of BLIFAT-like neurons.

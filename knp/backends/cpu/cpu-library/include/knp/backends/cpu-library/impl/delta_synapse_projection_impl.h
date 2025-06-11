@@ -24,6 +24,7 @@
 #include <knp/core/message_bus.h>
 #include <knp/core/projection.h>
 #include <knp/synapse-traits/delta.h>
+#include <knp/synapse-traits/stdp_synaptic_resource_rule.h>
 
 #include <spdlog/spdlog.h>
 
@@ -132,15 +133,15 @@ template <class DeltaLikeSynapse>
 void calculate_projection_part_impl(
     knp::core::Projection<DeltaLikeSynapse> &projection,
     const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
-    size_t part_start, size_t part_size, std::mutex &mutex)
+    uint64_t part_start, uint64_t part_size, std::mutex &mutex)
 {
     size_t part_end = std::min(part_start + part_size, projection.size());
     std::vector<std::pair<uint64_t, knp::core::messaging::SynapticImpact>> container;
+    WeightUpdateStdpMp<DeltaLikeSynapse>::init_projection_part(projection, message_in_data, step_n);
     for (size_t synapse_index = part_start; synapse_index < part_end; ++synapse_index)
     {
         auto &synapse = projection[synapse_index];
         // update_step(synapse.params_, step_n);
-        // TODO: Move update logic here too.
         auto iter = message_in_data.find(std::get<core::source_neuron_id>(synapse));
         if (iter == message_in_data.end())
         {
@@ -150,6 +151,7 @@ void calculate_projection_part_impl(
         // Add new impact.
         // The message is sent on step N - 1, received on step N.
         uint64_t key = std::get<core::synapse_data>(synapse).delay_ + step_n - 1;
+        WeightUpdateStdpMp<DeltaLikeSynapse>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
 
         knp::core::messaging::SynapticImpact impact{
             synapse_index, std::get<core::synapse_data>(synapse).weight_ * iter->second,
@@ -183,6 +185,7 @@ void calculate_projection_part_impl(
             future_messages.insert(std::make_pair(value.first, message_out));
         }
     }
+    WeightUpdateStdpMp<DeltaLikeSynapse>::modify_weights_part(projection);
 }
 
 
