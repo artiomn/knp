@@ -41,49 +41,6 @@
 
 #include <boost/mp11.hpp>
 
-namespace knp::backends::cpu
-{
-template <>
-void finalize_population<
-    knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron,
-    multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer>(
-    knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
-    const knp::core::messaging::SpikeMessage &message,
-    multi_threaded_cpu::MultiThreadedCPUBackend::ProjectionContainer &projections, knp::core::Step step)
-{
-    // using NeuronType = knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron;
-    using SynapseType = knp::synapse_traits::SynapticResourceSTDPDeltaSynapse;
-    // auto working_projections = cpu::find_projection_by_type_and_postsynaptic<
-    //         SynapseType, ProjContainer>(
-    //         projections, population.get_uid(), true);
-
-    std::vector<knp::core::Projection<SynapseType> *> working_projections;
-    constexpr uint64_t type_index =
-        boost::mp11::mp_find<backends::multi_threaded_cpu::MultiThreadedCPUBackend::SupportedSynapses, SynapseType>();
-    for (auto &projection : projections)
-    {
-        if (projection.arg_.index() != type_index)
-        {
-            continue;
-        }
-
-        auto *projection_ptr = &(std::get<type_index>(projection.arg_));
-        if (projection_ptr->is_locked())
-        {
-            continue;
-        }
-
-        if (projection_ptr->get_postsynaptic() == population.get_uid())
-        {
-            working_projections.push_back(projection_ptr);
-        }
-    }
-
-    do_STDP_resource_plasticity<knp::neuron_traits::BLIFATNeuron, knp::synapse_traits::DeltaSynapse>(
-        population, working_projections, message, step);
-}
-}  //namespace knp::backends::cpu
-
 namespace knp::backends::multi_threaded_cpu
 {
 
@@ -460,5 +417,4 @@ MultiThreadedCPUBackend::ProjectionConstIterator MultiThreadedCPUBackend::end_pr
 
 
 BOOST_DLL_ALIAS(knp::backends::multi_threaded_cpu::MultiThreadedCPUBackend::create, create_knp_backend)
-
 }  // namespace knp::backends::multi_threaded_cpu
