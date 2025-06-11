@@ -23,7 +23,6 @@
 #include <knp/backends/cpu-library/delta_synapse_projection.h>
 #include <knp/backends/cpu-library/impl/altai_lif_population_impl.h>
 #include <knp/backends/cpu-library/impl/blifat_population_impl.h>
-#include <knp/backends/cpu-library/impl/blifat_rstdp_population_impl.h>
 #include <knp/backends/cpu-library/impl/synaptic_resource_stdp_impl.h>
 #include <knp/backends/cpu-library/init.h>
 #include <knp/backends/cpu-multi-threaded/backend.h>
