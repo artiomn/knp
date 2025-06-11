@@ -61,7 +61,7 @@ std::vector<knp::core::Projection<SynapseType> *> find_projection_by_type_and_po
 {
     using ProjectionType = knp::core::Projection<SynapseType>;
     std::vector<knp::core::Projection<SynapseType> *> result;
-    constexpr uint64_t type_index = boost::mp11::mp_find<synapse_traits::AllSynapses, SynapseType>();
+    constexpr auto type_index = boost::mp11::mp_find<synapse_traits::AllSynapses, SynapseType>();
     for (auto &projection : projections)
     {
         if (projection.arg_.index() != type_index)

@@ -41,10 +41,9 @@
 
 #include <boost/mp11.hpp>
 
+
 namespace knp::backends::multi_threaded_cpu
 {
-
-
 MultiThreadedCPUBackend::MultiThreadedCPUBackend(
     size_t thread_count, size_t population_part_size, size_t projection_part_size)
     : population_part_size_(population_part_size),
