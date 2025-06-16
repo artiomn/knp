@@ -375,7 +375,7 @@ std::optional<core::messaging::SpikeMessage> calculate_blifat_like_population_im
  * @return indexes of spiked neurons.
  */
 template <class BlifatLikeNeuron>
-std::optional<knp::core::messaging::SpikeMessage> calculate_blifat_like_population_impl(
+std::optional<core::messaging::SpikeMessage> calculate_blifat_like_population_impl(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n,
     std::mutex &mutex)
 {
