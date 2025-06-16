@@ -41,6 +41,8 @@
 
 #include <boost/mp11.hpp>
 
+#include "template_specs.h"
+
 
 namespace knp::backends::multi_threaded_cpu
 {
