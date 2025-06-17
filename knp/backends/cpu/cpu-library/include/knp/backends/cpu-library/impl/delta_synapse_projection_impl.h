@@ -48,19 +48,6 @@ namespace knp::backends::cpu
 using MessageQueue = std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage>;
 
 
-template <class DeltaLikeSynapse>
-void calculate_projection_part_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection,
-    const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
-    size_t part_start, size_t part_size, std::mutex &mutex);
-
-
-template <class DeltaLikeSynapse>
-void calculate_delta_synapse_projection_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection, knp::core::MessageEndpoint &endpoint,
-    MessageQueue &future_messages, size_t step_n);
-
-
 template <class ProjectionType>
 constexpr bool is_forcing()
 {
