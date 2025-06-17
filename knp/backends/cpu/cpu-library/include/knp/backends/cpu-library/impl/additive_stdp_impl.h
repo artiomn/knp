@@ -217,7 +217,7 @@ void update_projection_weights_additive_stdp_part(
     uint64_t part_start, uint64_t part_end)
 {
     // Update projection parameters.
-    for (uint64_t i = part_start; i < std::min(projection.size(), part_end); ++i)
+    for (uint64_t i = part_start; i < std::min<uint64_t>(projection.size(), part_end); ++i)
     {
         auto &proj = projection[i];
         SPDLOG_TRACE("Applying STDP rule...");
