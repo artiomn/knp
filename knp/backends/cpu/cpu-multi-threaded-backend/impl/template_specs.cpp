@@ -21,9 +21,12 @@
 #include "template_specs.h"
 
 #include <knp/backends/cpu-library/impl/blifat_population_impl.h>
+#include <knp/backends/cpu-library/impl/delta_synapse_projection_impl.h>
 #include <knp/backends/cpu-library/impl/synaptic_resource_stdp_impl.h>
 #include <knp/backends/cpu-multi-threaded/backend.h>
+#include <knp/synapse-traits/all_traits.h>
 
+#include <unordered_map>
 #include <vector>
 
 
@@ -64,4 +67,14 @@ void finalize_population<
     do_STDP_resource_plasticity<knp::neuron_traits::BLIFATNeuron, knp::synapse_traits::DeltaSynapse>(
         population, working_projections, message, step);
 }
+
 }  //namespace knp::backends::cpu
+
+#define INSTANCE_PROJECTION_PART(n, template_for_instance, synapse_type)                                             \
+    template void knp::backends::cpu::calculate_projection_part_impl<knp::synapse_traits::synapse_type>(             \
+        knp::core::Projection<knp::synapse_traits::synapse_type> & projection,                                       \
+        const std::unordered_map<knp::core::Step, size_t> &message_in_data,                                          \
+        knp::backends::cpu::MessageQueue &future_messages, uint64_t step_n, uint64_t part_start, uint64_t part_size, \
+        std::mutex &mutex);
+
+BOOST_PP_SEQ_FOR_EACH(INSTANCE_PROJECTION_PART, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_SYNAPSES))
