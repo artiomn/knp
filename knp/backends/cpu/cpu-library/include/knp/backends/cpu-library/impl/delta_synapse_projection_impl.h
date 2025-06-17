@@ -48,19 +48,6 @@ namespace knp::backends::cpu
 using MessageQueue = std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage>;
 
 
-template <class DeltaLikeSynapse>
-void calculate_projection_part_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection,
-    const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
-    size_t part_start, size_t part_size, std::mutex &mutex);
-
-
-template <class DeltaLikeSynapse>
-void calculate_delta_synapse_projection_impl(
-    knp::core::Projection<DeltaLikeSynapse> &projection, knp::core::MessageEndpoint &endpoint,
-    MessageQueue &future_messages, size_t step_n);
-
-
 template <class ProjectionType>
 constexpr bool is_forcing()
 {
@@ -135,7 +122,7 @@ void calculate_projection_part_impl(
     const std::unordered_map<knp::core::Step, size_t> &message_in_data, MessageQueue &future_messages, uint64_t step_n,
     uint64_t part_start, uint64_t part_size, std::mutex &mutex)
 {
-    size_t part_end = std::min(part_start + part_size, projection.size());
+    size_t part_end = std::min(part_start + part_size, static_cast<uint64_t>(projection.size()));
     std::vector<std::pair<uint64_t, knp::core::messaging::SynapticImpact>> container;
     WeightUpdateStdpMp<DeltaLikeSynapse>::init_projection_part(projection, message_in_data, step_n);
     for (size_t synapse_index = part_start; synapse_index < part_end; ++synapse_index)

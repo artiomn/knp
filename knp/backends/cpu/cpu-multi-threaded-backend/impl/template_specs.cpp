@@ -21,9 +21,12 @@
 #include "template_specs.h"
 
 #include <knp/backends/cpu-library/impl/blifat_population_impl.h>
+#include <knp/backends/cpu-library/impl/delta_synapse_projection_impl.h>
 #include <knp/backends/cpu-library/impl/synaptic_resource_stdp_impl.h>
 #include <knp/backends/cpu-multi-threaded/backend.h>
+#include <knp/synapse-traits/all_traits.h>
 
+#include <unordered_map>
 #include <vector>
 
 
@@ -64,4 +67,5 @@ void finalize_population<
     do_STDP_resource_plasticity<knp::neuron_traits::BLIFATNeuron, knp::synapse_traits::DeltaSynapse>(
         population, working_projections, message, step);
 }
+
 }  //namespace knp::backends::cpu
