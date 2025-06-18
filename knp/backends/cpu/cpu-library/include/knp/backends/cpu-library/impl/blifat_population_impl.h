@@ -177,11 +177,11 @@ void calculate_single_neuron_state(typename knp::core::Population<BlifatLikeNeur
  */
 template <class BlifatLikeNeuron>
 void calculate_neurons_state_part(
-    knp::core::Population<BlifatLikeNeuron> &population, size_t part_start, size_t part_size)
+    knp::core::Population<BlifatLikeNeuron> &population, uint64_t part_start, uint64_t part_size)
 {
-    size_t part_end = std::min(part_start + part_size, population.size());
+    uint64_t part_end = std::min<uint64_t>(part_start + part_size, population.size());
     SPDLOG_TRACE("Calculate neuron state part.");
-    for (size_t i = part_start; i < part_end; ++i)
+    for (uint64_t i = part_start; i < part_end; ++i)
     {
         auto &neuron = population[i];
         ++neuron.n_time_steps_since_last_firing_;
@@ -315,6 +315,17 @@ void calculate_neurons_post_input_state_part(
 
 
 /**
+ * Anything that works after the population has been calculated goes here. Mostly for STDP and other learning.
+ */
+template <class BlifatLikeNeuron, class ProjectionContainer>
+void finalize_population(
+    knp::core::Population<BlifatLikeNeuron> &population, const knp::core::messaging::SpikeMessage &message,
+    ProjectionContainer &projections, knp::core::Step step)
+{
+}
+
+
+/**
  * @brief Process BLIFAT neuron population and return spiked neuron indexes.
  * @tparam BlifatLikeNeuron type of neuron which inference can be calculated the same as BLIFAT.
  * @param population population of BLIFAT-like neurons.
@@ -364,7 +375,7 @@ std::optional<core::messaging::SpikeMessage> calculate_blifat_like_population_im
  * @return indexes of spiked neurons.
  */
 template <class BlifatLikeNeuron>
-std::optional<knp::core::messaging::SpikeMessage> calculate_blifat_like_population_impl(
+std::optional<core::messaging::SpikeMessage> calculate_blifat_like_population_impl(
     knp::core::Population<BlifatLikeNeuron> &population, knp::core::MessageEndpoint &endpoint, size_t step_n,
     std::mutex &mutex)
 {
