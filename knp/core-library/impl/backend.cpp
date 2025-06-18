@@ -179,8 +179,9 @@ void Backend::select_devices(const std::set<UID>& uids)
 
 void Backend::select_device(std::unique_ptr<Device>&& device)
 {
-    SPDLOG_INFO("Device with UID {} was selected.", std::string(device->get_uid()));
+    devices_.clear();
     devices_.push_back(std::move(device));
+    SPDLOG_INFO("Device with UID {} was selected.", std::string(device->get_uid()));
 }
 
 }  // namespace knp::core
