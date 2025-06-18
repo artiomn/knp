@@ -221,6 +221,31 @@ std::vector<std::unique_ptr<knp::core::Device>> CUDABackend::get_devices() const
 }
 
 
+void CUDABackend::select_devices(const std::set<knp::core::UID> &uids)
+{
+    Backend::select_devices(uids);
+
+    if (get_current_devices().size() > 1)
+    {
+        SPDLOG_ERROR("In the current implementation only one GPU can be selected.");
+        throw std::runtime_error("Only one GPU device can be selected");
+    }
+
+    auto cuda_device_ptr = dynamic_cast<knp::devices::gpu::CUDA*>(get_current_devices()[0].get());
+    cudaSetDevice(cuda_device_ptr->get_socket_number());
+}
+
+
+void CUDABackend::select_device(std::unique_ptr<knp::core::Device> &&device)
+{
+    auto cuda_device_ptr = dynamic_cast<knp::devices::gpu::CUDA*>(device.get());
+
+    cudaSetDevice(cuda_device_ptr->get_socket_number());
+
+    Backend::select_device(std::move(device));
+}
+
+
 void CUDABackend::_init()
 {
     SPDLOG_DEBUG("Initializing CUDABackend backend...");

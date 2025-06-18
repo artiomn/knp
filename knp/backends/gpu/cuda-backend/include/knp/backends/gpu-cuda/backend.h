@@ -30,6 +30,7 @@
 #include <knp/synapse-traits/all_traits.h>
 
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -267,6 +268,18 @@ public:
      * @see Device.
      */
     [[nodiscard]] std::vector<std::unique_ptr<knp::core::Device>> get_devices() const override;
+
+    /**
+     * @brief Select devices on which to run the backend.
+     * @param uids set of device UIDs that the backend uses.
+     */
+    void select_devices(const std::set<knp::core::UID> &uids) override;
+
+    /**
+     * @brief Select devices on which to run the backend.
+     * @param device selected for backend device.
+     */
+    void select_device(std::unique_ptr<knp::core::Device> &&device) override;
 
 public:
     /**
