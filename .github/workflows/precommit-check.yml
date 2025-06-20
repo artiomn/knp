@@ -17,7 +17,7 @@ jobs:
       with:
         python-version: "3.x"
     - id: changed_files
-      uses: trilom/file-changes-action@v1.2.3
+      uses: trilom/file-changes-action@v1.2.4
       with:
         output: ' '
     - name: Run pre-commit
