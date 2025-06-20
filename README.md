@@ -24,6 +24,8 @@ You can use the C++ and Python languages to accomplish these tasks. The platform
 
 For information on the platform concepts and architecture, installation instructions and platform use cases, see <a href="https://click.kaspersky.com/?hl=en-US&version=1.0&pid=KNP&link=online_help">Kaspersky Neuromorphic Platform Help</a>.
 
+Only versions of repository with release tags have release quality. If you use the source code from master branch or a build compiled from master branch, you may get code and build with errors and vulnerabilities.
+
 ## Hardware and software requirements
 
 For Kaspersky Neuromorphic Platform operation, the computer must meet the following minimum requirements.
@@ -90,8 +92,6 @@ To work with the platform, the following software must be installed on the devic
   - python3-loguru
   - python3-tqdm
   - TensorFlow 2.13.1
- 
-Only versions of repository with release tags have release quality. If you use the source code from master branch or a build compiled from master branch, you may get code and build with errors and vulnerabilities.
 
 ## Installing the platform
 
@@ -309,3 +309,4 @@ This is an open source project. If you are interested in making a code contribut
 
 Copyright © 2024 AO Kaspersky Lab
 Licensed under the Apache 2.0 License. See the `LICENSE.txt` file in the root directory for details.
+.

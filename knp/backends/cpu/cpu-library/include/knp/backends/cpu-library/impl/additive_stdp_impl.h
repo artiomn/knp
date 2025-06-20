@@ -28,6 +28,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -152,11 +153,12 @@ constexpr bool is_additive_stdp_synapse()
 
 
 template <class DeltaLikeSynapse>
-void register_additive_stdp_spikes(
+void register_additive_stdp_spikes_part(
     knp::core::Projection<knp::synapse_traits::STDP<knp::synapse_traits::STDPAdditiveRule, DeltaLikeSynapse>>
         &projection,
-    std::vector<SpikeMessage> &all_messages)
+    std::vector<SpikeMessage> &all_messages, uint64_t part_start, uint64_t part_end)
 {
+    if (part_start != 0) return;  // Not much sense to parallelize this by projection, so it's calculated just once.
     SPDLOG_DEBUG("Calculating additive STDP delta synapse projection...");
 
     using ProjectionType = typename std::decay_t<decltype(projection)>;
@@ -209,13 +211,15 @@ void register_additive_stdp_spikes(
 
 
 template <class DeltaLikeSynapse>
-void update_projection_weights_additive_stdp(
+void update_projection_weights_additive_stdp_part(
     knp::core::Projection<knp::synapse_traits::STDP<knp::synapse_traits::STDPAdditiveRule, DeltaLikeSynapse>>
-        &projection)
+        &projection,
+    uint64_t part_start, uint64_t part_end)
 {
     // Update projection parameters.
-    for (auto &proj : projection)
+    for (uint64_t i = part_start; i < std::min<uint64_t>(projection.size(), part_end); ++i)
     {
+        auto &proj = projection[i];
         SPDLOG_TRACE("Applying STDP rule...");
         auto &rule = std::get<knp::core::synapse_data>(proj).rule_;
         const auto period = rule.tau_plus_ + rule.tau_minus_;
@@ -238,19 +242,32 @@ template <class DeltaLikeSynapse>
 struct WeightUpdateSTDP<synapse_traits::STDP<synapse_traits::STDPAdditiveRule, DeltaLikeSynapse>>
 {
     using Synapse = synapse_traits::STDP<synapse_traits::STDPAdditiveRule, DeltaLikeSynapse>;
-    static void init_projection(
-        knp::core::Projection<Synapse> &projection, std::vector<SpikeMessage> &all_messages, knp::core::Step step)
+
+    static void init_projection_part(
+        knp::core::Projection<Synapse> &projection, std::vector<SpikeMessage> &all_messages, knp::core::Step step,
+        uint64_t part_start, uint64_t part_end)
     {
-        register_additive_stdp_spikes(projection, all_messages);
+        register_additive_stdp_spikes_part(projection, all_messages, part_start, part_end);
     }
 
     static void init_synapse(const knp::synapse_traits::synapse_parameters<Synapse> &projection, knp::core::Step step)
     {
     }
 
+    static void modify_weights_part(knp::core::Projection<Synapse> &projection, uint64_t part_start, uint64_t part_end)
+    {
+        update_projection_weights_additive_stdp_part(projection, part_start, part_end);
+    }
+
+    static void init_projection(
+        knp::core::Projection<Synapse> &projection, std::vector<SpikeMessage> &all_messages, knp::core::Step step)
+    {
+        init_projection_part(projection, all_messages, step, 0, projection.size());
+    }
+
     static void modify_weights(knp::core::Projection<Synapse> &projection)
     {
-        update_projection_weights_additive_stdp(projection);
+        modify_weights_part(projection, 0, projection.size());
     }
 };
 
