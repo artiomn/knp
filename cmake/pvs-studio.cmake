@@ -1,6 +1,6 @@
 # 2006-2008 (c) Viva64.com Team
 # 2008-2020 (c) OOO "Program Verification Systems"
-# 2020-2022 (c) PVS-Studio LLC
+# 2020-2025 (c) PVS-Studio LLC
 # Version 12
 
 cmake_minimum_required(VERSION 3.5)
@@ -34,7 +34,6 @@ if (PVS_STUDIO_AS_SCRIPT)
 
     file(REMOVE "${PVS_STUDIO_LOG_FILE}")
     execute_process(COMMAND ${PVS_STUDIO_COMMAND} ${additional_args}
-                    COMMAND_ECHO STDOUT
                     RESULT_VARIABLE result
                     OUTPUT_VARIABLE output
                     ERROR_VARIABLE error)
@@ -229,7 +228,7 @@ function (pvs_studio_analyze_file SOURCE SOURCE_DIR BINARY_DIR)
                            IMPLICIT_DEPENDS "${PVS_STUDIO_LANGUAGE}" "${SOURCE}"
                            ${depCommandArg}
                            VERBATIM
-                           COMMENT "Analyzing ${PVS_STUDIO_LANGUAGE} file ${SOURCE_RELATIVE} with args: ${pvscmd}")
+                           COMMENT "Analyzing ${PVS_STUDIO_LANGUAGE} file ${SOURCE_RELATIVE}")
         list(APPEND PLOGS "${LOG}")
     endif()
     set(PVS_STUDIO_PLOGS "${PLOGS}" PARENT_SCOPE)
@@ -367,8 +366,6 @@ function (pvs_studio_add_target)
               set(PATHS "${ROOT}")
            endif()
         endif()
-
-
 
         default(PVS_STUDIO_BIN "CompilerCommandsAnalyzer.exe")
         default(PVS_STUDIO_CONVERTER "HtmlGenerator.exe")
@@ -551,11 +548,29 @@ function (pvs_studio_add_target)
 
                 list(APPEND COMMANDS COMMAND call ${COMMAND_TYPE_FILE})
             else()
-                set(COMMANDS COMMAND type ${PVS_STUDIO_PLOGS} ${PVS_STUDIO_PLOGS_LOGS} > "${PVS_STUDIO_LOG}" 2>nul || cd .)
+              set(MERGE_COMMAND "type")
+              list(APPEND MERGE_COMMAND_SUFFIX 2>nul || cd .)
             endif()
         else()
-            set(COMMANDS COMMAND cat ${PVS_STUDIO_PLOGS} ${PVS_STUDIO_PLOGS_LOGS} > "${PVS_STUDIO_LOG}" 2>/dev/null || true)
+          set(MERGE_COMMAND "cat")
+          list(APPEND MERGE_COMMAND_SUFFIX 2>/dev/null || true)
         endif()
+
+        if (NOT "${MERGE_COMMAND}" STREQUAL "")
+          set(STEP_SIZE 30)
+          set(BEGIN 0)
+
+          list(APPEND PVS_STUDIO_PLOGS ${PVS_STUDIO_PLOGS_LOGS})
+          list(LENGTH PVS_STUDIO_PLOGS END)
+          list(APPEND COMMANDS COMMAND "${CMAKE_COMMAND}" -E remove -f "${PVS_STUDIO_LOG}")
+
+          while(BEGIN LESS END)
+            list(SUBLIST PVS_STUDIO_PLOGS ${BEGIN} ${STEP_SIZE} NEW_LIST)
+            list(APPEND COMMANDS COMMAND "${MERGE_COMMAND}" "${NEW_LIST}" >> "${PVS_STUDIO_LOG}" "${MERGE_COMMAND_SUFFIX}")
+            math(EXPR BEGIN "${BEGIN} + ${STEP_SIZE}")
+          endwhile()
+        endif()
+
         set(COMMENT "Generating ${LOG_RELATIVE}")
         if (NOT "${PVS_STUDIO_FORMAT}" STREQUAL "" OR PVS_STUDIO_OUTPUT)
             if ("${PVS_STUDIO_FORMAT}" STREQUAL "")
