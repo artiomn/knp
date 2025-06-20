@@ -36,6 +36,11 @@ namespace knp::testing
 {
 using DeltaProjection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 using BLIFATPopulation = knp::core::Population<knp::neuron_traits::BLIFATNeuron>;
+using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
+using ResourceSynapse = knp::synapse_traits::SynapticResourceSTDPDeltaSynapse;
+using ResourceSynapseData = ResourceDeltaProjection::Synapse;
+using ResourceSynapseParams = knp::synapse_traits::synapse_parameters<ResourceSynapse>;
+
 
 // Create an input projection.
 inline std::optional<DeltaProjection::Synapse> input_projection_gen(size_t /*index*/)  // NOLINT
