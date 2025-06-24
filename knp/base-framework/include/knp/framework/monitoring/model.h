@@ -40,7 +40,7 @@ namespace knp::framework::monitoring::model
 using SpikeProcessor = knp::framework::monitoring::MessageProcessor<knp::core::messaging::SpikeMessage>;
 
 
-/*
+/**
  * @brief add a logger that outputs spikes in aggregated format
  * @param model network model
  * @param senders_names uid-name of senders that will have spikes observer attached to them
@@ -55,7 +55,7 @@ void KNP_DECLSPEC add_aggregated_spikes_logger(
     std::ostream &log_stream, size_t logging_period);
 
 
-/*
+/**
  * @brief add a logger that outputs weights from projections
  * @param weights_log output stream
  * @param model_executor model executor
@@ -67,7 +67,7 @@ void KNP_DECLSPEC add_projection_weights_logger(
     size_t logging_period);
 
 
-/*
+/**
  * @brief add a logger that outputs all spikes
  * @param model_executor model executor
  * @param senders_names uid-name of senders that will have spikes observer attached to them
@@ -78,7 +78,7 @@ void KNP_DECLSPEC add_spikes_logger(
     std::ostream &log_stream);
 
 
-/*
+/**
  * @brief add a logger that will output status of model
  * @param model model
  * @param log_stream output stream
