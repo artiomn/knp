@@ -20,7 +20,8 @@ jobs:
       uses: trilom/file-changes-action@v1.2.4
       with:
         output: ' '
-    - uses: actions/setup-python@v3
+    - run: ln -s /usr/bin/python3 /usr/bin/python
+      shell: bash
     - name: Run pre-commit
       uses: pre-commit/action@v3.0.1
       with:
