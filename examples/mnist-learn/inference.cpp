@@ -73,11 +73,9 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
 
     std::ofstream log_stream;
 
-    // These two variables should have the same lifetime as model_executor, or else UB.
+    // this variable should have the same lifetime as model_executor, or else UB.
     // cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
-    // cppcheck-suppress variableScope
-    size_t current_index = 0;
 
     auto wta_uids = add_wta_handlers(described_network, model_executor);
     auto all_senders_names = described_network.data_.population_names_;
@@ -95,7 +93,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     if (log_stream.is_open())
     {
         knp::framework::monitoring::model::add_aggregated_spikes_logger(
-            model, all_senders_names, model_executor, current_index, spike_accumulator, log_stream,
+            model, all_senders_names, model_executor, spike_accumulator, log_stream,
             logging_period_for_aggregated_spikes_logger);
     }
 

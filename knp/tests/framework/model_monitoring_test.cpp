@@ -68,13 +68,11 @@ TEST(AggregatedSpikesLogger, ModelMonitoring)
               return {};
           }}});
 
-    size_t current_index = 0;
     std::map<std::string, size_t> spike_accumulator;
     std::ostringstream projection_weights_stream;
 
     knp::framework::monitoring::model::add_aggregated_spikes_logger(
-        model, {{i_channel_uid, "INPUT"}}, model_executor, current_index, spike_accumulator, projection_weights_stream,
-        1);
+        model, {{i_channel_uid, "INPUT"}}, model_executor, spike_accumulator, projection_weights_stream, 1);
     model_executor.start([](size_t step) -> bool { return step < 3; });
 
     ASSERT_STREQ(projection_weights_stream.str().c_str(), "Index, INPUT\n1, 0\n2, 1\n3, 0\n");

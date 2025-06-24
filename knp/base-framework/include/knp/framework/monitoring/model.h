@@ -45,15 +45,14 @@ using SpikeProcessor = knp::framework::monitoring::MessageProcessor<knp::core::m
  * @param model network model
  * @param senders_names uid-name of senders that will have spikes observer attached to them
  * @param model_executor model executor
- * @param current_index basically a steps counter, required to have same lifetime as model
  * @param spike_accumulator will save spikes between logging, acts as a buffer
  * @param log_stream output stream
  * @param logging_period logging period, will output to log_stream each logging_period steps
  */
 void KNP_DECLSPEC add_aggregated_spikes_logger(
     const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &senders_names,
-    knp::framework::ModelExecutor &model_executor, size_t &current_index,
-    std::map<std::string, size_t> &spike_accumulator, std::ostream &log_stream, size_t logging_period);
+    knp::framework::ModelExecutor &model_executor, std::map<std::string, size_t> &spike_accumulator,
+    std::ostream &log_stream, size_t logging_period);
 
 
 /*
