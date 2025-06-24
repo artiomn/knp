@@ -14,9 +14,6 @@ jobs:
       volumes:
         - ${{ github.workspace }}:/KNP
       options: --cpus 1
-    defaults:
-      run:
-        working-directory: /KNP
     steps:
     - uses: actions/checkout@v3
     - id: changed_files
@@ -28,6 +25,8 @@ jobs:
     - run: mkdir -p ~/.config/pip/
       shell: bash
     - run: echo -e "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
+      shell: bash
+    - run: cd /KNP
       shell: bash
     - name: Run pre-commit
       uses: pre-commit/action@v3.0.1
