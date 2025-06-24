@@ -129,11 +129,11 @@ SpikeProcessor make_aggregated_spikes_observer_function(
     auto observer_func = [&log_stream, &accumulator, &model_executor, sender_names,
                           period](const std::vector<knp::core::messaging::SpikeMessage> &messages)
     {
-        size_t curr_index = model_executor.get_backend()->get_step();
-        if (curr_index % period == 0)
+        size_t step = model_executor.get_backend()->get_step();
+        if (step % period == 0)
         {
             // Write container to log
-            save_aggregated_spikes_log(log_stream, accumulator, curr_index);
+            save_aggregated_spikes_log(log_stream, accumulator, step);
             // Reset container
             accumulator.clear();
             for (const auto &val : sender_names) accumulator.insert({val.second, 0});
@@ -147,7 +147,6 @@ SpikeProcessor make_aggregated_spikes_observer_function(
             std::string const &population_name = name_iter->second;
             accumulator[population_name] += msg.neuron_indexes_.size();
         }
-        ++curr_index;
     };
     return observer_func;
 }
@@ -175,8 +174,8 @@ SpikeProcessor make_spikes_observer_function(
 
 void add_aggregated_spikes_logger(
     const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &senders_names,
-    knp::framework::ModelExecutor &model_executor, size_t &current_index,
-    std::map<std::string, size_t> &spike_accumulator, std::ostream &log_stream, size_t logging_period)
+    knp::framework::ModelExecutor &model_executor, std::map<std::string, size_t> &spike_accumulator,
+    std::ostream &log_stream, size_t logging_period)
 {
     std::vector<knp::core::UID> all_senders_uids(senders_names.size());
     std::transform(

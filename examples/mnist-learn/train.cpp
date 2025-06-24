@@ -119,8 +119,6 @@ AnnotatedNetwork train_mnist_network(
     std::ofstream log_stream, weight_stream;
     // cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
-    // cppcheck-suppress variableScope
-    size_t current_index = 0;
 
     add_wta_handlers(example_network, model_executor);
     // All loggers go here
@@ -129,8 +127,8 @@ AnnotatedNetwork train_mnist_network(
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
         if (log_stream.is_open())
             knp::framework::monitoring::model::add_aggregated_spikes_logger(
-                model, example_network.data_.population_names_, model_executor, current_index, spike_accumulator,
-                log_stream, logging_period_for_aggregated_spikes_logger);
+                model, example_network.data_.population_names_, model_executor, spike_accumulator, log_stream,
+                logging_period_for_aggregated_spikes_logger);
         else
             std::cout << "Couldn't open spikes_training.csv at " << log_path << std::endl;
 
