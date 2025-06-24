@@ -22,11 +22,11 @@ jobs:
         output: ' '
     - run: ln -s /usr/bin/python3 /usr/bin/python
       shell: bash
-    - run: mkdir -p ~/.config/pip/
+    - run: mkdir -p ~/.config/pip/ && echo -e "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
       shell: bash
-    - run: echo -e "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
+    - run: git config --global --add safe.directory /KNP
       shell: bash
     - name: Run pre-commit
-      run: ls -al . && pre-commit run --show-diff-on-failure --color=always --files ${{ steps.changed_files.outputs.files}} || cat /github/home/.cache/pre-commit/pre-commit.log
+      run: pre-commit run --show-diff-on-failure --color=always --files ${{ steps.changed_files.outputs.files}} || cat /github/home/.cache/pre-commit/pre-commit.log
       working-directory: /KNP
       shell: bash
