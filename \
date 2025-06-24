@@ -69,7 +69,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
 
     model_executor.get_backend()->stop_learning();
 
-    knp::framework::monitoring::model::add_status_logger(model_executor, model, std::cout, 1);
+    knp::framework::monitoring::model::add_status_logger(model_executor,model,std::cout,1);
 
     std::ofstream log_stream;
 
@@ -95,8 +95,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     if (log_stream.is_open())
     {
         knp::framework::monitoring::model::add_aggregated_spikes_logger(
-            model, all_senders_names, model_executor, current_index, spike_accumulator, log_stream,
-            logging_period_for_aggregated_spikes_logger);
+            model, all_senders_names, model_executor, current_index, spike_accumulator, log_stream, logging_period_for_aggregated_spikes_logger);
     }
 
     // Start model.
