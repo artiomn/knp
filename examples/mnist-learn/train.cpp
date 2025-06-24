@@ -23,7 +23,7 @@
 
 #include <knp/framework/model.h>
 #include <knp/framework/model_executor.h>
-#include <knp/framework/monitoring/model_monitoring.h>
+#include <knp/framework/monitoring/model.h>
 #include <knp/framework/monitoring/observer.h>
 #include <knp/framework/network.h>
 #include <knp/framework/sonata/network_io.h>
@@ -39,6 +39,9 @@
 #include "time_string.h"
 #include "wta.h"
 
+constexpr size_t logging_period_for_aggregated_spikes_logger = 4e3;
+
+constexpr size_t logging_period_for_projection_weights_logger = 1e5;
 
 namespace fs = std::filesystem;
 
@@ -109,42 +112,33 @@ AnnotatedNetwork train_mnist_network(
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(model, backend_loader.load(path_to_backend), std::move(channel_map));
 
-    // Add observer.
-    model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-        [](const std::vector<knp::core::messaging::SpikeMessage> &messages)
-        {
-            if (messages.empty() || messages[0].neuron_indexes_.empty()) return;
-            for (auto index : messages[0].neuron_indexes_)
-            {
-                std::cout << index << " ";
-            }
-            std::cout << std::endl;
-        },
-        example_network.data_.output_uids_);
+    knp::framework::monitoring::model::add_status_logger(model_executor, model, std::cout, 1);
 
     // Add all spikes observer.
-    // These variables should have the same lifetime as model_executor, or else UB.
+    // All these variables should have the same lifetime as model_executor, or else UB.
     std::ofstream log_stream, weight_stream;
     // cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
     // cppcheck-suppress variableScope
     size_t current_index = 0;
+
     add_wta_handlers(example_network, model_executor);
     // All loggers go here
     if (!log_path.empty())
     {
         log_stream.open(log_path / "spikes_training.csv", std::ofstream::out);
         if (log_stream.is_open())
-            knp::framework::monitoring::model_monitoring::add_aggregated_spikes_logger(
+            knp::framework::monitoring::model::add_aggregated_spikes_logger(
                 model, example_network.data_.population_names_, model_executor, current_index, spike_accumulator,
-                log_stream, 4000);
+                log_stream, logging_period_for_aggregated_spikes_logger);
         else
             std::cout << "Couldn't open spikes_training.csv at " << log_path << std::endl;
 
         weight_stream.open(log_path / "weights.log", std::ofstream::out);
         if (weight_stream.is_open())
-            knp::framework::monitoring::model_monitoring::add_projection_weights_logger(
-                weight_stream, model_executor, example_network.data_.projections_from_raster_[0], 1e5);
+            knp::framework::monitoring::model::add_projection_weights_logger(
+                weight_stream, model_executor, example_network.data_.projections_from_raster_[0],
+                logging_period_for_projection_weights_logger);
         else
             std::cout << "Couldn't open weights.log at " << log_path << std::endl;
     }

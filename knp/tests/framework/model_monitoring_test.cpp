@@ -1,7 +1,7 @@
 /**
  * @file model_monitoring_test.cpp
  * @brief Single-threaded backend test.
- * @kaspersky_support Vartenkov An.
+ * @kaspersky_support D. Postnikov
  * @date 07.04.2023
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
@@ -20,7 +20,7 @@
  */
 
 #include <knp/framework/model_executor.h>
-#include <knp/framework/monitoring/model_monitoring.h>
+#include <knp/framework/monitoring/model.h>
 
 #include <generators.h>
 #include <tests_common.h>
@@ -72,12 +72,12 @@ TEST(AggregatedSpikesLogger, ModelMonitoring)
     std::map<std::string, size_t> spike_accumulator;
     std::ostringstream projection_weights_stream;
 
-    knp::framework::monitoring::model_monitoring::add_aggregated_spikes_logger(
+    knp::framework::monitoring::model::add_aggregated_spikes_logger(
         model, {{i_channel_uid, "INPUT"}}, model_executor, current_index, spike_accumulator, projection_weights_stream,
         1);
     model_executor.start([](size_t step) -> bool { return step < 3; });
 
-    ASSERT_STREQ(projection_weights_stream.str().c_str(), "Index, INPUT\n1, 1\n2, 0\n");
+    ASSERT_STREQ(projection_weights_stream.str().c_str(), "Index, INPUT\n1, 0\n2, 1\n3, 0\n");
 }
 
 
@@ -116,7 +116,7 @@ TEST(ProjectionWeightsLogger, ModelMonitoring)
           }}});
 
     std::ostringstream projection_weights_stream;
-    knp::framework::monitoring::model_monitoring::add_projection_weights_logger(
+    knp::framework::monitoring::model::add_projection_weights_logger(
         projection_weights_stream, model_executor, input_projection.get_uid(), 1);
     model_executor.start([](size_t step) -> bool { return step < 2; });
 
@@ -168,8 +168,8 @@ TEST(SpikesLogger, ModelMonitoring)
 
     std::ostringstream projection_weights_stream;
 
-    knp::framework::monitoring::model_monitoring::add_spikes_logger(
-        model, {{i_channel_uid, "INPUT"}}, model_executor, projection_weights_stream);
+    knp::framework::monitoring::model::add_spikes_logger(
+        model_executor, {{i_channel_uid, "INPUT"}}, projection_weights_stream);
     model_executor.start([](size_t step) -> bool { return step < 3; });
 
     ASSERT_STREQ(projection_weights_stream.str().c_str(), "Step: 0\nSender: INPUT\n0 \nStep: 2\nSender: INPUT\n0 \n");

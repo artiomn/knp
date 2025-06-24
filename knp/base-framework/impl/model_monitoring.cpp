@@ -1,7 +1,7 @@
 /**
  * @file model_monitoring.cpp
  * @brief Functions for network construction.
- * @kaspersky_support A. Vartenkov
+ * @kaspersky_support D. Postnikov
  * @date 24.03.2025
  * @license Apache 2.0
  * @copyright © 2025 AO Kaspersky Lab
@@ -22,7 +22,7 @@
 #include <knp/core/messaging/messaging.h>
 #include <knp/core/projection.h>
 #include <knp/framework/model_executor.h>
-#include <knp/framework/monitoring/model_monitoring.h>
+#include <knp/framework/monitoring/model.h>
 #include <knp/synapse-traits/stdp_synaptic_resource_rule.h>
 
 #include <algorithm>
@@ -30,7 +30,7 @@
 #include <string>
 #include <tuple>
 
-namespace knp::framework::monitoring::model_monitoring
+namespace knp::framework::monitoring::model
 {
 
 
@@ -120,17 +120,17 @@ void save_aggregated_spikes_log(std::ostream &log_stream, const std::map<std::st
 
 
 SpikeProcessor make_aggregated_spikes_observer_function(
-    std::ostream &log_stream, size_t period, const std::map<knp::core::UID, std::string> &sender_names,
-    std::map<std::string, size_t> &accumulator, size_t &curr_index)
+    knp::framework::ModelExecutor &model_executor, std::ostream &log_stream, size_t period,
+    const std::map<knp::core::UID, std::string> &sender_names, std::map<std::string, size_t> &accumulator)
 {
     // Initialize accumulator
     accumulator.clear();
     for (const auto &val : sender_names) accumulator.insert({val.second, 0});
-    curr_index = 0;
-    auto observer_func = [&log_stream, &accumulator, sender_names, period,
-                          &curr_index](const std::vector<knp::core::messaging::SpikeMessage> &messages)
+    auto observer_func = [&log_stream, &accumulator, &model_executor, sender_names,
+                          period](const std::vector<knp::core::messaging::SpikeMessage> &messages)
     {
-        if (curr_index != 0 && curr_index % period == 0)
+        size_t curr_index = model_executor.get_backend()->get_step();
+        if (curr_index % period == 0)
         {
             // Write container to log
             save_aggregated_spikes_log(log_stream, accumulator, curr_index);
@@ -169,7 +169,6 @@ SpikeProcessor make_spikes_observer_function(
             log_stream << std::endl;
         }
     };
-    std::cout << "}log obs" << std::endl;
     return observer_func;
 }
 
@@ -186,7 +185,7 @@ void add_aggregated_spikes_logger(
     write_aggregated_spikes_logger_header(log_stream, senders_names);
     model_executor.add_observer<knp::core::messaging::SpikeMessage>(
         make_aggregated_spikes_observer_function(
-            log_stream, logging_period, senders_names, spike_accumulator, current_index),
+            model_executor, log_stream, logging_period, senders_names, spike_accumulator),
         all_senders_uids);
 }
 
@@ -196,15 +195,13 @@ void add_projection_weights_logger(
     size_t logging_period)
 {
     model_executor.add_observer<knp::core::messaging::SpikeMessage>(
-        knp::framework::monitoring::model_monitoring::make_projection_weights_observer_function(
-            weights_log, logging_period, model_executor, uid),
-        {});
+        make_projection_weights_observer_function(weights_log, logging_period, model_executor, uid), {});
 }
 
 
 void add_spikes_logger(
-    const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &senders_names,
-    knp::framework::ModelExecutor &model_executor, std::ostream &log_stream)
+    knp::framework::ModelExecutor &model_executor, const std::map<knp::core::UID, std::string> &senders_names,
+    std::ostream &log_stream)
 {
     std::vector<knp::core::UID> all_senders_uids(senders_names.size());
     std::transform(
@@ -215,4 +212,23 @@ void add_spikes_logger(
 }
 
 
-}  //namespace knp::framework::monitoring::model_monitoring
+void add_status_logger(
+    knp::framework::ModelExecutor &model_executor, const knp::framework::Model &model, std::ostream &log_stream,
+    size_t logging_period)
+{
+    std::vector<knp::core::UID> populations_uids;
+    for (auto const &neuron : model.get_network().get_populations())
+    {
+        std::visit([&populations_uids](auto const &neuron) { populations_uids.push_back(neuron.get_uid()); }, neuron);
+    }
+    model_executor.add_observer<knp::core::messaging::SpikeMessage>(
+        [&log_stream](const std::vector<knp::core::messaging::SpikeMessage> &messages)
+        {
+            if (messages.empty()) return;
+            log_stream << messages.size() << std::endl;
+        },
+        populations_uids);
+}
+
+
+}  //namespace knp::framework::monitoring::model
