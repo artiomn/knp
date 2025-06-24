@@ -22,6 +22,10 @@ jobs:
         output: ' '
     - run: ln -s /usr/bin/python3 /usr/bin/python
       shell: bash
+    - run: mkdir -p ~/.config/pip/
+      shell: bash
+    - run: echo -e "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
+      shell: bash
     - name: Run pre-commit
       uses: pre-commit/action@v3.0.1
       with:
