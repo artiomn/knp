@@ -26,9 +26,8 @@ jobs:
       shell: bash
     - run: echo -e "[global]\nbreak-system-packages = true" > ~/.config/pip/pip.conf
       shell: bash
-    - run: cd /KNP
-      shell: bash
+    - run: ls -al /KNP
     - name: Run pre-commit
       run: pre-commit run --show-diff-on-failure --color=always --files ${{ steps.changed_files.outputs.files}}
-      shell: bash
       working-directory: /KNP
+      shell: bash
