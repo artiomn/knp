@@ -49,7 +49,7 @@ using SpikeProcessor = knp::framework::monitoring::MessageProcessor<knp::core::m
  * @param log_stream output stream
  * @param logging_period logging period, will output to log_stream each logging_period steps
  */
-void KNP_DECLSPEC add_aggregated_spikes_logger(
+KNP_DECLSPEC void add_aggregated_spikes_logger(
     const knp::framework::Model &model, const std::map<knp::core::UID, std::string> &senders_names,
     knp::framework::ModelExecutor &model_executor, std::map<std::string, size_t> &spike_accumulator,
     std::ostream &log_stream, size_t logging_period);
@@ -62,7 +62,7 @@ void KNP_DECLSPEC add_aggregated_spikes_logger(
  * @param uid projection uid
  * @param logging_period logging period, will output to weights_log every logging_period steps
  */
-void KNP_DECLSPEC add_projection_weights_logger(
+KNP_DECLSPEC void add_projection_weights_logger(
     std::ostream &weights_log, knp::framework::ModelExecutor &model_executor, knp::core::UID const &uid,
     size_t logging_period);
 
@@ -73,18 +73,19 @@ void KNP_DECLSPEC add_projection_weights_logger(
  * @param senders_names uid-name of senders that will have spikes observer attached to them
  * @param log_stream output stream
  */
-void KNP_DECLSPEC add_spikes_logger(
+KNP_DECLSPEC void add_spikes_logger(
     knp::framework::ModelExecutor &model_executor, const std::map<knp::core::UID, std::string> &senders_names,
     std::ostream &log_stream);
 
 
 /**
  * @brief add a logger that will output status of model
+ * @param model_executor model executor
  * @param model model
  * @param log_stream output stream
  * @param logging_period logging period, will output status to log_stream every logging_period steps
  */
-void KNP_DECLSPEC add_status_logger(
+KNP_DECLSPEC void add_status_logger(
     knp::framework::ModelExecutor &model_executor, const knp::framework::Model &model, std::ostream &log_stream,
     size_t logging_period);
 
