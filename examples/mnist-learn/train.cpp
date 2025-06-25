@@ -29,8 +29,6 @@
 #include <knp/framework/sonata/network_io.h>
 #include <knp/synapse-traits/all_traits.h>
 
-#include <spdlog/spdlog.h>
-
 #include <filesystem>
 #include <map>
 #include <utility>
@@ -131,7 +129,7 @@ AnnotatedNetwork train_mnist_network(
                 model, example_network.data_.population_names_, model_executor, spike_accumulator, log_stream,
                 aggregated_spikes_logging_period);
         else
-            SPDLOG_WARN("Couldn't open spikes_training.csv at {}", log_path.c_str());
+            std::cout << "Couldn't open spikes_training.csv at " << log_path << std::endl;
 
         weight_stream.open(log_path / "weights.log", std::ofstream::out);
         if (weight_stream.is_open())
@@ -139,7 +137,7 @@ AnnotatedNetwork train_mnist_network(
                 weight_stream, model_executor, example_network.data_.projections_from_raster_[0],
                 projection_weights_logging_period);
         else
-            SPDLOG_WARN("Couldn't open weights.log at {}", log_path.c_str());
+            std::cout << "Couldn't open weights.csv at " << log_path << std::endl;
     }
 
     // Start model.
