@@ -40,7 +40,9 @@ using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::Synap
 struct WeightByReceiverSender
 {
     size_t receiver_, sender_;
+    //cppcheck-suppress unusedStructMember
     float weight_;
+    //cppcheck-suppress unusedStructMember
     knp::core::Step update_step_;
 };
 
