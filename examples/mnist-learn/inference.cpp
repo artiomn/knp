@@ -38,7 +38,7 @@
 #include "time_string.h"
 #include "wta.h"
 
-constexpr size_t logging_period_for_aggregated_spikes_logger = 4e3;
+constexpr size_t aggregated_spikes_logging_period = 4e3;
 
 namespace fs = std::filesystem;
 
@@ -73,8 +73,8 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
 
     std::ofstream log_stream;
 
-    // this variable should have the same lifetime as model_executor, or else UB.
-    // cppcheck-suppress variableScope
+    // This variable should have the same lifetime as model_executor, or else UB.
+    //  cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
 
     auto wta_uids = add_wta_handlers(described_network, model_executor);
@@ -93,8 +93,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     if (log_stream.is_open())
     {
         knp::framework::monitoring::model::add_aggregated_spikes_logger(
-            model, all_senders_names, model_executor, spike_accumulator, log_stream,
-            logging_period_for_aggregated_spikes_logger);
+            model, all_senders_names, model_executor, spike_accumulator, log_stream, aggregated_spikes_logging_period);
     }
 
     // Start model.

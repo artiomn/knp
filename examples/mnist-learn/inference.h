@@ -32,6 +32,7 @@
 /// How many steps to use for testing.
 constexpr int testing_period = 10000;
 
+
 /**
  * @brief Run inference on MNIST dataset.
  * @param path_to_backend path to backend.

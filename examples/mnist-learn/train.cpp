@@ -29,19 +29,20 @@
 #include <knp/framework/sonata/network_io.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include <spdlog/spdlog.h>
+
 #include <filesystem>
 #include <map>
 #include <utility>
 
 #include "construct_network.h"
 #include "data_read.h"
-#include "inference.h"
 #include "time_string.h"
 #include "wta.h"
 
-constexpr size_t logging_period_for_aggregated_spikes_logger = 4e3;
+constexpr size_t aggregated_spikes_logging_period = 4e3;
 
-constexpr size_t logging_period_for_projection_weights_logger = 1e5;
+constexpr size_t projection_weights_logging_period = 1e5;
 
 namespace fs = std::filesystem;
 
@@ -128,17 +129,17 @@ AnnotatedNetwork train_mnist_network(
         if (log_stream.is_open())
             knp::framework::monitoring::model::add_aggregated_spikes_logger(
                 model, example_network.data_.population_names_, model_executor, spike_accumulator, log_stream,
-                logging_period_for_aggregated_spikes_logger);
+                aggregated_spikes_logging_period);
         else
-            std::cout << "Couldn't open spikes_training.csv at " << log_path << std::endl;
+            SPDLOG_WARN("Couldn't open spikes_training.csv at {}", log_path.c_str());
 
         weight_stream.open(log_path / "weights.log", std::ofstream::out);
         if (weight_stream.is_open())
             knp::framework::monitoring::model::add_projection_weights_logger(
                 weight_stream, model_executor, example_network.data_.projections_from_raster_[0],
-                logging_period_for_projection_weights_logger);
+                projection_weights_logging_period);
         else
-            std::cout << "Couldn't open weights.log at " << log_path << std::endl;
+            SPDLOG_WARN("Couldn't open weights.log at {}", log_path.c_str());
     }
 
     // Start model.
