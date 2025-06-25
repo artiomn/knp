@@ -1,5 +1,5 @@
 /**
- * @file model_monitoring.cpp
+ * @file model.cpp
  * @brief Functions for network construction.
  * @kaspersky_support D. Postnikov
  * @date 24.03.2025
@@ -37,24 +37,33 @@ namespace knp::framework::monitoring::model
 using ResourceDeltaProjection = knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse>;
 
 
-auto fill_projection_weights(const knp::core::AllProjectionsVariant &proj_variant)
+struct WeightByReceiverSender
+{
+    size_t receiver_, sender_;
+    float weight_;
+    knp::core::Step update_step_;
+};
+
+
+auto process_projection_weights(const knp::core::AllProjectionsVariant &proj_variant)
 {
     const auto &proj = std::get<ResourceDeltaProjection>(proj_variant);
-    std::vector<std::tuple<int, int, float, knp::core::Step>> weights_by_receiver_sender;
+    std::vector<WeightByReceiverSender> weights_by_receiver_sender;
     for (const auto &synapse_data : proj)
     {
-        float weight = std::get<0>(synapse_data).rule_.synaptic_resource_;
-        knp::core::Step update_step = std::get<0>(synapse_data).rule_.last_spike_step_;
-        size_t sender = std::get<1>(synapse_data);
-        size_t receiver = std::get<2>(synapse_data);
+        float weight = std::get<knp::core::SynapseElementAccess::synapse_data>(synapse_data).rule_.synaptic_resource_;
+        knp::core::Step update_step =
+            std::get<knp::core::SynapseElementAccess::synapse_data>(synapse_data).rule_.last_spike_step_;
+        size_t sender = std::get<knp::core::SynapseElementAccess::source_neuron_id>(synapse_data);
+        size_t receiver = std::get<knp::core::SynapseElementAccess::target_neuron_id>(synapse_data);
         weights_by_receiver_sender.push_back({receiver, sender, weight, update_step});
     }
     std::sort(
         weights_by_receiver_sender.begin(), weights_by_receiver_sender.end(),
-        [](const auto &v1, const auto &v2)
+        [](const WeightByReceiverSender &v1, const WeightByReceiverSender &v2)
         {
-            if (std::get<0>(v1) != std::get<0>(v2)) return std::get<0>(v1) < std::get<0>(v2);
-            return std::get<1>(v1) < std::get<1>(v2);
+            if (v1.receiver_ != v2.receiver_) return v1.receiver_ < v2.receiver_;
+            return v1.sender_ < v2.sender_;
         });
     return weights_by_receiver_sender;
 }
@@ -71,21 +80,21 @@ SpikeProcessor make_projection_weights_observer_function(
         // Output weights for every step that is a full square
         weights_log << "Step: " << step << std::endl;
         const auto ranges = model_executor.get_backend()->get_network_data();
-        for (auto &iter = *ranges.projection_range.first; iter != *ranges.projection_range.second; ++iter)
+        for (auto &iter = *(ranges.projection_range.first); iter != *(ranges.projection_range.second); ++iter)
         {
             const knp::core::UID curr_proj_uid = std::visit([](const auto &proj) { return proj.get_uid(); }, *iter);
             if (curr_proj_uid != uid) continue;
-            auto weights_by_receiver_sender = fill_projection_weights(*iter);
-            size_t neuron = -1;
+            auto weights_by_receiver_sender = process_projection_weights(*iter);
+            size_t neuron = std::numeric_limits<size_t>::max();
             for (const auto &syn_data : weights_by_receiver_sender)
             {
-                size_t new_neuron = std::get<0>(syn_data);
+                size_t new_neuron = syn_data.receiver_;
                 if (neuron != new_neuron)
                 {
                     neuron = new_neuron;
                     weights_log << std::endl << "Neuron " << neuron << std::endl;
                 }
-                weights_log << std::get<2>(syn_data) << "|" << std::get<3>(syn_data) << " ";
+                weights_log << syn_data.weight_ << "|" << syn_data.update_step_ << " ";
             }
             weights_log << std::endl;
             return;

@@ -31,6 +31,7 @@
 /// How many subnetworks to use.
 constexpr int num_subnetworks = 5;
 
+
 /**
  * @brief Create and train a network.
  * @param path_to_backend path to backend.
