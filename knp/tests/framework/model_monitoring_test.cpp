@@ -26,7 +26,7 @@
 #include <tests_common.h>
 
 
-TEST(AggregatedSpikesLogger, ModelMonitoring)
+TEST(ModelMonitoring, AggregatedSpikesLogger)
 {
     knp::testing::BLIFATPopulation population{knp::testing::neuron_generator, 1};
 
@@ -75,11 +75,11 @@ TEST(AggregatedSpikesLogger, ModelMonitoring)
         model, {{i_channel_uid, "INPUT"}}, model_executor, spike_accumulator, projection_weights_stream, 1);
     model_executor.start([](size_t step) -> bool { return step < 3; });
 
-    ASSERT_STREQ(projection_weights_stream.str().c_str(), "Index, INPUT\n1, 0\n2, 1\n3, 0\n");
+    ASSERT_EQ(projection_weights_stream.str(), "Index, INPUT\n1, 0\n2, 1\n3, 0\n");
 }
 
 
-TEST(ProjectionWeightsLogger, ModelMonitoring)
+TEST(ModelMonitoring, ProjectionWeightsLogger)
 {
     knp::testing::BLIFATPopulation population{knp::testing::neuron_generator, 1};
 
@@ -118,11 +118,11 @@ TEST(ProjectionWeightsLogger, ModelMonitoring)
         projection_weights_stream, model_executor, input_projection.get_uid(), 1);
     model_executor.start([](size_t step) -> bool { return step < 2; });
 
-    ASSERT_STREQ(projection_weights_stream.str().c_str(), "Step: 1\n\nNeuron 1\n0|0 \nStep: 2\n\nNeuron 1\n0|1 \n");
+    ASSERT_EQ(projection_weights_stream.str(), "Step: 1\n\nNeuron 1\n0|0 \nStep: 2\n\nNeuron 1\n0|1 \n");
 }
 
 
-TEST(SpikesLogger, ModelMonitoring)
+TEST(ModelMonitoring, SpikesLogger)
 {
     knp::testing::BLIFATPopulation population{knp::testing::neuron_generator, 1};
 
@@ -170,5 +170,5 @@ TEST(SpikesLogger, ModelMonitoring)
         model_executor, {{i_channel_uid, "INPUT"}}, projection_weights_stream);
     model_executor.start([](size_t step) -> bool { return step < 3; });
 
-    ASSERT_STREQ(projection_weights_stream.str().c_str(), "Step: 0\nSender: INPUT\n0 \nStep: 2\nSender: INPUT\n0 \n");
+    ASSERT_EQ(projection_weights_stream.str(), "Step: 0\nSender: INPUT\n0 \nStep: 2\nSender: INPUT\n0 \n");
 }
