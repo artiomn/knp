@@ -114,10 +114,13 @@ TEST(ModelMonitoring, ProjectionWeightsLogger)
           }}});
 
     std::ostringstream projection_weights_stream;
+    std::cout << "CHECKKK attached weights logger" << std::endl;
     knp::framework::monitoring::model::add_projection_weights_logger(
         projection_weights_stream, model_executor, input_projection.get_uid(), 1);
+    std::cout << "CHECKKK started model" << std::endl;
     model_executor.start([](size_t step) -> bool { return step < 2; });
 
+    std::cout << "CHECKKK model finished" << std::endl;
     ASSERT_EQ(projection_weights_stream.str(), "Step: 1\n\nNeuron 1\n0|0 \nStep: 2\n\nNeuron 1\n0|1 \n");
 }
 
