@@ -1,5 +1,5 @@
 /**
- * @file gpu_cuda.cu
+ * @file gpu_cuda_device.cu
  * @brief CUDA device class implementation.
  * @kaspersky_support Artiom N.
  * @date 24.02.2024
