@@ -61,13 +61,17 @@ bool receive_messages_smallest_network(const knp::core::UID &out_channel_uid, En
 }
 
 
+//__global__
+
+
 TEST(CUDABackendSuite, CUDADevice)  // cppcheck-suppress syntaxError
 {
     auto gpus = knp::devices::gpu::list_cuda_processors();
     for (const auto &gpu : gpus)
     {
         auto gpu_ptr = dynamic_cast<const knp::devices::gpu::CUDA *>(&gpu);
-        SPDLOG_INFO("GPU name: {}, warp size = {}", gpu.get_name(), gpu_ptr->get_warp_size());
+        SPDLOG_INFO(
+            "GPU name: {}, warp size = {}, power = {}", gpu.get_name(), gpu_ptr->get_warp_size(), gpu.get_power());
     }
 }
 

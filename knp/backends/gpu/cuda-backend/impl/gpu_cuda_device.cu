@@ -87,10 +87,15 @@ uint32_t CUDA::get_socket_number() const
 
 float CUDA::get_power() const
 {
-    nvmlDevice_t device_handle;
-
     try
     {
+        if (auto e_code = nvmlInit_v2(); e_code != NVML_SUCCESS)
+        {
+            throw std::runtime_error(std::string("NVML initialization failed: ") + std::to_string(e_code));
+        }
+
+        nvmlDevice_t device_handle;
+
         if (auto e_code = nvmlDeviceGetHandleByIndex_v2(gpu_num_, &device_handle); e_code != NVML_SUCCESS)
         {
             throw std::runtime_error(std::string("Device handle getting error: ") + std::to_string(e_code));
@@ -109,11 +114,20 @@ float CUDA::get_power() const
             throw std::runtime_error(std::string("Device power usage getting error: ") + std::to_string(e_code));
         }
 
+        if (auto e_code = nvmlShutdown(); e_code != NVML_SUCCESS)
+        {
+            SPDLOG_WARN("NVML shutdown failed: {}", e_code);
+        }
+
         return power_usage;
     }
     catch(const std::runtime_error &e)
     {
         SPDLOG_ERROR("{}", e.what());
+        if (auto e_code = nvmlShutdown(); e_code != NVML_SUCCESS)
+        {
+            SPDLOG_WARN("NVML shutdown failed: {}", e_code);
+        }
         throw;
     }
     catch(...)

@@ -96,7 +96,7 @@ public:
     [[nodiscard]] uint32_t get_socket_number() const;
 
     /**
-     * @brief Get power consumption details for the device.
+     * @brief Get power consumption details for the device in mWatts.
      * @return amount of consumed power.
      */
     [[nodiscard]] float get_power() const override;
