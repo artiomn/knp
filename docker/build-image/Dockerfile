@@ -51,6 +51,7 @@ RUN <<EOT
       bison \
       build-essential \
       ca-certificates \
+      cccc \
       clang \
       clang-tidy \
       cmake \

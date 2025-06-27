@@ -150,6 +150,8 @@ jobs:
             c_compiler: cl
 
     steps:
+      # NTFS protection must be enabled to prevent files with names containing '\'.
+      # - run: git config --global core.protectNTFS false
       - uses: actions/checkout@v4
       - name: Set reusable strings
         # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
