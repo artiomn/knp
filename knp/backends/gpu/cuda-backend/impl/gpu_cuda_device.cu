@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-#include <knp/devices/gpu_cuda_device.h>
 #include <knp/devices/gpu_cuda.h>
 
 #include <spdlog/spdlog.h>

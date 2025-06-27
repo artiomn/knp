@@ -26,7 +26,6 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
-#include <gpu_cuda_device.h>
 
 #include <array>
 #include <memory>
