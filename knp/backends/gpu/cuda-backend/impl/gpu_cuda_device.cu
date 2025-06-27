@@ -1,5 +1,5 @@
 /**
- * @file gpu_cuda.cpp
+ * @file gpu_cuda.cu
  * @brief CUDA device class implementation.
  * @kaspersky_support Artiom N.
  * @date 24.02.2024
@@ -19,9 +19,12 @@
  * limitations under the License.
  */
 
+#include <knp/devices/gpu_cuda_device.h>
 #include <knp/devices/gpu_cuda.h>
 
 #include <spdlog/spdlog.h>
+
+#include <nvml.h>
 
 #include <exception>
 
@@ -85,7 +88,93 @@ uint32_t CUDA::get_socket_number() const
 
 float CUDA::get_power() const
 {
-    return 0;
+    nvmlDevice_t device_handle;
+
+    try
+    {
+        if (auto e_code = nvmlDeviceGetHandleByIndex_v2(gpu_num_, &device_handle); e_code != NVML_SUCCESS)
+        {
+            throw std::runtime_error(std::string("Device handle getting error: ") + std::to_string(e_code));
+        }
+
+        nvmlEnableState_t mode;
+        if (auto e_code = nvmlDeviceGetPowerManagementMode(device_handle, &mode); e_code != NVML_SUCCESS)
+        {
+            throw std::runtime_error(std::string("Device power management mode getting error: ") +
+                                     std::to_string(e_code));
+        }
+
+        unsigned int power_usage;
+        if (auto e_code = nvmlDeviceGetPowerUsage(device_handle, &power_usage); e_code != NVML_SUCCESS)
+        {
+            throw std::runtime_error(std::string("Device power usage getting error: ") + std::to_string(e_code));
+        }
+
+        return power_usage;
+    }
+    catch(const std::runtime_error &e)
+    {
+        SPDLOG_ERROR("{}", e.what());
+        throw;
+    }
+    catch(...)
+    {
+        throw;
+    }
+}
+
+
+unsigned int CUDA::get_warp_size() const
+{
+    return static_cast<unsigned int>(properties_.warpSize);
+}
+
+
+unsigned int CUDA::get_mp_count() const
+{
+    return static_cast<unsigned int>(properties_.multiProcessorCount);
+}
+
+
+unsigned int CUDA::get_threads_per_mp() const
+{
+    return static_cast<unsigned int>(properties_.maxThreadsPerMultiProcessor);
+}
+
+
+unsigned int CUDA::get_max_threads_count() const
+{
+    return static_cast<unsigned int>(properties_.maxThreadsPerBlock);
+}
+
+
+unsigned int CUDA::get_concurrent_kernels() const
+{
+    return static_cast<unsigned int>(properties_.concurrentKernels);
+}
+
+
+const std::array<int, 3> CUDA::get_max_threads_dim() const
+{
+    return {properties_.maxThreadsDim[0], properties_.maxThreadsDim[1], properties_.maxThreadsDim[2]};
+}
+
+
+const std::array<int, 3> CUDA::get_max_grid_size() const
+{
+    return {properties_.maxGridSize[0], properties_.maxGridSize[1], properties_.maxGridSize[2]};
+}
+
+
+unsigned int CUDA::get_global_memory_bytes() const
+{
+    return static_cast<unsigned int>(properties_.totalGlobalMem);
+}
+
+
+unsigned int CUDA::get_constant_memory_bytes() const
+{
+    return static_cast<unsigned int>(properties_.totalConstMem);
 }
 
 

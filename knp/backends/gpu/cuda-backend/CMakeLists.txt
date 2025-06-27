@@ -60,7 +60,7 @@ knp_add_library("${PROJECT_NAME}"
         ${${PROJECT_NAME}_headers}
     ALIAS KNP::Backends::CUDA
     LINK_PRIVATE
-        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::cudart CUDA::cuda_driver
+        Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::cudart CUDA::cuda_driver CUDA::nvml
     LINK_PUBLIC
         KNP::Core
 )

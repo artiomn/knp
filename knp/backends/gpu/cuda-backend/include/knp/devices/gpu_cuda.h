@@ -26,7 +26,9 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <gpu_cuda_device.h>
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -99,6 +101,57 @@ public:
      * @return amount of consumed power.
      */
     [[nodiscard]] float get_power() const override;
+
+    /**
+     * @brief Get warp size from GPU.
+     */
+    [[nodiscard]] unsigned int get_warp_size() const;
+
+    /**
+     * @brief Get multiprocessors count.
+     */
+    [[nodiscard]] unsigned int get_mp_count() const;
+
+    /**
+     * @brief Get threads per multiprocessor.
+     */
+    [[nodiscard]] unsigned int get_threads_per_mp() const;
+
+    /**
+     * @brief Get threads per block from GPU.
+     */
+    [[nodiscard]] unsigned int get_max_threads_count() const;
+
+    /**
+     * @brief Get kernels count that GPU can possibly execute concurrently.
+     */
+    [[nodiscard]] unsigned int get_concurrent_kernels() const;
+
+    /**
+     * @brief Get maximum size of each dimension of a block from GPU.
+     */
+    [[nodiscard]] const std::array<int, 3> get_max_threads_dim() const;
+
+    /**
+     * @brief Get maximum size of each dimension of a grid from GPU.
+     */
+    [[nodiscard]] const std::array<int, 3> get_max_grid_size() const;
+
+    /**
+     * @brief Get global memory available on device in bytes.
+     */
+    [[nodiscard]] unsigned int get_global_memory_bytes() const;
+
+    /**
+     * @brief Get constant memory available on device in bytes.
+     */
+    [[nodiscard]] unsigned int get_constant_memory_bytes() const;
+
+public:
+    /**
+     * @brief Get description sGPU.
+     */
+    [[nodiscard]] [[deprecated("Use methods")]] cudaDeviceProp get_device_prop() const;
 
 private:
     /**
