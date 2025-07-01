@@ -51,13 +51,13 @@ public:
      * @brief Route some messages.
      * @return number of messages routed during the step.
      */
-    _CCCL_DEVICE size_t step();
+    __device__ size_t step();
 
     /**
      * @brief Route messages.
      * @return number of messages routed.
      */
-    _CCCL_DEVICE size_t route_messages();
+    __device__ size_t route_messages();
 
 public:
     /**
@@ -70,7 +70,7 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    _CCCL_DEVICE bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders);
+    __device__ bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders);
 
     /**
      * @brief Unsubscribe from messages of a specified type.
@@ -79,19 +79,19 @@ public:
      * @return true if a subscription was deleted, false otherwise.
      */
     template <typename MessageType>
-    _CCCL_DEVICE bool unsubscribe(const UID &receiver);
+    __device__ bool unsubscribe(const UID &receiver);
 
     /**
      * @brief Remove all subscriptions for a receiver with given UID.
      * @param receiver receiver UID.
      */
-    _CCCL_DEVICE void remove_receiver(const UID &receiver);
+    __device__ void remove_receiver(const UID &receiver);
 
     /**
      * @brief Send a message to the message bus.
      * @param message message to send.
      */
-    _CCCL_DEVICE void send_message(const cuda::MessageVariant &message);
+    __device__ void send_message(const cuda::MessageVariant &message);
 
     /**
      * @brief Read messages of the specified type received via subscription.
@@ -101,7 +101,7 @@ public:
      * @return vector of messages.
      */
     template <class MessageType>
-    _CCCL_DEVICE void unload_messages(const cuda::UID &receiver_uid,
+    __device__ void unload_messages(const cuda::UID &receiver_uid,
                                       thrust::device_vector<MessageType> &result_messages)
     {
     }
@@ -125,8 +125,6 @@ private:
     SubscriptionContainer subscriptions_;
 
     thrust::device_vector<cuda::MessageVariant> messages_to_route_;
-
-    std::mutex mutex_;
 };
 
 }  // namespace knp::backends::gpu::cuda

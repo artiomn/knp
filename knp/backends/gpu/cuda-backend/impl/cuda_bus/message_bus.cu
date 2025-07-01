@@ -28,7 +28,7 @@ namespace knp::backends::gpu::cuda
 {
 
 template <typename MessageType>
-_CCCL_DEVICE bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
+__device__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
 {
     for (const auto &subscr : subscriptions_)
     {
@@ -55,7 +55,7 @@ _CCCL_DEVICE bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::d
 
 
 template <typename MessageType>
-_CCCL_DEVICE bool CUDAMessageBus::unsubscribe(const UID &receiver)
+__device__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
     auto sub_iter = thrust::find_if(thrust::device, subscriptions_.begin(), subscriptions_.end(),
     [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
@@ -75,7 +75,7 @@ _CCCL_DEVICE bool CUDAMessageBus::unsubscribe(const UID &receiver)
 }
 
 
-_CCCL_DEVICE void CUDAMessageBus::remove_receiver(const UID &receiver)
+__device__ void CUDAMessageBus::remove_receiver(const UID &receiver)
 {
     for (auto sub_iter = subscriptions_.begin(); sub_iter != subscriptions_.end(); ++sub_iter)
     {
@@ -92,12 +92,12 @@ _CCCL_DEVICE void CUDAMessageBus::remove_receiver(const UID &receiver)
 }
 
 
-_CCCL_DEVICE void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
+__device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 {
 }
 
 
-_CCCL_DEVICE size_t CUDAMessageBus::step()
+__device__ size_t CUDAMessageBus::step()
 {
 /*    const std::lock_guard lock(mutex_);
     if (messages_to_route_.empty()) return 0;  // No more messages left for endpoints to receive.
@@ -141,7 +141,7 @@ _CCCL_DEVICE size_t CUDAMessageBus::step()
 }
 
 
-_CCCL_DEVICE size_t CUDAMessageBus::route_messages()
+__device__ size_t CUDAMessageBus::route_messages()
 {
     size_t count = 0;
     size_t num_messages = step();

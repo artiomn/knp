@@ -65,20 +65,20 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    _CCCL_DEVICE Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
+    __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
         receiver_(receiver) { add_senders(senders); }
 
     /**
      * @brief Get list of sender UIDs.
      * @return senders UIDs.
      */
-    [[nodiscard]] _CCCL_DEVICE const UidSet &get_senders() const { return senders_; }
+    [[nodiscard]] __device__ const UidSet &get_senders() const { return senders_; }
 
     /**
      * @brief Get UID of the entity that receives messages via the subscription.
      * @return UID.
      */
-    [[nodiscard]] _CCCL_DEVICE UID get_receiver_uid() const { return receiver_; }
+    [[nodiscard]] __device__ UID get_receiver_uid() const { return receiver_; }
 
     /**
      * @brief Unsubscribe from a sender.
@@ -86,7 +86,7 @@ public:
      * @param uid sender UID.
      * @return true if sender was deleted from subscription.
      */
-    _CCCL_DEVICE bool remove_sender(const UID &uid)
+    __device__ bool remove_sender(const UID &uid)
     {
         auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
         if (senders_.end() == erase_iter) return false;
@@ -100,7 +100,7 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    _CCCL_DEVICE bool add_sender(const UID &uid)
+    __device__ bool add_sender(const UID &uid)
     {
         if (has_sender(uid)) return false;
 
@@ -114,7 +114,7 @@ public:
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    _CCCL_DEVICE size_t add_senders(const thrust::device_vector<UID> &senders)
+    __device__ size_t add_senders(const thrust::device_vector<UID> &senders)
     {
         const size_t size_before = senders_.size();
 
@@ -129,7 +129,7 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] _CCCL_DEVICE bool has_sender(const UID &uid) const
+    [[nodiscard]] __device__ bool has_sender(const UID &uid) const
     {
         return thrust::find(thrust::device, senders_.begin(), senders_.end(), uid) != senders_.end();
     }
@@ -139,28 +139,28 @@ public:
      * @brief Add a message to the subscription.
      * @param message message to add.
      */
-    _CCCL_DEVICE void add_message(MessageType &&message) { messages_.push_back(message); }
+    __device__ void add_message(MessageType &&message) { messages_.push_back(message); }
     /**
      * @brief Add a message to the subscription.
      * @param message constant message to add.
      */
-    _CCCL_DEVICE void add_message(const MessageType &message) { messages_.push_back(message); }
+    __device__ void add_message(const MessageType &message) { messages_.push_back(message); }
 
     /**
      * @brief Get all messages.
      * @return reference to message container.
      */
-    _CCCL_DEVICE MessageContainerType &get_messages() { return messages_; }
+    __device__ MessageContainerType &get_messages() { return messages_; }
     /**
      * @brief Get all messages.
      * @return constant reference to message container.
      */
-    _CCCL_DEVICE const MessageContainerType &get_messages() const { return messages_; }
+    __device__ const MessageContainerType &get_messages() const { return messages_; }
 
     /**
      * @brief Remove all stored messages.
      */
-    _CCCL_DEVICE void clear_messages() { messages_.clear(); }
+    __device__ void clear_messages() { messages_.clear(); }
 
 private:
     /**
