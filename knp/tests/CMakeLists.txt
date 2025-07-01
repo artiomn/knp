@@ -31,8 +31,16 @@ project(knp-tester VERSION "${KNP_VERSION}" LANGUAGES CXX
         DESCRIPTION "Kaspersky Neuromorphic Platform tester and tests")
 
 if (NOT KNP_BUILD_TESTS)
-    message(STATUS "Building of tests is disabled.")
+    message(STATUS "Building of tests disabled.")
     return()
+endif()
+
+set(GLOB_LIST "*.h" "*_test.cpp")
+
+if (KNP_BUILD_CUDA)
+    message(STATUS "Building CUDA tests enabled.")
+    enable_language(CUDA)
+    list(APPEND GLOB_LIST "*_test.cu")
 endif()
 
 include(CTest)
@@ -43,9 +51,7 @@ enable_testing()
 
 include(GoogleTest)
 
-file(GLOB_RECURSE COMMON_SOURCE CONFIGURE_DEPENDS
-     "*.h"
-     "*_test.cpp")
+file(GLOB_RECURSE COMMON_SOURCE CONFIGURE_DEPENDS ${GLOB_LIST})
 
 add_executable("${PROJECT_NAME}" ${COMMON_SOURCE} tester.cpp utility.cpp)
 
@@ -58,7 +64,12 @@ target_include_directories("${PROJECT_NAME}"
 #knp_get_hdf5_target(HDF5_LIB)
 
 target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::BaseFramework::CoreStatic KNP::Backends::CPUSingleThreaded KNP::Backends::CPUMultiThreaded
-                                                KNP::Backends::CPU::ThreadPool KNP::Backends::CUDA)
+                                                KNP::Backends::CPU::ThreadPool)
+
+if (KNP_BUILD_CUDA)
+    target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::Backends::CUDA)
+endif()
+
 target_link_libraries("${PROJECT_NAME}" PRIVATE gtest gtest_main spdlog::spdlog_header_only) #  HighFive
 
 add_dependencies("${PROJECT_NAME}" knp-base-framework-core_static)

@@ -27,5 +27,7 @@
 
 namespace knp::backends::gpu::cuda
 {
+
 using UID = ::cuda::std::array<std::uint8_t, 16>;
+
 }

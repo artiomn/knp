@@ -1,5 +1,5 @@
 /**
- * @file cuda_test.cpp
+ * @file cuda_test.cu
  * @brief CUDA backend test.
  * @kaspersky_support Artiom N.
  * @date 26.02.2025
@@ -29,6 +29,8 @@
 
 #include <functional>
 #include <vector>
+
+#include "../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 
 
 using Population = knp::backends::gpu::CUDABackend::PopulationVariants;
@@ -61,7 +63,9 @@ bool receive_messages_smallest_network(const knp::core::UID &out_channel_uid, En
 }
 
 
-//__global__
+__global__ void run_bus()
+{
+}
 
 
 TEST(CUDABackendSuite, CUDADevice)  // cppcheck-suppress syntaxError
@@ -73,6 +77,14 @@ TEST(CUDABackendSuite, CUDADevice)  // cppcheck-suppress syntaxError
         SPDLOG_INFO(
             "GPU name: {}, warp size = {}, power = {}", gpu.get_name(), gpu_ptr->get_warp_size(), gpu.get_power());
     }
+}
+
+
+TEST(CUDABackendSuite, CUDABus)
+{
+    knp::backends::gpu::cuda::CUDAMessageBus message_bus;
+
+    run_bus<<<1>>>();
 }
 
 

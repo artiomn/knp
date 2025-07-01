@@ -32,6 +32,11 @@ project(knp-gpu-cuda-backend VERSION "${KNP_VERSION}" LANGUAGES CUDA C CXX
         DESCRIPTION "Kaspersky Neuromorphic Platform NVIDIA CUDA GPU backend"
         HOMEPAGE_URL "https://neuro.kaspersky.ru/neyromorfnye-tekhnologii/")
 
+if (NOT KNP_BUILD_CUDA)
+    message(STATUS "Building CUDA backend disabled.")
+    return()
+endif()
+
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
