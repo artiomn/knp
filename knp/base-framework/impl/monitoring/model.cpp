@@ -77,40 +77,29 @@ SpikeProcessor make_projection_weights_observer_function(
         [&weights_log, period, &model_executor, uid](const std::vector<knp::core::messaging::SpikeMessage> &)
     {
         size_t step = model_executor.get_backend()->get_step();
-        std::cout << "CHECKKK observer fired on " << step << std::endl;
         if (!weights_log.good() || step % period != 0) return;
-        std::cout << "CHECKKK passed check " << step << std::endl;
         // Output weights for every step that is a full square
         weights_log << "Step: " << step << std::endl;
         const auto ranges = model_executor.get_backend()->get_network_data();
-        std::cout << "CHECKKK got ranges " << step << std::endl;
         for (auto &iter = *(ranges.projection_range.first); iter != *(ranges.projection_range.second); ++iter)
         {
-            std::cout << "CHECKKK ranges cycle start " << step << std::endl;
             const knp::core::UID curr_proj_uid = std::visit([](const auto &proj) { return proj.get_uid(); }, *iter);
-            std::cout << "CHECKKK ranges found proj uid " << step << ' ' << curr_proj_uid << std::endl;
             if (curr_proj_uid != uid) continue;
-            std::cout << "CHECKKK ranges equal " << step << std::endl;
             auto weights_by_receiver_sender = process_projection_weights(*iter);
-            std::cout << "CHECKKK ranges processed " << step << std::endl;
             size_t neuron = std::numeric_limits<size_t>::max();
             for (const auto &syn_data : weights_by_receiver_sender)
             {
-                std::cout << "CHECKKK ranges weights start " << step << std::endl;
                 size_t new_neuron = syn_data.receiver_;
                 if (neuron != new_neuron)
                 {
-                    std::cout << "CHECKKK ranges weights output " << step << std::endl;
                     neuron = new_neuron;
                     weights_log << std::endl << "Neuron " << neuron << std::endl;
                 }
                 weights_log << syn_data.weight_ << "|" << syn_data.update_step_ << " ";
             }
-            std::cout << "CHECKKK ranges weights end " << step << std::endl;
             weights_log << std::endl;
             return;
         }
-        std::cout << "CHECKKK ranges cycle ended " << step << std::endl;
     };
     return observer_func;
 }
@@ -214,10 +203,8 @@ void add_projection_weights_logger(
     std::ostream &weights_log, knp::framework::ModelExecutor &model_executor, knp::core::UID const &uid,
     size_t logging_period)
 {
-    std::cout << "CHECKKK added observer" << std::endl;
     model_executor.add_observer<knp::core::messaging::SpikeMessage>(
         make_projection_weights_observer_function(weights_log, logging_period, model_executor, uid), {});
-    std::cout << "CHECKKK finally added observer" << std::endl;
 }
 
 
