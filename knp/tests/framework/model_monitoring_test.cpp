@@ -43,15 +43,20 @@ TEST(ModelMonitoring, AggregatedSpikesLogger)
 
     knp::testing::DeltaProjection input_projection = knp::testing::DeltaProjection{
         knp::core::UID{false}, population.get_uid(), knp::testing::input_projection_gen, 1};
+
     knp::framework::Network network;
+
+    const knp::core::UID input_projection_uid = input_projection.get_uid();
+    const knp::core::UID population_uid = population.get_uid();
+
     network.add_population(std::move(population));
     network.add_projection<knp::testing::DeltaProjection>(std::move(input_projection));
 
     const knp::core::UID i_channel_uid, o_channel_uid;
 
     knp::framework::Model model(std::move(network));
-    model.add_input_channel(i_channel_uid, input_projection.get_uid());
-    model.add_output_channel(o_channel_uid, population.get_uid());
+    model.add_input_channel(i_channel_uid, input_projection_uid);
+    model.add_output_channel(o_channel_uid, population_uid);
 
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(
@@ -93,14 +98,18 @@ TEST(ModelMonitoring, ProjectionWeightsLogger)
         1};
 
     knp::framework::Network network;
+
+    const knp::core::UID input_projection_uid = input_projection.get_uid();
+    const knp::core::UID population_uid = population.get_uid();
+
     network.add_population(std::move(population));
     network.add_projection<knp::testing::ResourceDeltaProjection>(std::move(input_projection));
 
     const knp::core::UID i_channel_uid, o_channel_uid;
 
     knp::framework::Model model(std::move(network));
-    model.add_input_channel(i_channel_uid, input_projection.get_uid());
-    model.add_output_channel(o_channel_uid, population.get_uid());
+    model.add_input_channel(i_channel_uid, input_projection_uid);
+    model.add_output_channel(o_channel_uid, population_uid);
 
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(
@@ -139,15 +148,20 @@ TEST(ModelMonitoring, SpikesLogger)
 
     knp::testing::DeltaProjection input_projection = knp::testing::DeltaProjection{
         knp::core::UID{false}, population.get_uid(), knp::testing::input_projection_gen, 1};
+
     knp::framework::Network network;
+
+    const knp::core::UID input_projection_uid = input_projection.get_uid();
+    const knp::core::UID population_uid = population.get_uid();
+
     network.add_population(std::move(population));
     network.add_projection<knp::testing::DeltaProjection>(std::move(input_projection));
 
     const knp::core::UID i_channel_uid, o_channel_uid;
 
     knp::framework::Model model(std::move(network));
-    model.add_input_channel(i_channel_uid, input_projection.get_uid());
-    model.add_output_channel(o_channel_uid, population.get_uid());
+    model.add_input_channel(i_channel_uid, input_projection_uid);
+    model.add_output_channel(o_channel_uid, population_uid);
 
     knp::framework::BackendLoader backend_loader;
     knp::framework::ModelExecutor model_executor(
