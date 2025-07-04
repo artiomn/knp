@@ -34,10 +34,12 @@ namespace knp::framework::projection
  * @brief add wta(winner takes all) handlers to network
  * @param executor model executor
  * @param winners_amount amount of winners
+ * @param borders borders for wta
  * @param wta_data for each compound network: a vector of senders and a vector of receivers
+ * @return vector with uids of handlers
  */
-std::vector<knp::core::UID> KNP_DECLSPEC add_wta_handlers(
-    knp::framework::ModelExecutor& executor, size_t winners_amount,
+KNP_DECLSPEC std::vector<knp::core::UID> add_wta_handlers(
+    knp::framework::ModelExecutor& executor, size_t winners_amount, std::vector<size_t> const& borders,
     std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>> const& wta_data);
 
 
