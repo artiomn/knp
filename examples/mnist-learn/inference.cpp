@@ -26,6 +26,7 @@
 #include <knp/framework/monitoring/model.h>
 #include <knp/framework/monitoring/observer.h>
 #include <knp/framework/network.h>
+#include <knp/framework/projection/wta.h>
 #include <knp/framework/sonata/network_io.h>
 #include <knp/synapse-traits/all_traits.h>
 
@@ -36,7 +37,6 @@
 #include "construct_network.h"
 #include "data_read.h"
 #include "time_string.h"
-#include "wta.h"
 
 constexpr size_t aggregated_spikes_logging_period = 4e3;
 
@@ -77,7 +77,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     //  cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
 
-    auto wta_uids = add_wta_handlers(described_network, model_executor);
+    auto wta_uids = knp::framework::projection::add_wta_handlers(model_executor, 1, described_network.data_.wta_data_);
     auto all_senders_names = described_network.data_.population_names_;
     for (const auto &uid : wta_uids)
     {
