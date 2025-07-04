@@ -29,13 +29,10 @@ namespace knp::framework::projection
 
 
 std::vector<knp::core::UID> add_wta_handlers(
-    knp::framework::ModelExecutor& executor, size_t winners_amount,
+    knp::framework::ModelExecutor& executor, size_t winners_amount, std::vector<size_t> const& borders,
     std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>> const& wta_data)
 {
-    std::vector<size_t> borders;
     std::vector<knp::core::UID> result;
-
-    for (size_t i = 0; i < 10; ++i) borders.push_back(15 * i);
 
     //generating seed for wta randomness
     std::mt19937 rand_gen(std::random_device{}());

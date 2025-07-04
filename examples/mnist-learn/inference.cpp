@@ -77,7 +77,14 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     //  cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
 
-    auto wta_uids = knp::framework::projection::add_wta_handlers(model_executor, 1, described_network.data_.wta_data_);
+    std::vector<knp::core::UID> wta_uids;
+    {
+        std::vector<size_t> wta_borders;
+        for (size_t i = 0; i < 10; ++i) wta_borders.push_back(15 * i);
+        wta_uids = knp::framework::projection::add_wta_handlers(
+            model_executor, 1, wta_borders, described_network.data_.wta_data_);
+    }
+
     auto all_senders_names = described_network.data_.population_names_;
     for (const auto &uid : wta_uids)
     {

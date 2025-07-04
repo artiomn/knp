@@ -119,7 +119,12 @@ AnnotatedNetwork train_mnist_network(
     // cppcheck-suppress variableScope
     std::map<std::string, size_t> spike_accumulator;
 
-    knp::framework::projection::add_wta_handlers(model_executor, 1, example_network.data_.wta_data_);
+    {
+        std::vector<size_t> wta_borders;
+        for (size_t i = 0; i < 10; ++i) wta_borders.push_back(15 * i);
+        knp::framework::projection::add_wta_handlers(model_executor, 1, wta_borders, example_network.data_.wta_data_);
+    }
+
     // All loggers go here
     if (!log_path.empty())
     {
