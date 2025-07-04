@@ -36,8 +36,7 @@ TEST(ModelMonitoring, AggregatedSpikesLogger)
         {
             auto param = params[i];
             param.activation_threshold_ = std::numeric_limits<double>::max();
-            //todo change this to set_neuron_parameters when #69 gets fixed
-            population.set_neurons_parameters(i, param);
+            population.set_neuron_parameters(i, param);
         }
     }
 
@@ -142,7 +141,7 @@ TEST(ModelMonitoring, SpikesLogger)
             auto param = params[i];
             param.activation_threshold_ = std::numeric_limits<double>::max();
             //todo change this to set_neuron_parameters when #69 gets fixed
-            population.set_neurons_parameters(i, param);
+            population.set_neuron_parameters(i, param);
         }
     }
 
