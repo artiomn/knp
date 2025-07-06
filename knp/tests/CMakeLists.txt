@@ -21,6 +21,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Need to build tests.
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.30")
     # Suppress Boost warning.
@@ -41,6 +44,8 @@ if (KNP_BUILD_CUDA)
     message(STATUS "Building CUDA tests enabled.")
     enable_language(CUDA)
     list(APPEND GLOB_LIST "*_test.cu")
+
+    find_package(CUDAToolkit REQUIRED)
 endif()
 
 include(CTest)
@@ -67,7 +72,7 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::BaseFramework::CoreStatic K
                                                 KNP::Backends::CPU::ThreadPool)
 
 if (KNP_BUILD_CUDA)
-    target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::Backends::CUDA)
+    target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::Backends::CUDA CUDA::cudart)
 endif()
 
 target_link_libraries("${PROJECT_NAME}" PRIVATE gtest gtest_main spdlog::spdlog_header_only) #  HighFive

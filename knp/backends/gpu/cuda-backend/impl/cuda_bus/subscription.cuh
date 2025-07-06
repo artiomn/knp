@@ -21,13 +21,14 @@
 
 #pragma once
 
-#include <boost/mp11.hpp>
-#include <cuda/std/iterator>
-
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
 #include <thrust/find.h>
 #include <thrust/execution_policy.h>
+
+#include <boost/mp11.hpp>
+#include <cuda/std/iterator>
+#include <algorithm>
 
 #include "cuda_common.cuh"
 #include "messaging.cuh"

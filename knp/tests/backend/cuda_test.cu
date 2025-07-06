@@ -30,6 +30,7 @@
 #include <functional>
 #include <vector>
 
+#include "../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 
 
@@ -63,8 +64,35 @@ bool receive_messages_smallest_network(const knp::core::UID &out_channel_uid, En
 }
 
 
+__device__ void prn()
+{
+    printf("Hello from GPU! Thread ID: %d\n", threadIdx.x);
+
+    knp::backends::gpu::cuda::device_lib::CudaVector<int> cv;
+
+    cv.reserve(2);
+
+    printf("cv.size() = %lu\n", cv.size());
+    cv.push_back(1);
+    printf("cv.size() = %lu, v = %d\n", cv.size(), cv[0]);
+    auto v = cv.pop_back();
+    printf("p1 = %d\n", v);
+    printf("cv.size() = %lu\n", cv.size());
+    cv.resize(10);
+
+    for (int i = 0; i < cv.size(); ++i) printf("i0 = %d\n", cv[i]);
+    for (int i = 0; i < cv.size(); ++i) cv[i] = i;
+    for (int i = 0; i < cv.size(); ++i) printf("i1 = %d\n", cv[i]);
+    cv.resize(5);
+    for (int i = 0; i < cv.size(); ++i) printf("i2 = %d\n", cv[i]);
+    cv.reserve(15);
+    for (int i = 0; i < cv.size(); ++i) printf("i3 = %d\n", cv[i]);
+}
+
+
 __global__ void run_bus()
 {
+    prn();
 }
 
 
@@ -84,7 +112,9 @@ TEST(CUDABackendSuite, CUDABus)
 {
     knp::backends::gpu::cuda::CUDAMessageBus message_bus;
 
-    run_bus<<<1>>>();
+    run_bus<<<1, 10>>>();
+
+    cudaDeviceSynchronize();
 }
 
 
