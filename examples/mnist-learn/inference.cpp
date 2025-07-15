@@ -21,6 +21,7 @@
 
 #include "inference.h"
 
+#include <knp/framework/data_processing/image_classification.h>
 #include <knp/framework/model.h>
 #include <knp/framework/model_executor.h>
 #include <knp/framework/monitoring/model.h>
@@ -35,7 +36,6 @@
 #include <utility>
 
 #include "construct_network.h"
-#include "data_read.h"
 #include "time_string.h"
 
 constexpr size_t aggregated_spikes_logging_period = 4e3;
@@ -45,7 +45,7 @@ namespace fs = std::filesystem;
 
 std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     const fs::path &path_to_backend, AnnotatedNetwork &described_network,
-    const std::vector<std::vector<bool>> &spike_frames, const fs::path &log_path)
+    knp::framework::data_processing::image_classification::Dataset const &dataset, const fs::path &log_path)
 {
     knp::framework::BackendLoader backend_loader;
     knp::framework::Model model(std::move(described_network.network_));
@@ -56,7 +56,9 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // and the population IDs.
     knp::framework::ModelLoader::InputChannelMap channel_map;
     knp::core::UID input_image_channel_uid;
-    channel_map.insert({input_image_channel_uid, make_input_generator(spike_frames, learning_period)});
+    channel_map.insert(
+        {input_image_channel_uid,
+         knp::framework::data_processing::image_classification::make_inference_images_spikes_generator(dataset)});
 
     for (auto i : described_network.data_.output_uids_) model.add_output_channel(o_channel_uid, i);
     for (auto image_proj_uid : described_network.data_.projections_from_raster_)
@@ -106,10 +108,10 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // Start model.
     std::cout << get_time_string() << ": inference started\n";
     model_executor.start(
-        [](size_t step)
+        [&](size_t step)
         {
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
-            return step != testing_period;
+            return step != dataset.steps_required_for_inference_;
         });
     // Updates the output channel.
     auto spikes = out_channel.update();

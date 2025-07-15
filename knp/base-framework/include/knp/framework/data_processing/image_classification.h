@@ -1,0 +1,106 @@
+/**
+ * @file image_classification.h
+ * @brief Prepare dataset of images for classification
+ * @kaspersky_support D. Postnikov
+ * @date 14.07.2025
+ * @license Apache 2.0
+ * @copyright © 2024 AO Kaspersky Lab
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#pragma once
+
+#include <knp/core/core.h>
+#include <knp/core/messaging/messaging.h>
+
+#include <filesystem>
+#include <utility>
+#include <vector>
+
+#include "knp/core/impexp.h"
+
+namespace knp::framework::data_processing::image_classification
+{
+
+struct Dataset
+{
+    // Vector of labels and images in spikes form
+    std::vector<std::pair<unsigned, std::vector<bool>>> data_for_training_;
+    // Vector of labels and images in spikes form
+    std::vector<std::pair<unsigned, std::vector<bool>>> data_for_inference_;
+
+    size_t steps_per_image_;
+    size_t steps_required_for_training_;
+    size_t steps_required_for_inference_;
+    size_t image_size_;
+};
+
+
+/**
+ * @brief Create a simple image to spikes converter, its gonna send spikes for active_steps steps, and it will not send
+ * any for steps_per_image-active_steps steps
+ * @param steps_per_image amount of steps required for a single image to be passed to model in form of spikes
+ * @param active_steps amount of active steps, active steps are steps when spikes being sent, must me < steps_per_image
+ * @param image_size total image size
+ * @param state_increment_factor how much to increment to spike accumulator
+ * @param state a vector of states, should be filled with zeroes and size of image_size, should have same lifetime as
+ * function call expression lifetime
+ */
+KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_simple_image_to_spikes_converter(
+    size_t steps_per_image, size_t active_steps, size_t image_size, float state_increment_factor,
+    std::vector<float> &&states);
+
+
+/**
+ * @brief Process data from dataset, and save it in form so it can be used for training and inference. Note that dataset
+ * should be randomized beforehand, this function does not include any randomization
+ * @param path_to_features path to file containing features, aka raw images.
+ * @param path_to_labels path to file containing labels of images
+ * @param training_amount amount of images model should be trained on
+ * @param dataset_split a float between 0 and 1, represents dataset split on training and inference data, for example
+ * dataset_split of 0.8 would cut dataset so 80% of data is used for training, and other data used for inference.
+ * @param image_size total image size
+ * @param steps_per_image amount of steps used to send image in form of spikes to model
+ * @param image_to_spikes function to convert raw image data to spikes form
+ */
+KNP_DECLSPEC Dataset process_data(
+    std::filesystem::path const &path_to_features, std::filesystem::path const &path_to_labels, size_t training_amount,
+    float dataset_split, size_t image_size, size_t steps_per_image,
+    std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes);
+
+
+/**
+ * @brief Make generator of spikes(from training labels) for channel
+ * @param dataset dataset
+ */
+KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_labels_generator(
+    Dataset const &dataset);
+
+
+/**
+ * @brief Make generator of spikes(from training images in form of spikes) for channel
+ * @param dataset dataset
+ */
+KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_images_spikes_generator(
+    Dataset const &dataset);
+
+
+/**
+ * @brief Make generator of spikes(from inference images in form of spikes) for channel
+ * @param dataset dataset
+ */
+KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_inference_images_spikes_generator(
+    Dataset const &dataset);
+
+}  //namespace knp::framework::data_processing::image_classification
