@@ -24,7 +24,7 @@
 #include <knp/core/core.h>
 #include <knp/core/messaging/messaging.h>
 
-#include <filesystem>
+#include <fstream>
 #include <utility>
 #include <vector>
 
@@ -65,8 +65,8 @@ KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make
 /**
  * @brief Process data from dataset, and save it in form so it can be used for training and inference. Note that dataset
  * should be randomized beforehand, this function does not include any randomization
- * @param path_to_features path to file containing features, aka raw images.
- * @param path_to_labels path to file containing labels of images
+ * @param images_stream stream of raw images
+ * @param labels_stream stream of labels to images
  * @param training_amount amount of images model should be trained on
  * @param dataset_split a float between 0 and 1, represents dataset split on training and inference data, for example
  * dataset_split of 0.8 would cut dataset so 80% of data is used for training, and other data used for inference.
@@ -75,8 +75,8 @@ KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make
  * @param image_to_spikes function to convert raw image data to spikes form
  */
 KNP_DECLSPEC Dataset process_data(
-    std::filesystem::path const &path_to_features, std::filesystem::path const &path_to_labels, size_t training_amount,
-    float dataset_split, size_t image_size, size_t steps_per_image,
+    std::ifstream &images_stream, std::ifstream &labels_stream, size_t training_amount, float dataset_split,
+    size_t image_size, size_t steps_per_image,
     std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes);
 
 

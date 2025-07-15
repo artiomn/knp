@@ -64,8 +64,8 @@ std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_simple_image
 
 
 Dataset process_data(
-    std::filesystem::path const &path_to_features, std::filesystem::path const &path_to_labels, size_t training_amount,
-    float dataset_split, size_t image_size, size_t steps_per_image,
+    std::ifstream &images_stream, std::ifstream &labels_stream, size_t training_amount, float dataset_split,
+    size_t image_size, size_t steps_per_image,
     std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes)
 {
     Dataset dataset;
@@ -74,14 +74,11 @@ Dataset process_data(
     dataset.steps_per_image_ = steps_per_image;
 
     {  // Process dataset
-        std::ifstream features_stream(path_to_features, std::ios::binary);
-        std::ifstream labels_stream(path_to_labels);
-
         std::vector<uint8_t> image_reading_buffer(image_size, 0);
 
-        while (features_stream.good() && labels_stream.good())
+        while (images_stream.good() && labels_stream.good())
         {
-            features_stream.read(reinterpret_cast<char *>(&*image_reading_buffer.begin()), image_size);
+            images_stream.read(reinterpret_cast<char *>(&*image_reading_buffer.begin()), image_size);
             auto spikes_frame = image_to_spikes(image_reading_buffer);
 
             std::string str;

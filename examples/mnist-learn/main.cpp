@@ -33,6 +33,8 @@ constexpr size_t active_steps = 10;
 constexpr size_t steps_per_image = 20;
 constexpr size_t image_size = 28 * 28;
 constexpr float state_increment_factor = 1.f / 255;
+constexpr size_t images_amount_to_train = 10000;
+constexpr float dataset_split = 0.8;
 
 
 int main(int argc, char **argv)
@@ -51,10 +53,12 @@ int main(int argc, char **argv)
     std::filesystem::path path_to_backend =
         std::filesystem::path(argv[0]).parent_path() / "knp-cpu-multi-threaded-backend";
 
+    std::ifstream images_stream(argv[1], std::ios::binary);
+    std::ifstream labels_stream(argv[2], std::ios::in);
 
     knp::framework::data_processing::image_classification::Dataset dataset =
         knp::framework::data_processing::image_classification::process_data(
-            argv[1], argv[2], 10000, 0.8f, image_size, steps_per_image,
+            images_stream, labels_stream, images_amount_to_train, dataset_split, image_size, steps_per_image,
             knp::framework::data_processing::image_classification::make_simple_image_to_spikes_converter(
                 steps_per_image, active_steps, image_size, state_increment_factor,
                 std::vector<float>(image_size, 0.f)));
