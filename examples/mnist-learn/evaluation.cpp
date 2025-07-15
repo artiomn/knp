@@ -28,8 +28,6 @@
 #include <string>
 #include <utility>
 
-#include "construct_network.h"
-
 
 constexpr int num_possible_labels = 10;
 
@@ -50,8 +48,8 @@ struct Result
 class Target
 {
 public:
-    Target(int num_target_classes, const std::vector<int> &classes)
-        : prediction_votes_(num_target_classes, 0), states_(classes), max_vote_(num_target_classes, 0)
+    Target(int num_target_classes, knp::framework::data_processing::image_classification::Dataset const &dataset)
+        : prediction_votes_(num_target_classes, 0), states_(dataset), max_vote_(num_target_classes, 0)
     {
     }
 
@@ -66,7 +64,7 @@ private:
         const std::filesystem::path &out_file_path, const std::vector<Result> &prediction_results,
         const std::vector<int> &predictions) const;
 
-    const std::vector<int> &states_;
+    knp::framework::data_processing::image_classification::Dataset const &states_;
     std::vector<std::pair<int, int>> predicted_states_;
     size_t tact_ = 0;
     const int state_duration_ = 20;
@@ -139,8 +137,8 @@ void Target::write_predictions_to_file(
         out_stream << label << ',' << precision << ',' << recall << ',' << f_measure << std::endl;
     }
     for (size_t i = 0; i < predicted_states_.size(); ++i)
-        out_stream << states_[i] << ',' << predicted_states_[i].first << ',' << predicted_states_[i].second << ','
-                   << predictions[i] << std::endl;
+        out_stream << states_.data_for_inference_[i].first << ',' << predicted_states_[i].first << ','
+                   << predicted_states_[i].second << ',' << predictions[i] << std::endl;
 }
 
 
@@ -159,9 +157,10 @@ int Target::finalize(const std::filesystem::path &out_file_path) const
     for (size_t i = 0; i < predicted_states_.size(); ++i)
     {
         int predicted = predictions[i];
-        if (states_[i] != -1) ++prediction_results[states_[i]].real_;
+        if (states_.data_for_inference_[i].first != -1)
+            ++prediction_results[states_.data_for_inference_[i].first].real_;
         if (predicted != -1) ++prediction_results[predicted].predicted_;
-        if (predicted != states_[i])
+        if (predicted != states_.data_for_inference_[i].first)
             ++num_errors;
         else if (predicted != -1)
             ++prediction_results[predicted].correcty_predicted_;
@@ -174,11 +173,11 @@ int Target::finalize(const std::filesystem::path &out_file_path) const
 
 
 void process_inference_results(
-    const std::vector<knp::core::messaging::SpikeMessage> &spikes, const std::vector<int> &classes_for_testing,
-    int testing_period)
+    const std::vector<knp::core::messaging::SpikeMessage> &spikes,
+    knp::framework::data_processing::image_classification::Dataset const &dataset, int testing_period)
 {
     auto j = spikes.begin();
-    Target target(num_possible_labels, classes_for_testing);
+    Target target(num_possible_labels, dataset);
     for (int tact = 0; tact < testing_period; ++tact)
     {
         knp::core::messaging::SpikeData firing_neuron_indices;

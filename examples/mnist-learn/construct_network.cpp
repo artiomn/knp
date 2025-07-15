@@ -52,19 +52,19 @@ constexpr float threshold_weight_coeff = 0.023817F;
 //
 
 // Number of neurons reserved per a single digit.
-constexpr int neurons_per_column = 15;
+constexpr size_t neurons_per_column = 15;
 
 // Ten possible digits, one column per each.
-constexpr int num_possible_labels = classes_in_mnist;
+constexpr size_t num_possible_labels = 10;
 
 // All columns are a part of the same population.
-constexpr int num_input_neurons = neurons_per_column * num_possible_labels;
+constexpr size_t num_input_neurons = neurons_per_column * num_possible_labels;
 
 // Number of pixels for a single MNIST image.
-constexpr int input_size = 28 * 28;
+constexpr size_t input_size = 28 * 28;
 
 // Dense input projection from 28 * 28 image to population of 150 neurons.
-constexpr int input_projection_size = input_size * num_input_neurons;
+constexpr size_t input_projection_size = input_size * num_input_neurons;
 
 
 // Intermediate population neurons.

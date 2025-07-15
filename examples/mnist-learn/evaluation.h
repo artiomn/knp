@@ -22,10 +22,11 @@
 #pragma once
 
 #include <knp/core/messaging/messaging.h>
+#include <knp/framework/data_processing/image_classification.h>
 
 #include <vector>
 
 
 void process_inference_results(
-    const std::vector<knp::core::messaging::SpikeMessage> &spikes, const std::vector<int> &classes_for_testing,
-    int testing_period);
+    const std::vector<knp::core::messaging::SpikeMessage>& spikes,
+    knp::framework::data_processing::image_classification::Dataset const& dataset, int testing_period);

@@ -71,6 +71,7 @@ knp_add_library("${PROJECT_NAME}-core"
     impl/sonata/types/altai_lif_neuron.cpp
     impl/sonata/types/resource_delta_synapse.cpp
     impl/sonata/types/additive_delta_synapse.cpp
+    impl/data_processing/image_classification.cpp
     impl/observer.cpp
     ${${PROJECT_NAME}_headers}
     ALIAS KNP::BaseFramework::Core
