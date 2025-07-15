@@ -22,27 +22,46 @@
 #pragma once
 
 #include <knp/core/core.h>
+#include <knp/core/impexp.h>
 #include <knp/core/messaging/messaging.h>
 
 #include <fstream>
 #include <utility>
 #include <vector>
 
-#include "knp/core/impexp.h"
-
 namespace knp::framework::data_processing::image_classification
 {
 
+/**
+ * @brief A class that represents processed dataset
+ */
 struct Dataset
 {
-    // Vector of labels and images in spikes form
+    /**
+     * @brief Vector of pairs of labels and image in spikes form(distributed in several steps)
+     */
     std::vector<std::pair<unsigned, std::vector<bool>>> data_for_training_;
-    // Vector of labels and images in spikes form
+
+    /**
+     * @brief Vector of pairs of labels and image in spikes form(distributed in several steps)
+     */
     std::vector<std::pair<unsigned, std::vector<bool>>> data_for_inference_;
 
+    /**
+     * @brief Amount of steps the converted image will be sent
+     */
     size_t steps_per_image_;
+    /**
+     * @brief Amount of steps required for training
+     */
     size_t steps_required_for_training_;
+    /**
+     * @brief Amount of steps required for inference
+     */
     size_t steps_required_for_inference_;
+    /**
+     * @brief Total image size
+     */
     size_t image_size_;
 };
 
