@@ -75,6 +75,7 @@ struct Dataset
  * @param state_increment_factor how much to increment to spike accumulator
  * @param state a vector of states, should be filled with zeroes and size of image_size, should have same lifetime as
  * function call expression lifetime
+ * @return A functor that converts image raw data to spikes
  */
 KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_simple_image_to_spikes_converter(
     size_t steps_per_image, size_t active_steps, size_t image_size, float state_increment_factor,
@@ -92,6 +93,7 @@ KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make
  * @param image_size total image size
  * @param steps_per_image amount of steps used to send image in form of spikes to model
  * @param image_to_spikes function to convert raw image data to spikes form
+ * @return Processed dataset
  */
 KNP_DECLSPEC Dataset process_data(
     std::ifstream &images_stream, std::ifstream &labels_stream, size_t training_amount, float dataset_split,
@@ -102,6 +104,7 @@ KNP_DECLSPEC Dataset process_data(
 /**
  * @brief Make generator of spikes(from training labels) for channel
  * @param dataset dataset
+ * @return A functor for generating spikes from dataset
  */
 KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_labels_generator(
     Dataset const &dataset);
@@ -110,6 +113,7 @@ KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> mak
 /**
  * @brief Make generator of spikes(from training images in form of spikes) for channel
  * @param dataset dataset
+ * @return A functor for generating spikes from dataset
  */
 KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_images_spikes_generator(
     Dataset const &dataset);
@@ -118,6 +122,7 @@ KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> mak
 /**
  * @brief Make generator of spikes(from inference images in form of spikes) for channel
  * @param dataset dataset
+ * @return A functor for generating spikes from dataset
  */
 KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_inference_images_spikes_generator(
     Dataset const &dataset);
