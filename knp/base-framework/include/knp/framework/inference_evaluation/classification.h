@@ -61,7 +61,6 @@ struct InferenceResultForClass
  * @param classes_amount amount of classes in classification model
  * @param steps_per_object amoount of steps required for one object, for example in MNIST you can translate image to
  * spikes that will be sent in 20 steps, so steps_per_object=20
- * @param results_stream output stream
  * @return processed inference results for each class
  */
 KNP_DECLSPEC std::vector<InferenceResultForClass> process_inference_results(
