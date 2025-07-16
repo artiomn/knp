@@ -20,11 +20,12 @@
  */
 
 #include <knp/framework/data_processing/image_classification.h>
+#include <knp/framework/inference_evaluation/classification.h>
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 
-#include "evaluation.h"
 #include "inference.h"
 #include "time_string.h"
 #include "train.h"
@@ -35,9 +36,10 @@ constexpr size_t image_size = 28 * 28;
 constexpr float state_increment_factor = 1.f / 255;
 constexpr size_t images_amount_to_train = 10000;
 constexpr float dataset_split = 0.8;
+constexpr size_t classes_amount = 10;
 
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     if (argc < 3)
     {
@@ -74,6 +76,12 @@ int main(int argc, char **argv)
     std::cout << get_time_string() << ": inference finished  -- output spike count is " << spikes.size() << std::endl;
 
     // Evaluate results.
-    process_inference_results(spikes, dataset, dataset.steps_required_for_inference_);
+    auto const& processed_inference_results =
+        knp::framework::inference_evaluation::classification::process_inference_results(
+            spikes, dataset, classes_amount, steps_per_image);
+
+    knp::framework::inference_evaluation::classification::write_inference_results_to_stream_as_csv(
+        std::cout, processed_inference_results);
+
     return EXIT_SUCCESS;
 }
