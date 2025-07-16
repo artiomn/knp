@@ -21,8 +21,6 @@
 
 #include <knp/framework/data_processing/image_classification.h>
 
-#include <fstream>
-
 namespace knp::framework::data_processing::image_classification
 {
 
@@ -64,7 +62,7 @@ std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_simple_image
 
 
 Dataset process_data(
-    std::ifstream &images_stream, std::ifstream &labels_stream, size_t training_amount, float dataset_split,
+    std::istream &images_stream, std::istream &labels_stream, size_t training_amount, float dataset_split,
     size_t image_size, size_t steps_per_image,
     std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes)
 {
