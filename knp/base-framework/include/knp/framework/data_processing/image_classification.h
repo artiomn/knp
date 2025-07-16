@@ -25,7 +25,6 @@
 #include <knp/core/impexp.h>
 #include <knp/core/messaging/messaging.h>
 
-#include <fstream>
 #include <utility>
 #include <vector>
 
@@ -96,7 +95,7 @@ KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make
  * @return Processed dataset
  */
 KNP_DECLSPEC Dataset process_data(
-    std::ifstream &images_stream, std::ifstream &labels_stream, size_t training_amount, float dataset_split,
+    std::istream &images_stream, std::istream &labels_stream, size_t training_amount, float dataset_split,
     size_t image_size, size_t steps_per_image,
     std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes);
 
