@@ -28,14 +28,28 @@
 namespace knp::core
 {
 
+template <class T>
+T& as_lvalue(T&& t)
+{
+    return t;
+}
+
+
 Backend::Backend()
-    : message_bus_(knp::core::MessageBus::construct_bus()), message_endpoint_{message_bus_.create_endpoint()}
+    : message_bus_{knp::core::MessageBus::construct_bus()}, message_endpoint_(message_bus_->create_endpoint())
 {
 }
 
 
 Backend::Backend(MessageBus&& message_bus)
-    : message_bus_(std::move(message_bus)), message_endpoint_{message_bus_.create_endpoint()}
+    : message_bus_{std::make_shared<knp::core::MessageBus>(std::move(message_bus))},
+      message_endpoint_(message_bus_->create_endpoint())
+{
+}
+
+
+Backend::Backend(std::shared_ptr<MessageBus> message_bus)
+    : message_bus_(message_bus), message_endpoint_(message_bus_->create_endpoint())
 {
 }
 
