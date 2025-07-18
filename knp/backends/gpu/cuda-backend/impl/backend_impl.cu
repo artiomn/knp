@@ -214,8 +214,7 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
     thrust::device_vector<cuda::SynapticImpactMessage> &messages,
     std::uint64_t step_n)
 {
-    message_bus_.unload_messages<cuda::SynapticImpactMessage>(population.uid_, messages);
-
+    // TODO rework
     for (size_t i = 0; i < population.neurons_.size(); ++i)
     {
         neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron> neuron = population.neurons_[i];
@@ -377,7 +376,7 @@ __device__ void CUDABackendImpl::calculate_projection(
     SynapticMessageQueue &message_queue,
     std::uint64_t step_n)
 {
-    message_bus_.unload_messages<cuda::SpikeMessage>(projection.uid_, messages);
+    // message_bus_.unload_messages<cuda::SpikeMessage>(projection.uid_, messages);
 
     // auto out_iter = calculate_delta_synapse_projection_data(projection, messages, future_messages, get_step());
     //

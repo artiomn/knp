@@ -24,6 +24,7 @@
 #include <thrust/device_vector.h>
 
 #include <knp/core/uid.h>
+#include <knp/core/message_endpoint.h>
 #include <cub/config.cuh>
 
 #include <cuda/std/variant>
@@ -34,6 +35,7 @@
 #include "subscription.cuh"
 #include "cuda_common.cuh"
 #include "messaging.cuh"
+#include "../cuda_lib/vector.cuh"
 
 
 /**
@@ -47,6 +49,13 @@ namespace knp::backends::gpu::cuda
 class CUDAMessageBus
 {
 public:
+    /**
+     * @brief Construct GPU message bus.
+     * @param external_endpoint message endpoint used for message exchange with host.
+     */
+    explicit CUDAMessageBus(knp::core::MessageEndpoint &external_endpoint) : cpu_endpoint_(external_endpoint) 
+    {}
+
     /**
      * @brief Route some messages.
      * @return number of messages routed during the step.
@@ -94,23 +103,30 @@ public:
     __device__ void send_message(const cuda::MessageVariant &message);
 
     /**
+     * @brief Delete all messages inside the bus.
+     */
+    __device__ void clear() { messages_to_route_.clear(); }
+
+    /**
      * @brief Read messages of the specified type received via subscription.
-     * @note After reading the messages, the method clears them from the subscription.
      * @tparam MessageType type of messages to read.
      * @param receiver_uid receiver UID.
      * @return vector of messages.
      */
     template <class MessageType>
-    __device__ void unload_messages(const cuda::UID &receiver_uid,
-                                      thrust::device_vector<MessageType> &result_messages)
-    {
-    }
+    __device__ void receive_messages(const cuda::UID &receiver_uid,
+                                      thrust::device_vector<MessageType> &result_messages);
+
+
+    __device__ cuda::MessageVariant& get_message(uint64_t message_index);
 
 public:
     /**
      * @brief Type of subscription container.
      */
     using SubscriptionContainer = thrust::device_vector<SubscriptionVariant>;
+
+    using MessageBuffer = thrust::device_vector<cuda::MessageVariant>; // device_lib::CudaVector<cuda::MessageVariant>
 
     /**
      * @brief Get access to subscription container of the endpoint.
@@ -120,11 +136,26 @@ public:
 
 private:
     /**
+     * @brief Send messages to CPU endpoint.
+     */
+    __host__ int synchronize() const;
+
+
+    /**
+     * 
+     */
+    template<class MessageType>
+    __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> index_messages();
+
+    /**
      * @brief Container that stores all the subscriptions for the current endpoint.
      */
     SubscriptionContainer subscriptions_;
 
-    thrust::device_vector<cuda::MessageVariant> messages_to_route_;
+    MessageBuffer messages_to_route_;
+
+    knp::core::MessageEndpoint &cpu_endpoint_;
+
 };
 
 }  // namespace knp::backends::gpu::cuda

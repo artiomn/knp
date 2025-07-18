@@ -119,6 +119,9 @@ public:
         return *this;
     }
 
+    // Sets size to 0 without reallocation or changing capacity.
+    __device__ void clear() { size_ = 0; }
+
     __device__ T& operator[](size_t index)
     {
         return data_[index];
@@ -165,6 +168,7 @@ public:
 
     __device__ void reserve(size_t new_capacity)
     {
+        if (new_capacity <= capacity_) return;
         T* new_data = nullptr;
 
         // Capacity.
