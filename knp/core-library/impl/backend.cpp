@@ -28,13 +28,6 @@
 namespace knp::core
 {
 
-template <class T>
-T& as_lvalue(T&& t)
-{
-    return t;
-}
-
-
 Backend::Backend()
     : message_bus_{knp::core::MessageBus::construct_bus()}, message_endpoint_(message_bus_->create_endpoint())
 {
