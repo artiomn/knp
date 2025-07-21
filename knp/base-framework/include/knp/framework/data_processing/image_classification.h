@@ -1,6 +1,6 @@
 /**
  * @file image_classification.h
- * @brief Prepare dataset of images for classification
+ * @brief Processing of dataset
  * @kaspersky_support D. Postnikov
  * @date 14.07.2025
  * @license Apache 2.0
