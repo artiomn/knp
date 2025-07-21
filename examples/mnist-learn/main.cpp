@@ -58,12 +58,10 @@ int main(int argc, char** argv)
     std::ifstream images_stream(argv[1], std::ios::binary);
     std::ifstream labels_stream(argv[2], std::ios::in);
 
-    knp::framework::data_processing::image_classification::Dataset dataset =
-        knp::framework::data_processing::image_classification::process_data(
-            images_stream, labels_stream, images_amount_to_train, dataset_split, image_size, steps_per_image,
-            knp::framework::data_processing::image_classification::make_simple_image_to_spikes_converter(
-                steps_per_image, active_steps, image_size, state_increment_factor,
-                std::vector<float>(image_size, 0.f)));
+    auto dataset = knp::framework::data_processing::classification::images::process_data(
+        images_stream, labels_stream, images_amount_to_train, dataset_split, image_size, steps_per_image,
+        knp::framework::data_processing::classification::images::make_simple_image_to_spikes_converter(
+            steps_per_image, active_steps, image_size, state_increment_factor, std::vector<float>(image_size, 0.f)));
 
     dataset.steps_required_for_training_ = 10000;
     dataset.steps_required_for_inference_ = 1000;
