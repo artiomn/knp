@@ -89,7 +89,7 @@ Dataset process_data(
 
         {  // Split dataset
             size_t split_beginning =
-                static_cast<size_t>(static_cast<float>(dataset.data_for_training_.size()) * dataset_split) + 1;
+                static_cast<size_t>(static_cast<float>(dataset.data_for_training_.size()) * dataset_split + 0.5F);
             for (size_t i = split_beginning; i < dataset.data_for_training_.size(); ++i)
                 dataset.data_for_inference_.emplace_back(std::move(dataset.data_for_training_[i]));
             dataset.data_for_training_.erase(
@@ -98,8 +98,8 @@ Dataset process_data(
     }
 
     /*
-     * The idea is that if dataset is too big for required training amount, then inference will be bigger than training,
-     * so to compensate we make inference smaller, according to dataset_split
+     * The idea is that, if dataset is too big for required training amount, then inference will be bigger than
+     * training, so to compensate we make inference smaller, according to dataset_split
      */
     if (training_amount < dataset.data_for_training_.size())
     {
@@ -107,10 +107,14 @@ Dataset process_data(
         dataset.data_for_inference_.resize(
             static_cast<size_t>(static_cast<float>(dataset.data_for_training_.size()) / dataset_split) -
             dataset.data_for_training_.size());
+        dataset.steps_required_for_training_ = steps_per_image * dataset.data_for_training_.size();
+        dataset.steps_required_for_inference_ = steps_per_image * dataset.data_for_inference_.size();
     }
-
-    dataset.steps_required_for_training_ = steps_per_image * dataset.data_for_training_.size();
-    dataset.steps_required_for_inference_ = steps_per_image * dataset.data_for_inference_.size();
+    else
+    {
+        dataset.steps_required_for_training_ = steps_per_image * training_amount;
+        dataset.steps_required_for_inference_ = steps_per_image * dataset.data_for_inference_.size();
+    }
 
     return dataset;
 }
