@@ -45,7 +45,7 @@ namespace fs = std::filesystem;
 
 std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     const fs::path &path_to_backend, AnnotatedNetwork &described_network,
-    knp::framework::data_processing::image_classification::Dataset const &dataset, const fs::path &log_path)
+    knp::framework::data_processing::classification::images::Dataset const &dataset, const fs::path &log_path)
 {
     knp::framework::BackendLoader backend_loader;
     knp::framework::Model model(std::move(described_network.network_));
@@ -58,7 +58,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     knp::core::UID input_image_channel_uid;
     channel_map.insert(
         {input_image_channel_uid,
-         knp::framework::data_processing::image_classification::make_inference_images_spikes_generator(dataset)});
+         knp::framework::data_processing::classification::images::make_inference_images_spikes_generator(dataset)});
 
     for (auto i : described_network.data_.output_uids_) model.add_output_channel(o_channel_uid, i);
     for (auto image_proj_uid : described_network.data_.projections_from_raster_)

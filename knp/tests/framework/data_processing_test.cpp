@@ -30,10 +30,9 @@ TEST(DataProcessing, ImageClassification)
     constexpr float dataset_split = 2.F / 3.F;
     std::stringstream images_stream("\x01\x02\x03");
     std::stringstream labels_stream("0\n1\n2\n");
-    auto dataset =
-        knp::framework::data_processing::classification::images::process_data(
-            images_stream, labels_stream, training_amount, dataset_split, image_size, steps_per_image,
-            [](std::vector<uint8_t> const&) -> std::vector<bool> { return {true}; });
+    auto dataset = knp::framework::data_processing::classification::images::process_data(
+        images_stream, labels_stream, training_amount, dataset_split, image_size, steps_per_image,
+        [](std::vector<uint8_t> const&) -> std::vector<bool> { return {true}; });
     ASSERT_EQ(dataset.image_size_, image_size);
     ASSERT_EQ(dataset.steps_per_class_, steps_per_image);
     ASSERT_EQ(dataset.steps_required_for_training_, 10);

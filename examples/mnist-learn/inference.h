@@ -41,5 +41,5 @@
  */
 std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     const std::filesystem::path &path_to_backend, AnnotatedNetwork &described_network,
-    knp::framework::data_processing::image_classification::Dataset const &dataset,
+    knp::framework::data_processing::classification::images::Dataset const &dataset,
     const std::filesystem::path &log_path);

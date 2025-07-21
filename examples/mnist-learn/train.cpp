@@ -47,7 +47,7 @@ namespace fs = std::filesystem;
 // Create channel map for training.
 auto build_channel_map_train(
     const AnnotatedNetwork &network, knp::framework::Model &model,
-    knp::framework::data_processing::image_classification::Dataset const &dataset)
+    knp::framework::data_processing::classification::images::Dataset const &dataset)
 {
     // Create future channels uids randomly.
     knp::core::UID input_image_channel_raster;
@@ -65,10 +65,10 @@ auto build_channel_map_train(
     knp::framework::ModelLoader::InputChannelMap channel_map;
     channel_map.insert(
         {input_image_channel_raster,
-         knp::framework::data_processing::image_classification::make_training_images_spikes_generator(dataset)});
+         knp::framework::data_processing::classification::images::make_training_images_spikes_generator(dataset)});
     channel_map.insert(
         {input_image_channel_classes,
-         knp::framework::data_processing::image_classification::make_training_labels_generator(dataset)});
+         knp::framework::data_processing::classification::images::make_training_labels_generator(dataset)});
 
     return channel_map;
 }
@@ -100,7 +100,7 @@ knp::framework::Network get_network_for_inference(
 
 
 AnnotatedNetwork train_mnist_network(
-    const fs::path &path_to_backend, knp::framework::data_processing::image_classification::Dataset const &dataset,
+    const fs::path &path_to_backend, knp::framework::data_processing::classification::images::Dataset const &dataset,
     const fs::path &log_path)
 {
     AnnotatedNetwork example_network = create_example_network(num_subnetworks);
