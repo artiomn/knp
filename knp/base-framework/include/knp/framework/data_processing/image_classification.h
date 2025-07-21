@@ -50,14 +50,17 @@ struct Dataset
      * @brief Amount of steps the converted image will be sent
      */
     size_t steps_per_image_;
+
     /**
      * @brief Amount of steps required for training
      */
     size_t steps_required_for_training_;
+
     /**
      * @brief Amount of steps required for inference
      */
     size_t steps_required_for_inference_;
+
     /**
      * @brief Total image size
      */
