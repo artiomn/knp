@@ -1,6 +1,6 @@
 /**
  * @file model_monitoring_test.cpp
- * @brief Single-threaded backend test.
+ * @brief Model monitoring test.
  * @kaspersky_support D. Postnikov
  * @date 07.04.2023
  * @license Apache 2.0
