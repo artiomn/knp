@@ -65,7 +65,7 @@ struct InferenceResultForClass
  */
 KNP_DECLSPEC std::vector<InferenceResultForClass> process_inference_results(
     const std::vector<knp::core::messaging::SpikeMessage> &spikes,
-    knp::framework::data_processing::image_classification::Dataset const &dataset, size_t classes_amount,
+    knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
     size_t steps_per_object);
 
 /**
