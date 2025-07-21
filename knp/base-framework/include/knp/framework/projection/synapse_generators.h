@@ -23,6 +23,7 @@
 #include <knp/core/population.h>
 #include <knp/core/projection.h>
 
+#include <algorithm>
 #include <exception>
 #include <functional>
 #include <optional>
@@ -33,15 +34,9 @@
 
 
 /**
- * @brief Projection namespace.
+ * @brief Synapse generators namespace.
  */
-namespace knp::framework::projection
-{
-
-/**
- * @brief Namespace for framework projection generators.
- */
-namespace synapse_generators
+namespace knp::framework::projection::synapse_generators
 {
 /**
  * @brief Make connections between each presynaptic population (source) neuron to each postsynaptic population
@@ -58,7 +53,7 @@ namespace synapse_generators
 template <typename SynapseType>
 [[nodiscard]] typename knp::core::Projection<SynapseType>::SynapseGenerator all_to_all(
     size_t presynaptic_pop_size, size_t postsynaptic_pop_size,
-    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen =
+    parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
         parameters_generators::default_synapse_gen<SynapseType>)
 {
     return [presynaptic_pop_size, postsynaptic_pop_size,
@@ -70,6 +65,123 @@ template <typename SynapseType>
         return std::make_tuple(syn_gen(index0, index1), index0, index1);
     };
 }
+
+
+/**
+ * @brief Make connections between presynaptic population (source) neurons to postsynaptic population
+ * (destination) neurons.
+ * @details This is a functor class, that can be used as generator and allows to get suggested amount of synapses based
+ * on constructor parameters. If population0_size is 2 and population1_size is 4, then suggested synapses amount
+ * will be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
+ * connections evenly.
+ * tparam SynapseType projection synapse type
+ */
+template <typename SynapseType>
+class Aligned
+{
+public:
+    /**
+     * @brief Constructor
+     * @param population0_size size of first population
+     * @param population1_size size of second population
+     * @param syn_gan generator of synapse parameters
+     */
+    Aligned(
+        size_t population0_size, size_t population1_size,
+        parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
+            parameters_generators::default_synapse_gen<SynapseType>)
+        : population0_size_(population0_size), population1_size_(population1_size), syn_gen_(syn_gen)
+    {
+    }
+
+    /**
+     * @brief Generator
+     * @param index synapse index
+     * @return synapse parameters
+     */
+    [[nodiscard]] std::optional<typename knp::core::Projection<SynapseType>::Synapse> operator()(size_t index) const
+    {
+        size_t from_index;
+        size_t pack_size;
+        size_t to_index;
+        if (population0_size_ >= population1_size_)
+        {
+            from_index = index;
+            pack_size = population0_size_ / population1_size_;
+            to_index = index / pack_size;
+        }
+        else
+        {
+            to_index = index;
+            pack_size = population1_size_ / population0_size_;
+            from_index = index / pack_size;
+        }
+        return std::make_tuple(syn_gen_(from_index, to_index), from_index, to_index);
+    }
+
+    /**
+     * @brief Suggested synapses amount based on constructor arguments
+     * @return synapses amount
+     */
+    [[nodiscard]] size_t suggested_synapses_amount() const { return std::max(population0_size_, population1_size_); }
+
+private:
+    size_t population0_size_, population1_size_;
+    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen_;
+};
+
+
+/**
+ * @brief Make connections between presynaptic population (source) neurons to postsynaptic population
+ * (destination) neurons. Size of populations must be same
+ * @details This is a functor class, that can be used as generator and allows to get suggested amount of synapses based
+ * on constructor parameters. If populations size is 3, then this generator will suggest 6 synapses, and will generate
+ * synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time. tparam SynapseType
+ * projection synapse type
+ */
+
+template <typename SynapseType>
+class Exclusive
+{
+public:
+    /**
+     * @brief Constructor
+     * @param population_size size of populations, they are supposed to be the same
+     * @param syn_gen generator of synapse parameters
+     */
+    explicit Exclusive(
+        size_t population_size, parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
+                                    parameters_generators::default_synapse_gen<SynapseType>)
+        : population_size_(population_size), syn_gen_(syn_gen)
+    {
+    }
+
+
+    /**
+     * @brief Generator
+     * @param index synapse index
+     * @return synapse parameters
+     */
+    [[nodiscard]] std::optional<typename knp::core::Projection<SynapseType>::Synapse> operator()(size_t index) const
+    {
+        size_t from_index;
+        size_t to_index;
+        from_index = index / (population_size_ - 1);
+        to_index = index % (population_size_ - 1);
+        if (to_index >= from_index) ++to_index;
+        return std::make_tuple(syn_gen_(from_index, to_index), from_index, to_index);
+    }
+
+    /**
+     * @brief Suggested synapses amount based on constructor arguments
+     * @return synapses amount
+     */
+    [[nodiscard]] size_t suggested_synapses_amount() const { return population_size_ * (population_size_ - 1); }
+
+private:
+    size_t population_size_;
+    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen_;
+};
 
 
 /**
@@ -153,7 +265,7 @@ private:
 
 
 /**
- * @brief The FixedProbability class is a definition of a generator that makes connections with some probability 
+ * @brief The FixedProbability class is a definition of a generator that makes connections with some probability
  * between each presynaptic population (source) neuron to each postsynaptic population (destination) neuron.
  * @warning It doesn't get "real" populations and can't be used with populations that contain non-contiguous indexes.
  * @tparam SynapseType projection synapse type.
@@ -236,8 +348,8 @@ template <typename SynapseType>
 
 
 /**
- * @brief The FixedNumberPost class is a definition of a generator that makes connections between each presynaptic neuron 
- * and a fixed number of random postsynaptic neurons.
+ * @brief The FixedNumberPost class is a definition of a generator that makes connections between each presynaptic
+ * neuron and a fixed number of random postsynaptic neurons.
  * @details This connector uses MT19937 generator with uniform integer distribution.
  * @warning It doesn't get "real" populations and can't be used with populations that contain non-contiguous indexes.
  * @tparam SynapseType projection synapse type.
@@ -287,8 +399,8 @@ private:
 
 
 /**
- * @brief The FixedNumberPre class is a definition of a generator that makes connections between each postsynaptic neuron 
- * and a fixed number of random presynaptic neurons.
+ * @brief The FixedNumberPre class is a definition of a generator that makes connections between each postsynaptic
+ * neuron and a fixed number of random presynaptic neurons.
  * @details This uses MT19937 generator with uniform integer distribution.
  * @warning It doesn't get "real" populations and can't be used with populations that contain non-contiguous indexes.
  * @tparam SynapseType projection synapse type.
@@ -364,6 +476,4 @@ template <typename DestinationSynapseType, typename SourceSynapseType>
     };
 }
 
-}  // namespace synapse_generators
-
-}  // namespace knp::framework::projection
+}  //namespace knp::framework::projection::synapse_generators
