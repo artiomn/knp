@@ -1,6 +1,6 @@
 /**
  * @file classification.h
- * @brief Functions for network quality estimation.
+ * @brief Evaluation of how good model performs by inference results
  * @kaspersky_support D. Postnikov
  * @date 16.07.2025
  * @license Apache 2.0
