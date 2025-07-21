@@ -2,7 +2,7 @@
  * @file model_monitoring_test.cpp
  * @brief Model monitoring test.
  * @kaspersky_support D. Postnikov
- * @date 07.04.2023
+ * @date 10.08.2025
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
  *
