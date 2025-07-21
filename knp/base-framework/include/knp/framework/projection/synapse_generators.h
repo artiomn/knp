@@ -84,7 +84,7 @@ public:
      * @brief Constructor
      * @param population0_size size of first population
      * @param population1_size size of second population
-     * @param syn_gan generator of synapse parameters
+     * @param syn_gen generator of synapse parameters
      */
     Aligned(
         size_t population0_size, size_t population1_size,

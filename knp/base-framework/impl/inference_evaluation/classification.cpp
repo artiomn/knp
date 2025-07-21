@@ -33,9 +33,9 @@ class EvaluationHelper
 public:
     EvaluationHelper(
         knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
-        size_t steps_per_object)
+        size_t steps_per_class)
         : classes_amount_(classes_amount),
-          steps_per_object_(steps_per_object),
+          steps_per_class_(steps_per_class),
           prediction_votes_(classes_amount, 0),
           dataset_(dataset)
     {
@@ -55,7 +55,7 @@ private:
         size_t votes_ = 0;
     };
     std::vector<Prediction> predictions_;
-    const size_t classes_amount_, steps_per_object_;
+    const size_t classes_amount_, steps_per_class_;
     std::vector<size_t> prediction_votes_;
     knp::framework::data_processing::classification::Dataset const &dataset_;
 };
@@ -64,7 +64,7 @@ private:
 void EvaluationHelper::process_spikes(const knp::core::messaging::SpikeData &firing_neuron_indices, size_t step)
 {
     for (auto i : firing_neuron_indices) ++prediction_votes_[i % classes_amount_];
-    if (!((step + 1) % steps_per_object_))
+    if (!((step + 1) % steps_per_class_))
     {
         size_t n_max = 0;
         size_t predicted_state = 0;
@@ -127,9 +127,9 @@ std::vector<InferenceResultForClass> EvaluationHelper::process_inference_predict
 std::vector<InferenceResultForClass> process_inference_results(
     const std::vector<knp::core::messaging::SpikeMessage> &spikes,
     knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
-    size_t steps_per_object)
+    size_t steps_per_class)
 {
-    EvaluationHelper helper(dataset, classes_amount, steps_per_object);
+    EvaluationHelper helper(dataset, classes_amount, steps_per_class);
     knp::core::messaging::SpikeData firing_neuron_indices;
     auto spikes_iter = spikes.begin();
     for (size_t step = 0; step < dataset.steps_required_for_inference_; ++step)
