@@ -21,7 +21,7 @@
 
 #include <knp/framework/data_processing/image_classification.h>
 
-namespace knp::framework::data_processing::image_classification
+namespace knp::framework::data_processing::classification::images
 {
 
 std::vector<bool> simple_image_to_spikes(
@@ -69,7 +69,7 @@ Dataset process_data(
     Dataset dataset;
 
     dataset.image_size_ = image_size;
-    dataset.steps_per_image_ = steps_per_image;
+    dataset.steps_per_class_ = steps_per_image;
 
     {  // Process dataset
         std::vector<uint8_t> image_reading_buffer(image_size, 0);
@@ -126,7 +126,7 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_la
     {
         knp::core::messaging::SpikeData message;
         message.push_back(
-            dataset.data_for_training_[(step / dataset.steps_per_image_) % dataset.data_for_training_.size()].first);
+            dataset.data_for_training_[(step / dataset.steps_per_class_) % dataset.data_for_training_.size()].first);
         return message;
     };
 }
@@ -139,8 +139,8 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_im
     {
         knp::core::messaging::SpikeData message;
         auto const &data =
-            dataset.data_for_training_[(step / dataset.steps_per_image_) % dataset.data_for_training_.size()].second;
-        size_t frame_ind = step % dataset.steps_per_image_;
+            dataset.data_for_training_[(step / dataset.steps_per_class_) % dataset.data_for_training_.size()].second;
+        size_t frame_ind = step % dataset.steps_per_class_;
         size_t frame_start = frame_ind * dataset.image_size_;
         for (size_t i = frame_start; i < frame_start + dataset.image_size_; ++i)
             if (data[i]) message.push_back(i - frame_start);
@@ -156,8 +156,8 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_inference_i
     {
         knp::core::messaging::SpikeData message;
         auto const &data =
-            dataset.data_for_inference_[(step / dataset.steps_per_image_) % dataset.data_for_inference_.size()].second;
-        size_t frame_ind = step % dataset.steps_per_image_;
+            dataset.data_for_inference_[(step / dataset.steps_per_class_) % dataset.data_for_inference_.size()].second;
+        size_t frame_ind = step % dataset.steps_per_class_;
         size_t frame_start = frame_ind * dataset.image_size_;
         for (size_t i = frame_start; i < frame_start + dataset.image_size_; ++i)
             if (data[i]) message.push_back(i - frame_start);
@@ -165,4 +165,4 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_inference_i
     };
 }
 
-}  //namespace knp::framework::data_processing::image_classification
+}  //namespace knp::framework::data_processing::classification::images

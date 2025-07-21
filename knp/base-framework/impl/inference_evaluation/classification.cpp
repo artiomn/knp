@@ -32,7 +32,7 @@ class EvaluationHelper
 {
 public:
     EvaluationHelper(
-        knp::framework::data_processing::image_classification::Dataset const &dataset, size_t classes_amount,
+        knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
         size_t steps_per_object)
         : classes_amount_(classes_amount),
           steps_per_object_(steps_per_object),
@@ -57,7 +57,7 @@ private:
     std::vector<Prediction> predictions_;
     const size_t classes_amount_, steps_per_object_;
     std::vector<size_t> prediction_votes_;
-    knp::framework::data_processing::image_classification::Dataset const &dataset_;
+    knp::framework::data_processing::classification::Dataset const &dataset_;
 };
 
 
@@ -126,7 +126,7 @@ std::vector<InferenceResultForClass> EvaluationHelper::process_inference_predict
 
 std::vector<InferenceResultForClass> process_inference_results(
     const std::vector<knp::core::messaging::SpikeMessage> &spikes,
-    knp::framework::data_processing::image_classification::Dataset const &dataset, size_t classes_amount,
+    knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
     size_t steps_per_object)
 {
     EvaluationHelper helper(dataset, classes_amount, steps_per_object);

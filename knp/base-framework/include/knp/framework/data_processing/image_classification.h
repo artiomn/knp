@@ -28,39 +28,16 @@
 #include <utility>
 #include <vector>
 
-namespace knp::framework::data_processing::image_classification
+#include "classification_dataset.h"
+
+namespace knp::framework::data_processing::classification::images
 {
 
 /**
  * @brief A class that represents processed dataset
  */
-struct Dataset
+struct Dataset : classification::Dataset
 {
-    /**
-     * @brief Vector of pairs of labels and image in spikes form(distributed in several steps)
-     */
-    std::vector<std::pair<unsigned, std::vector<bool>>> data_for_training_;
-
-    /**
-     * @brief Vector of pairs of labels and image in spikes form(distributed in several steps)
-     */
-    std::vector<std::pair<unsigned, std::vector<bool>>> data_for_inference_;
-
-    /**
-     * @brief Amount of steps the converted image will be sent
-     */
-    size_t steps_per_image_;
-
-    /**
-     * @brief Amount of steps required for training
-     */
-    size_t steps_required_for_training_;
-
-    /**
-     * @brief Amount of steps required for inference
-     */
-    size_t steps_required_for_inference_;
-
     /**
      * @brief Total image size
      */
@@ -129,4 +106,4 @@ KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> mak
 KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_inference_images_spikes_generator(
     Dataset const &dataset);
 
-}  //namespace knp::framework::data_processing::image_classification
+}  //namespace knp::framework::data_processing::classification::images
