@@ -121,10 +121,14 @@ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::Subscripti
 }
 
 
-__device__ int find_by_sender(
+/**
+ * @brief Find messages with a given sender.
+ * @param senders vector of senders, we select one based on thread
+ */
+__global__ int find_by_sender(
     const thrust::device_vector<cuda::UID> &senders, 
     const CUDAMessageBus::MessageBuffer &messages,
-    DevVec<DevVec<uint64_t>> &sub_message_indices,
+    thrust::device_ptr<DevVec<uint64_t>> sub_message_indices,
     int type_index)
 {
     int sender_index = blockIdx.x + threadIdx.x;
@@ -136,8 +140,7 @@ __device__ int find_by_sender(
         if (msg.index() != type_index) continue;
         cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) {return msg.header_.sender_uid_; }, msg);
         // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid); 
-        thrust::device_ptr<DevVec<uint64_t>> ptr = sub_message_indices.data();
-        if (msg_uid == uid) (ptr + sender_index)->push_back(i); 
+        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i); 
 
     }
 }
@@ -164,7 +167,7 @@ __global__ void find_messages_by_receiver(
     const int num_threads = std::min<int>(threads_per_block, subscriptions.size());
     const int num_blocks = subscriptions.size() / threads_per_block + 1;
     thrust::device_ptr<DevVec<DevVec<uint64_t>>> ptr = message_indices.data();
-    find_by_sender<<<num_blocks, num_threads>>>(senders, messages, *(ptr + sub_index), type_index);
+    find_by_sender<<<num_blocks, num_threads>>>(senders, messages, (ptr + sub_index)->data(), type_index);
 }
 
 
