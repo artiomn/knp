@@ -70,65 +70,42 @@ template <typename SynapseType>
 /**
  * @brief Make connections between presynaptic population (source) neurons to postsynaptic population
  * (destination) neurons.
- * @details This is a functor class, that can be used as generator and allows to get suggested amount of synapses based
- * on constructor parameters. If population0_size is 2 and population1_size is 4, then suggested synapses amount
- * will be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
+ * @details Example of use: if population0_size is 2 and population1_size is 4, then synapses amount
+ * must be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
  * connections evenly.
+ * @param presynaptic_pop_size size of first population
+ * @param postsynaptic_pop_size size of second population
+ * @param syn_gen generator of synapse parameters
+ * @return synapse generator
  * tparam SynapseType projection synapse type
  */
 template <typename SynapseType>
-class Aligned
+[[nodiscard]] typename knp::core::Projection<SynapseType>::SynapseGenerator aligned(
+    size_t presynaptic_pop_size, size_t postsynaptic_pop_size,
+    parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
+        parameters_generators::default_synapse_gen<SynapseType>)
 {
-public:
-    /**
-     * @brief Constructor
-     * @param population0_size size of first population
-     * @param population1_size size of second population
-     * @param syn_gen generator of synapse parameters
-     */
-    Aligned(
-        size_t population0_size, size_t population1_size,
-        parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
-            parameters_generators::default_synapse_gen<SynapseType>)
-        : population0_size_(population0_size), population1_size_(population1_size), syn_gen_(syn_gen)
-    {
-    }
-
-    /**
-     * @brief Generator
-     * @param index synapse index
-     * @return synapse parameters
-     */
-    [[nodiscard]] std::optional<typename knp::core::Projection<SynapseType>::Synapse> operator()(size_t index) const
+    return [presynaptic_pop_size, postsynaptic_pop_size,
+            syn_gen](size_t index) -> std::optional<typename knp::core::Projection<SynapseType>::Synapse>
     {
         size_t from_index;
         size_t pack_size;
         size_t to_index;
-        if (population0_size_ >= population1_size_)
+        if (presynaptic_pop_size >= postsynaptic_pop_size)
         {
             from_index = index;
-            pack_size = population0_size_ / population1_size_;
+            pack_size = presynaptic_pop_size / postsynaptic_pop_size;
             to_index = index / pack_size;
         }
         else
         {
             to_index = index;
-            pack_size = population1_size_ / population0_size_;
+            pack_size = postsynaptic_pop_size / presynaptic_pop_size;
             from_index = index / pack_size;
         }
-        return std::make_tuple(syn_gen_(from_index, to_index), from_index, to_index);
-    }
-
-    /**
-     * @brief Suggested synapses amount based on constructor arguments
-     * @return synapses amount
-     */
-    [[nodiscard]] size_t suggested_synapses_amount() const { return std::max(population0_size_, population1_size_); }
-
-private:
-    size_t population0_size_, population1_size_;
-    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen_;
-};
+        return std::make_tuple(syn_gen(from_index, to_index), from_index, to_index);
+    };
+}
 
 
 /**
@@ -138,50 +115,27 @@ private:
  * on constructor parameters. If populations size is 3, then this generator will suggest 6 synapses, and will generate
  * synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time. tparam SynapseType
  * projection synapse type
+ * @param population_size size of populations, they are supposed to be the same
+ * @param syn_gen generator of synapse parameters
+ * @return synapse generator
+ * tparam SynapseType projection synapse type
  */
-
 template <typename SynapseType>
-class Exclusive
+[[nodiscard]] typename knp::core::Projection<SynapseType>::SynapseGenerator exclusive(
+    size_t populations_size, parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
+                                 parameters_generators::default_synapse_gen<SynapseType>)
 {
-public:
-    /**
-     * @brief Constructor
-     * @param population_size size of populations, they are supposed to be the same
-     * @param syn_gen generator of synapse parameters
-     */
-    explicit Exclusive(
-        size_t population_size, parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
-                                    parameters_generators::default_synapse_gen<SynapseType>)
-        : population_size_(population_size), syn_gen_(syn_gen)
-    {
-    }
-
-
-    /**
-     * @brief Generator
-     * @param index synapse index
-     * @return synapse parameters
-     */
-    [[nodiscard]] std::optional<typename knp::core::Projection<SynapseType>::Synapse> operator()(size_t index) const
+    return
+        [populations_size, syn_gen](size_t index) -> std::optional<typename knp::core::Projection<SynapseType>::Synapse>
     {
         size_t from_index;
         size_t to_index;
-        from_index = index / (population_size_ - 1);
-        to_index = index % (population_size_ - 1);
+        from_index = index / (populations_size - 1);
+        to_index = index % (populations_size - 1);
         if (to_index >= from_index) ++to_index;
-        return std::make_tuple(syn_gen_(from_index, to_index), from_index, to_index);
-    }
-
-    /**
-     * @brief Suggested synapses amount based on constructor arguments
-     * @return synapses amount
-     */
-    [[nodiscard]] size_t suggested_synapses_amount() const { return population_size_ * (population_size_ - 1); }
-
-private:
-    size_t population_size_;
-    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen_;
-};
+        return std::make_tuple(syn_gen(from_index, to_index), from_index, to_index);
+    };
+}
 
 
 /**

@@ -1,6 +1,6 @@
 /**
  * @file inference_evaluation_test.cpp
- * @brief Data processing test
+ * @brief Inference evaluation test
  * @kaspersky_support D. Postnikov
  * @date 21.08.2025
  * @license Apache 2.0

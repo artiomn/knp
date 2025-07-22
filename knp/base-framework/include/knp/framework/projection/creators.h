@@ -22,6 +22,7 @@
 
 #include <knp/core/projection.h>
 
+#include <algorithm>
 #include <exception>
 #include <functional>
 #include <optional>
@@ -69,6 +70,60 @@ template <typename SynapseType>
         presynaptic_uid, postsynaptic_uid,
         synapse_generators::all_to_all<SynapseType>(presynaptic_pop_size, postsynaptic_pop_size, syn_gen),
         presynaptic_pop_size * postsynaptic_pop_size);
+}
+
+
+/**
+ * @brief Make connections between presynaptic population (source) neurons to postsynaptic population
+ * (destination) neurons.
+ * @details Example of use: if population0_size is 2 and population1_size is 4, then synapses amount
+ * must be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
+ * connections evenly.
+ * @param presynaptic_uid presynaptic population UID.
+ * @param postsynaptic_uid postsynaptic population UID.
+ * @param presynaptic_pop_size size of first population
+ * @param postsynaptic_pop_size size of second population
+ * @param syn_gen generator of synapse parameters
+ * @return projection
+ * tparam SynapseType projection synapse type
+ */
+template <typename SynapseType>
+[[nodiscard]] knp::core::Projection<SynapseType> aligned(
+    const knp::core::UID &presynaptic_uid, const knp::core::UID &postsynaptic_uid, size_t presynaptic_pop_size,
+    size_t postsynaptic_pop_size,
+    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen =
+        parameters_generators::default_synapse_gen<SynapseType>)
+{
+    return knp::core::Projection<SynapseType>(
+        presynaptic_uid, postsynaptic_uid,
+        synapse_generators::aligned<SynapseType>(presynaptic_pop_size, postsynaptic_pop_size, syn_gen),
+        std::max(presynaptic_pop_size, postsynaptic_pop_size));
+}
+
+
+/**
+ * @brief Make connections between presynaptic population (source) neurons to postsynaptic population
+ * (destination) neurons. Size of populations must be same
+ * @details This is a functor class, that can be used as generator and allows to get suggested amount of synapses based
+ * on constructor parameters. If populations size is 3, then this generator will suggest 6 synapses, and will generate
+ * synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time. tparam SynapseType
+ * projection synapse type
+ * @param presynaptic_uid presynaptic population UID.
+ * @param postsynaptic_uid postsynaptic population UID.
+ * @param population_size size of populations, they are supposed to be the same
+ * @param syn_gen generator of synapse parameters
+ * @return projection
+ * tparam SynapseType projection synapse type
+ */
+template <typename SynapseType>
+[[nodiscard]] knp::core::Projection<SynapseType> exclusive(
+    const knp::core::UID &presynaptic_uid, const knp::core::UID &postsynaptic_uid, size_t pops_size,
+    parameters_generators::SynGen2ParamsType<SynapseType> syn_gen =
+        parameters_generators::default_synapse_gen<SynapseType>)
+{
+    return knp::core::Projection<SynapseType>(
+        presynaptic_uid, postsynaptic_uid, synapse_generators::exclusive<SynapseType>(pops_size, syn_gen),
+        pops_size * (pops_size - 1));
 }
 
 
