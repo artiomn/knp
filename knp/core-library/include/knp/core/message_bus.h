@@ -53,19 +53,19 @@ public:
      * @brief Create a CPU-based message bus.
      * @return message bus.
      */
-    static MessageBus construct_cpu_bus();
+    static std::shared_ptr<MessageBus> construct_cpu_bus();
 
     /**
      * @brief Create a ZMQ-based message bus.
      * @return message bus.
      */
-    static MessageBus construct_zmq_bus();
+    static std::shared_ptr<MessageBus> construct_zmq_bus();
 
     /**
      * @brief Create a message bus with default implementation.
      * @return message bus.
      */
-    static MessageBus construct_bus() { return construct_cpu_bus(); }
+    static std::shared_ptr<MessageBus> construct_bus() { return construct_cpu_bus(); }
 
     /**
      * @brief Default message bus constructor is deleted.
@@ -103,7 +103,7 @@ public:
      */
     size_t route_messages();
 
-private:
+protected:
     /**
      * @brief Message bus constructor with a specialized implementation.
      * @param impl message bus implementation.
@@ -111,7 +111,7 @@ private:
      */
     explicit MessageBus(std::unique_ptr<messaging::impl::MessageBusImpl> &&impl);
 
-
+private:
     /**
      * @brief Message bus implementation.
      */
