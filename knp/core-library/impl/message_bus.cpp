@@ -32,19 +32,28 @@
 
 namespace knp::core
 {
+struct make_shared_enabler : public MessageBus
+{
+    explicit make_shared_enabler(std::unique_ptr<messaging::impl::MessageBusImpl> &&impl) : MessageBus(std::move(impl))
+    {
+    }
+};
+
+
 MessageBus::~MessageBus() = default;
 
 MessageBus::MessageBus(MessageBus &&) noexcept = default;
 
+
 std::shared_ptr<MessageBus> MessageBus::construct_cpu_bus()
 {
-    return std::shared_ptr<MessageBus>(new MessageBus(std::make_unique<messaging::impl::MessageBusCPUImpl>()));
+    return std::make_shared<make_shared_enabler>(std::make_unique<messaging::impl::MessageBusCPUImpl>());
 }
 
 
 std::shared_ptr<MessageBus> MessageBus::construct_zmq_bus()
 {
-    return std::shared_ptr<MessageBus>(new MessageBus(std::make_unique<messaging::impl::MessageBusZMQImpl>()));
+    return std::make_shared<make_shared_enabler>(std::make_unique<messaging::impl::MessageBusZMQImpl>());
 }
 
 

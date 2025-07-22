@@ -103,7 +103,7 @@ public:
      */
     size_t route_messages();
 
-private:
+protected:
     /**
      * @brief Message bus constructor with a specialized implementation.
      * @param impl message bus implementation.
@@ -111,7 +111,7 @@ private:
      */
     explicit MessageBus(std::unique_ptr<messaging::impl::MessageBusImpl> &&impl);
 
-
+private:
     /**
      * @brief Message bus implementation.
      */
