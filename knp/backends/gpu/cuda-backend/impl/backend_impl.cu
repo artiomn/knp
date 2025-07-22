@@ -383,7 +383,7 @@ __device__ void CUDABackendImpl::calculate_projection(
     // using SynapseType = typename ProjectionType::ProjectionSynapseType;
     // WeightUpdateSTDP<SynapseType>::init_projection(projection, messages, step_n);
 
-    for (const knp::backends::gpu::cuda::SpikeMessage message : messages)
+    /* for (const knp::backends::gpu::cuda::SpikeMessage message : messages)
     {
         const auto &message_data = message.neuron_indexes_;
         for (const auto &spiked_neuron_index : message_data)
@@ -401,7 +401,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                 knp::backends::gpu::cuda::SynapticImpact impact{
                     synapse_index, synapse_params.weight_, synapse_params.output_type_,
                     static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
-                    static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
+                    static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))}; */
 
 /*                auto iter = future_messages.find(future_step);
                 if (iter != future_messages.end())
@@ -419,9 +419,9 @@ __device__ void CUDABackendImpl::calculate_projection(
                     future_messages.insert(std::make_pair(future_step, message_out));
                 }
 */
-            }
-        }
-    }
+    //        }
+    //    }
+    // }
 
 /*
     // WeightUpdateSTDP<SynapseType>::modify_weights(projection);

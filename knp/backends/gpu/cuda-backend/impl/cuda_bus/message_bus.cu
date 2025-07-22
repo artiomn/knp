@@ -137,7 +137,7 @@ __device__ int find_by_sender(
         cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) {return msg.header_.sender_uid_; }, msg);
         // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid); 
         thrust::device_ptr<DevVec<uint64_t>> ptr = sub_message_indices.data();
-        if (msg_uid == uid) (ptr + sender_index)->push_back(msg_uid); 
+        if (msg_uid == uid) (ptr + sender_index)->push_back(i); 
 
     }
 }
@@ -163,7 +163,8 @@ __global__ void find_messages_by_receiver(
     // Find number of threads and blocks
     const int num_threads = std::min<int>(threads_per_block, subscriptions.size());
     const int num_blocks = subscriptions.size() / threads_per_block + 1;
-    find_by_sender<<<num_blocks, num_threads>>>(senders, messages, message_indices[sub_index], type_index);
+    thrust::device_ptr<DevVec<DevVec<uint64_t>>> ptr = message_indices.data();
+    find_by_sender<<<num_blocks, num_threads>>>(senders, messages, *(ptr + sub_index), type_index);
 }
 
 
