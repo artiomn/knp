@@ -63,7 +63,7 @@ struct InferenceResultForClass
  * spikes that will be sent in 20 steps, so steps_per_class=20
  * @return processed inference results for each class
  */
-KNP_DECLSPEC [[nodiscard]] std::vector<InferenceResultForClass> process_inference_results(
+[[nodiscard]] KNP_DECLSPEC std::vector<InferenceResultForClass> process_inference_results(
     const std::vector<knp::core::messaging::SpikeMessage> &spikes,
     knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
     size_t steps_per_class);
