@@ -63,9 +63,6 @@ int main(int argc, char** argv)
         knp::framework::data_processing::classification::images::make_simple_image_to_spikes_converter(
             steps_per_image, active_steps, image_size, state_increment_factor, std::vector<float>(image_size, 0.f)));
 
-    dataset.steps_required_for_training_ = 10000;
-    dataset.steps_required_for_inference_ = 1000;
-
     std::cout << "Processed dataset, training will last " << dataset.steps_required_for_training_
               << " steps, inference " << dataset.steps_required_for_inference_ << " steps" << std::endl;
 
