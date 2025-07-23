@@ -52,7 +52,7 @@ struct Dataset : classification::Dataset
  * @param active_steps amount of active steps, active steps are steps when spikes being sent, must me < steps_per_image
  * @param image_size total image size
  * @param state_increment_factor how much to increment to spike accumulator
- * @param state a vector of states, should be filled with zeroes and size of image_size, should have same lifetime as
+ * @param states a vector of states, should be filled with zeroes and size of image_size, should have same lifetime as
  * function call expression lifetime
  * @return A functor that converts image raw data to spikes
  */
