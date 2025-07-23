@@ -110,7 +110,7 @@ template <typename SynapseType>
  * projection synapse type
  * @param presynaptic_uid presynaptic population UID.
  * @param postsynaptic_uid postsynaptic population UID.
- * @param population_size size of populations, they are supposed to be the same
+ * @param pops_size size of populations, they are supposed to be the same
  * @param syn_gen generator of synapse parameters
  * @return projection
  * tparam SynapseType projection synapse type
