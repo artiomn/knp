@@ -115,7 +115,7 @@ template <typename SynapseType>
  * on constructor parameters. If populations size is 3, then this generator will suggest 6 synapses, and will generate
  * synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time. tparam SynapseType
  * projection synapse type
- * @param population_size size of populations, they are supposed to be the same
+ * @param populations_size size of populations, they are supposed to be the same
  * @param syn_gen generator of synapse parameters
  * @return synapse generator
  * tparam SynapseType projection synapse type
