@@ -21,6 +21,7 @@
 
 #include <knp/core/messaging/messaging.h>
 #include <knp/framework/inference_evaluation/classification.h>
+#include <knp/framework/inference_evaluation/perfomance_metrics.h>
 
 #include <algorithm>
 #include <utility>
@@ -84,28 +85,6 @@ void EvaluationHelper::process_spikes(const knp::core::messaging::SpikeData &fir
 }
 
 
-float get_precision(const InferenceResultForClass &prediction_result)
-{
-    if (prediction_result.correctly_predicted_ + prediction_result.incorrectly_predicted_ == 0) return 0.F;
-    return static_cast<float>(prediction_result.correctly_predicted_) /
-           (prediction_result.correctly_predicted_ + prediction_result.incorrectly_predicted_);
-}
-
-
-float get_recall(const InferenceResultForClass &prediction_result)
-{
-    if (prediction_result.total_ == 0) return 0.F;
-    return static_cast<float>(prediction_result.correctly_predicted_) / prediction_result.total_;
-}
-
-
-float get_f_measure(float precision, float recall)
-{
-    if (precision * recall == 0) return 0.F;
-    return 2.F * precision * recall / (precision + recall);
-}
-
-
 std::vector<InferenceResultForClass> EvaluationHelper::process_inference_predictions() const
 {
     std::vector<InferenceResultForClass> prediction_results(classes_amount_);
@@ -156,8 +135,8 @@ void write_inference_results_to_stream_as_csv(
     for (size_t label = 0; label < inference_results.size(); ++label)
     {
         auto const &prediction = inference_results[label];
-        float precision = get_precision(prediction);
-        float recall = get_recall(prediction);
+        float precision = get_precision(prediction.correctly_predicted_, prediction.incorrectly_predicted_);
+        float recall = get_recall(prediction.correctly_predicted_, prediction.incorrectly_predicted_);
         float f_measure = get_f_measure(precision, recall);
         results_stream << label << ',' << prediction.total_ << ',' << prediction.correctly_predicted_ << ','
                        << prediction.incorrectly_predicted_ << ',' << prediction.no_votes_ << ',' << precision << ','
