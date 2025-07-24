@@ -73,11 +73,11 @@ template <typename SynapseType>
  * @details Example of use: if population0_size is 2 and population1_size is 4, then synapses amount
  * must be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
  * connections evenly.
- * @param presynaptic_pop_size size of first population
- * @param postsynaptic_pop_size size of second population
- * @param syn_gen generator of synapse parameters
- * @return synapse generator
- * tparam SynapseType projection synapse type
+ * @param presynaptic_pop_size size of first population.
+ * @param postsynaptic_pop_size size of second population.
+ * @param syn_gen generator of synapse parameters.
+ * @return synapse generator.
+ * tparam SynapseType projection synapse type.
  */
 template <typename SynapseType>
 [[nodiscard]] typename knp::core::Projection<SynapseType>::SynapseGenerator aligned(
@@ -111,15 +111,14 @@ template <typename SynapseType>
 
 /**
  * @brief Make connections between presynaptic population (source) neurons to postsynaptic population
- * (destination) neurons. Size of populations must be same
+ * (destination) neurons. Size of populations must be same.
  * @details This is a functor class, that can be used as generator and allows to get suggested amount of synapses based
  * on constructor parameters. If populations size is 3, then this generator will suggest 6 synapses, and will generate
- * synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time. tparam SynapseType
- * projection synapse type
- * @param populations_size size of populations, they are supposed to be the same
- * @param syn_gen generator of synapse parameters
- * @return synapse generator
- * tparam SynapseType projection synapse type
+ * synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time.
+ * @param populations_size size of populations, they are supposed to be the same.
+ * @param syn_gen generator of synapse parameters.
+ * @return synapse generator.
+ * tparam SynapseType projection synapse type.
  */
 template <typename SynapseType>
 [[nodiscard]] typename knp::core::Projection<SynapseType>::SynapseGenerator exclusive(
