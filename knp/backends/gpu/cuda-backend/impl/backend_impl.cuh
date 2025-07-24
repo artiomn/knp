@@ -267,6 +267,8 @@ public:
     using ProjectionConstIterator = typename ProjectionContainer::const_iterator;
 
 public:
+    // TODO : do we need it?
+    CUDABackendImpl() = default;
     /**
      * @brief Destructor for CUDA backend.
      */
@@ -417,7 +419,7 @@ protected:
      */
     __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-        thrust::device_vector<cuda::SpikeMessage> messages,
+        thrust::device_vector<cuda::SpikeMessage> &messages,
         SynapticMessageQueue &message_queue,
         std::uint64_t step_n);
 

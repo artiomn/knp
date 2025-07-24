@@ -372,7 +372,7 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
 
 __device__ void CUDABackendImpl::calculate_projection(
     CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-    thrust::device_vector<cuda::SpikeMessage> messages,
+    thrust::device_vector<cuda::SpikeMessage> &messages,
     SynapticMessageQueue &message_queue,
     std::uint64_t step_n)
 {

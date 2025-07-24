@@ -58,7 +58,9 @@ public:
      * @brief Internal container for UIDs.
      */
     using UidSet = thrust::device_vector<UID>;
-    // Subscription(const Subscription &) = delete;
+    __host__ __device__ Subscription() = default;
+    __host__ __device__ Subscription(const Subscription &) = default;
+    __host__ __device__ ~Subscription() = default;
 
 public:
     /**
@@ -66,20 +68,20 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
+    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
         receiver_(receiver) { add_senders(senders); }
 
     /**
      * @brief Get list of sender UIDs.
      * @return senders UIDs.
      */
-    [[nodiscard]] __device__ const UidSet &get_senders() const { return senders_; }
+    [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
 
     /**
      * @brief Get UID of the entity that receives messages via the subscription.
      * @return UID.
      */
-    [[nodiscard]] __device__ UID get_receiver_uid() const { return receiver_; }
+    [[nodiscard]] __device__ __host__ UID get_receiver_uid() const { return receiver_; }
 
     /**
      * @brief Unsubscribe from a sender.
@@ -87,7 +89,7 @@ public:
      * @param uid sender UID.
      * @return true if sender was deleted from subscription.
      */
-    __device__ bool remove_sender(const UID &uid)
+    __device__ __host__ bool remove_sender(const UID &uid)
     {
         auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
         if (senders_.end() == erase_iter) return false;
@@ -101,7 +103,7 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __device__ bool add_sender(const UID &uid)
+    __device__ __host__ bool add_sender(const UID &uid)
     {
         if (has_sender(uid)) return false;
 
@@ -115,7 +117,7 @@ public:
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    __device__ size_t add_senders(const thrust::device_vector<UID> &senders)
+    __device__ __host__ size_t add_senders(const thrust::device_vector<UID> &senders)
     {
         const size_t size_before = senders_.size();
 
@@ -130,7 +132,7 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __device__ bool has_sender(const UID &uid) const
+    [[nodiscard]] __device__ __host__ bool has_sender(const UID &uid) const
     {
         return thrust::find(thrust::device, senders_.begin(), senders_.end(), uid) != senders_.end();
     }
@@ -140,28 +142,28 @@ public:
      * @brief Add a message to the subscription.
      * @param message message to add.
      */
-    __device__ void add_message(MessageType &&message) { messages_.push_back(message); }
+    // __device__ __host__ void add_message(MessageType &&message) { messages_.push_back(message); }
     /**
      * @brief Add a message to the subscription.
      * @param message constant message to add.
      */
-    __device__ void add_message(const MessageType &message) { messages_.push_back(message); }
+    // __device__ void add_message(const MessageType &message) { messages_.push_back(message); }
 
     /**
      * @brief Get all messages.
      * @return reference to message container.
      */
-    __device__ MessageContainerType &get_messages() { return messages_; }
+    // __device__ MessageContainerType &get_messages() { return messages_; }
     /**
      * @brief Get all messages.
      * @return constant reference to message container.
      */
-    __device__ const MessageContainerType &get_messages() const { return messages_; }
+    // __device__ const MessageContainerType &get_messages() const { return messages_; }
 
     /**
      * @brief Remove all stored messages.
      */
-    __device__ void clear_messages() { messages_.clear(); }
+    // __device__ void clear_messages() { messages_.clear(); }
 
 private:
     /**
@@ -176,7 +178,7 @@ private:
     /**
      * @brief Message storage.
      */
-    MessageContainerType messages_;
+    // MessageContainerType messages_;
 };
 
 

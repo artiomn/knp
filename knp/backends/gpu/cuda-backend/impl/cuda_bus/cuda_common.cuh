@@ -23,11 +23,27 @@
 #pragma once
 
 #include <cuda/std/array>
+#include <cuda.h>
+#include <knp/core/uid.h>
 
 
 namespace knp::backends::gpu::cuda
 {
+constexpr int tag_size = 16;
+using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 
-using UID = ::cuda::std::array<std::uint8_t, 16>;
+UID to_gpu_uid(const knp::core::UID &uid)
+{
+    UID result;
+    cudaMemcpy(result.data(), uid.tag.data, sizeof(uint8_t) * tag_size, cudaMemcpyHostToDevice);
+    return result;
+}
+
+knp::core::UID to_cpu_uid(const UID &uid)
+{
+    knp::core::UID result;
+    cudaMemcpy(result.tag.data, uid.data(), sizeof(uint8_t) * tag_size, cudaMemcpyDeviceToHost);
+    return result;
+}
 
 }

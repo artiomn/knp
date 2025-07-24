@@ -53,20 +53,8 @@ public:
      * @brief Construct GPU message bus.
      * @param external_endpoint message endpoint used for message exchange with host.
      */
-    explicit CUDAMessageBus(knp::core::MessageEndpoint &external_endpoint) : cpu_endpoint_(external_endpoint) 
+    explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) : cpu_endpoint_{std::move(external_endpoint)} 
     {}
-
-    /**
-     * @brief Route some messages.
-     * @return number of messages routed during the step.
-     */
-    __device__ size_t step();
-
-    /**
-     * @brief Route messages.
-     * @return number of messages routed.
-     */
-    __device__ size_t route_messages();
 
 public:
     /**
@@ -79,7 +67,7 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    __device__ bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders);
+    __host__ bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders); // Done
 
     /**
      * @brief Unsubscribe from messages of a specified type.
@@ -88,24 +76,31 @@ public:
      * @return true if a subscription was deleted, false otherwise.
      */
     template <typename MessageType>
-    __device__ bool unsubscribe(const UID &receiver);
+    __host__ bool unsubscribe(const UID &receiver); // Done
 
     /**
      * @brief Remove all subscriptions for a receiver with given UID.
      * @param receiver receiver UID.
      */
-    __device__ void remove_receiver(const UID &receiver);
+    __host__ void remove_receiver(const UID &receiver);
 
     /**
      * @brief Send a message to the message bus.
      * @param message message to send.
      */
-    __device__ void send_message(const cuda::MessageVariant &message);
+    __host__ void send_message(const cuda::MessageVariant &message); // Done
 
     /**
      * @brief Delete all messages inside the bus.
      */
-    __device__ void clear() { messages_to_route_.clear(); }
+    __host__ void clear() { messages_to_route_.clear(); }
+
+
+    /**
+     * @brief Reserve bus buffer for messages.
+     * @param num_messages number of messages.
+     */
+    __host__ void reserve_message_buffer(uint64_t num_messages) { messages_to_route_.reserve(num_messages); }
 
     /**
      * @brief Read messages of the specified type received via subscription.
@@ -138,7 +133,7 @@ private:
     /**
      * @brief Send messages to CPU endpoint.
      */
-    __host__ int synchronize() const;
+    __host__ int synchronize();
 
 
     /**
@@ -154,7 +149,7 @@ private:
 
     MessageBuffer messages_to_route_;
 
-    knp::core::MessageEndpoint &cpu_endpoint_;
+    knp::core::MessageEndpoint cpu_endpoint_;
 
 };
 

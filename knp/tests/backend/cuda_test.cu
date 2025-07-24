@@ -20,6 +20,7 @@
  */
 
 #include <knp/backends/gpu-cuda/backend.h>
+#include <knp/core/message_bus.h>
 #include <knp/core/population.h>
 #include <knp/core/projection.h>
 
@@ -40,6 +41,16 @@ using Projection = knp::backends::gpu::CUDABackend::ProjectionVariants;
 
 namespace knp::testing
 {
+
+
+struct MessageBusTandem
+{
+    MessageBusTandem() : cpu_(knp::core::MessageBus::construct_bus()), gpu_(cpu_.create_endpoint())
+    {}
+    knp::core::MessageBus cpu_;
+    knp::backends::gpu::cuda::CUDAMessageBus gpu_;
+};
+
 
 template <class Endpoint>
 bool send_messages_smallest_network(const knp::core::UID &in_channel_uid, Endpoint &endpoint, knp::core::Step step)
@@ -96,7 +107,7 @@ __global__ void run_bus()
 }
 
 
-TEST(CUDABackendSuite, CUDADevice)  // cppcheck-suppress syntaxError
+TEST(CudaBackendSuite, CUDADevice)  // cppcheck-suppress syntaxError
 {
     auto gpus = knp::devices::gpu::list_cuda_processors();
     for (const auto &gpu : gpus)
@@ -108,17 +119,33 @@ TEST(CUDABackendSuite, CUDADevice)  // cppcheck-suppress syntaxError
 }
 
 
-TEST(CUDABackendSuite, CUDABus)
+TEST(CudaBackendSuite, CudaUidConversionTest)
 {
-    knp::backends::gpu::cuda::CUDAMessageBus message_bus;
-
-    run_bus<<<1, 10>>>();
-
-    cudaDeviceSynchronize();
+    knp::core::UID orig_uid;
+    knp::backends::gpu::cuda::UID cuda_uid = knp::backends::gpu::cuda::to_gpu_uid(orig_uid);
+    knp::core::UID restored_uid = knp::backends::gpu::cuda::to_cpu_uid(cuda_uid);
+    ASSERT_EQ(orig_uid, restored_uid);
 }
 
 
-TEST(CUDABackendSuite, SmallestNetwork)
+TEST(CudaBackendSuite, CudaBusSubscription)
+{
+    using knp::backends::gpu::cuda::to_gpu_uid;
+
+    MessageBusTandem bus_pair;
+    knp::core::UID sender_1, sender_2, receiver_1, receiver_2;
+    bus_pair.gpu_.subscribe<knp::backends::gpu::cuda::SpikeMessage>(
+            to_gpu_uid(receiver_1), {to_gpu_uid(sender_1), to_gpu_uid(sender_2)});
+    bus_pair.gpu_.subscribe<knp::backends::gpu::cuda::SpikeMessage>(
+        to_gpu_uid(receiver_2), {to_gpu_uid(sender_1)});
+    ASSERT_EQ(bus_pair.gpu_.get_subscriptions().size(), 2);
+    const knp::backends::gpu::cuda::SubscriptionVariant &sub_v = bus_pair.gpu_.get_subscriptions()[0];
+    const auto &sub = cuda::std::get<knp::backends::gpu::cuda::Subscription<knp::backends::gpu::cuda::SpikeMessage>>(sub_v);
+    ASSERT_EQ(sub.get_senders().size(), 2);
+}
+
+
+TEST(CudaBackendSuite, SmallestNetwork)
 {
     // Create a single-neuron neural network: input -> input_projection -> population <=> loop_projection.
 
@@ -130,7 +157,7 @@ TEST(CUDABackendSuite, SmallestNetwork)
 }
 
 
-TEST(CUDABackendSuite, NeuronsGettingTest)
+TEST(CudaBackendSuite, NeuronsGettingTest)
 {
     // const knp::testing::MTestingBack backend;
 
@@ -141,7 +168,7 @@ TEST(CUDABackendSuite, NeuronsGettingTest)
 }
 
 
-TEST(CUDABackendSuite, SynapsesGettingTest)
+TEST(CudaBackendSuite, SynapsesGettingTest)
 {
     // const knp::testing::MTestingBack backend;
 

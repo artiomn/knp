@@ -27,6 +27,19 @@
 #include <knp/meta/macro.h>
 #include "message_bus.cuh"
 
+// Как у нас работает бэк:
+// 0. Мы индексируем index_messages() сообщения нужных нам типов (или всех типов?) и сохраняем вектор индексов.
+// 1. каждая популяция получает входные сообщения и формирует, но не отправляет выходное сообщение.
+//  1.1. Входные сообщения выдаются в виде "указатель на все сообщения + индексы интересующих" 
+// 2. когда все популяции отработали, мы: 
+//  2.1. чистим шину clean()
+//  2.2. получаем сообщения receive_message() от популяций (в цикле)
+//  2.3. отправляем сообщения в эндпойнт и получаем сообщения из эндпойнта (synchronize)
+// потом мы проходим по проекциям (параллельно или нет), и они формируют сообщения
+// мы чистим шину от спайковых сообщений (clean), получаем сообщения от проекций (в цикле) и отправляем их в эндпойнт.
+// таким образом, конкретного step-а у нас попросту не образуется. Степ состоит из clear(), 
+// for(...) if(get_num_messages > 0) send_message(get_stored_messages) и sync(). 
+// Все эти функции вызываются из бэкенда чем-то вроде do_message_exchange().
 
 
 namespace knp::backends::gpu::cuda
@@ -38,8 +51,8 @@ template <class T>
 using DevVec = thrust::device_vector<T>;
 
 
-    template <typename MessageType>
-__device__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
+template <typename MessageType>
+__host__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
 {
     for (const auto &subscr : subscriptions_)
     {
@@ -65,13 +78,6 @@ __device__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::dev
 }
 
 
-// Допустим мы хотим сделать плоский вектор для индексов сообщений, потому что иначе дофига раз выделять и пушить.
-// Тогда нам надо иметь вектор размера "сумма всех отправителей для каждого получателя * число сообщений". Это значит 
-// что? Это значит что нам надо будет передавать вектор на начало своего сегмента -- а потом разбирать результат.
-// Чтобы разобрать результат, нужно иметь вектор индексов начала подписок. Это поможет потом разобрать сообщения... 
-// А размер? Там должен быть размер
-
-
 // Нам надо на хосте иметь размеры подписок, чтобы выделить вектор. Но подписки у нас в cuda-variant.
 // Так что обрабатываем их в куда-ядре
 __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions, 
@@ -82,7 +88,7 @@ __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContaine
     uint64_t senders_num = ::cuda::std::visit([](const auto &s) 
     { 
         return s.get_senders().size(); 
-    }, static_cast<SubscriptionVariant>(subscriptions[id]));
+    }, static_cast<const SubscriptionVariant&>(subscriptions[id]));
     result[id] = senders_num;
 }
 
@@ -125,7 +131,7 @@ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::Subscripti
  * @brief Find messages with a given sender.
  * @param senders vector of senders, we select one based on thread
  */
-__global__ int find_by_sender(
+__global__ void find_by_sender(
     const thrust::device_vector<cuda::UID> &senders, 
     const CUDAMessageBus::MessageBuffer &messages,
     thrust::device_ptr<DevVec<uint64_t>> sub_message_indices,
@@ -160,7 +166,7 @@ __global__ void find_messages_by_receiver(
     if (sub_index >= subscriptions.size()) return;
     const SubscriptionVariant &subscription = subscriptions[sub_index];
     if (subscription.index() != type_index) return;
-    const DevVec<cuda::UID> &senders = ::cuda::std::visit([](auto &sub) { return sub.get_senders(); }, subscription);
+    const DevVec<cuda::UID> &senders = ::cuda::std::visit([](const auto &sub) { return sub.get_senders(); }, subscription);
     uint64_t buf_size = messages.size();
 
     // Find number of threads and blocks
@@ -189,9 +195,8 @@ __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint6
 
 
 
-
 template <typename MessageType>
-__device__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
+__host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
     auto sub_iter = thrust::find_if(thrust::device, subscriptions_.begin(), subscriptions_.end(),
     [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
@@ -211,56 +216,24 @@ __device__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 }
 
 
-__device__ void CUDAMessageBus::remove_receiver(const UID &receiver)
+__host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
 {
     for (auto sub_iter = subscriptions_.begin(); sub_iter != subscriptions_.end(); ++sub_iter)
     {
-/*        ::cuda::std::visit([&receiver](auto &&arg)
-        {
-            return arg.get_receiver_uid() == receiver;
-        }, *sub_iter);
-*/
+        // TODO: Finish
     }
 
-/*    if (subscriptions_.end() == sub_iter) return;
-
-    subscriptions_.erase(sub_iter);*/
 }
 
 
 // This is not threadsafe, make sure it's not run in parallel.
-__device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
+__host__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 {
     messages_to_route_.push_back(message);
 }
 
 
-__device__ size_t CUDAMessageBus::step()
-{
-    // Как у нас работает бэк: каждая популяция получает входные сообщения и формирует, но не отправляет выходное сообщение. 
-    // когда все сообщения получены, мы чистим шину, получаем сообщения от популяций (в цикле) и отправляем их в эндпойнт.
-    // потом мы проходим по проекциям (параллельно или нет), и они формируют сообщения
-    // мы чистим шину от спайковых сообщений, получаем сообщения от проекций (в цикле) и отправляем их в эндпойнт.
-    // таким образом, конкретного step-а у нас попросту не образуется. Степ состоит из clear(), 
-    // for(...) if(get_num_messages > 0) send_message(get_stored_messages) и sync(). 
-    // Все эти функции вызываются из бэкенда чем-то вроде do_message_exchange().
-    return 1;
-}
 
-
-__device__ size_t CUDAMessageBus::route_messages()
-{
-    size_t count = 0;
-    size_t num_messages = step();
-
-    while (num_messages != 0)
-    {
-        count += num_messages;
-        num_messages = step();
-    }
-
-    return count;
-}
 
 
 template <class MessageType>
