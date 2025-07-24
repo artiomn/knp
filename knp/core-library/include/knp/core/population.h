@@ -118,16 +118,16 @@ public:  // NOLINT
     /**
      * @brief Set parameters for the specific neuron in the population.
      * @param index index of the population neuron.
-     * @param parameters neuron parameters
+     * @param parameters neuron parameters.
      */
-    void set_neuron_parameters(size_t index, NeuronParameters const &parameters) { neurons_[index] = parameters; }
+    void set_neuron_parameters(size_t index, const NeuronParameters &parameters) { neurons_[index] = parameters; }
 
     /**
      * @brief Set parameters for all neurons in the population.
-     * @param parameters vector of neuron parameters
+     * @param parameters vector of neuron parameters.
      * @note Copy method.
      */
-    void set_neurons_parameters(std::vector<NeuronParameters> const &parameters) { neurons_ = parameters; }
+    void set_neurons_parameters(const std::vector<NeuronParameters> &parameters) { neurons_ = parameters; }
 
     /**
      * @brief Set parameters for all neurons in the population.

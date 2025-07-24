@@ -45,5 +45,5 @@ constexpr int num_subnetworks = 5;
  */
 AnnotatedNetwork train_mnist_network(
     const std::filesystem::path &path_to_backend,
-    knp::framework::data_processing::classification::images::Dataset const &dataset,
+    const knp::framework::data_processing::classification::images::Dataset &dataset,
     const std::filesystem::path &log_path = "");

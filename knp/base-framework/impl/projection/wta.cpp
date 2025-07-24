@@ -34,7 +34,7 @@ std::vector<knp::core::UID> add_wta_handlers(
 {
     std::vector<knp::core::UID> result;
 
-    //generating seed for wta randomness
+    // Generating seed for WTA randomness
     std::mt19937 rand_gen(std::random_device{}());
     std::uniform_int_distribution<int> distr(-std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
 
@@ -49,5 +49,4 @@ std::vector<knp::core::UID> add_wta_handlers(
     return result;
 }
 
-
-}  //namespace knp::framework::projection
+}  // namespace knp::framework::projection

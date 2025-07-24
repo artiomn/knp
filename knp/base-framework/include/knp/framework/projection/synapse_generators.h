@@ -53,7 +53,7 @@ namespace knp::framework::projection::synapse_generators
 template <typename SynapseType>
 [[nodiscard]] typename knp::core::Projection<SynapseType>::SynapseGenerator all_to_all(
     size_t presynaptic_pop_size, size_t postsynaptic_pop_size,
-    parameters_generators::SynGen2ParamsType<SynapseType> const &syn_gen =
+    const parameters_generators::SynGen2ParamsType<SynapseType> &syn_gen =
         parameters_generators::default_synapse_gen<SynapseType>)
 {
     return [presynaptic_pop_size, postsynaptic_pop_size,
@@ -91,6 +91,7 @@ template <typename SynapseType>
         size_t from_index;
         size_t pack_size;
         size_t to_index;
+
         if (presynaptic_pop_size >= postsynaptic_pop_size)
         {
             from_index = index;
@@ -430,4 +431,4 @@ template <typename DestinationSynapseType, typename SourceSynapseType>
     };
 }
 
-}  //namespace knp::framework::projection::synapse_generators
+}  // namespace knp::framework::projection::synapse_generators

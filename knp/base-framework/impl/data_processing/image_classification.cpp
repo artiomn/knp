@@ -37,7 +37,7 @@ std::vector<bool> simple_image_to_spikes(
         for (size_t l = 0; l < image_size; ++l)
         {
             states[l] += state_increment_factor * static_cast<float>(image[l]);
-            if (states[l] >= 1.)
+            if (states[l] >= 1.F)
             {
                 ret[ret.size() - image_size + l] = true;
                 --states[l];
@@ -120,7 +120,7 @@ Dataset process_data(
 }
 
 
-std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_labels_generator(Dataset const &dataset)
+std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_labels_generator(const Dataset &dataset)
 {
     return [&dataset](knp::core::Step step)
     {
@@ -133,7 +133,7 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_la
 
 
 std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_images_spikes_generator(
-    Dataset const &dataset)
+    const Dataset &dataset)
 {
     return [&dataset](knp::core::Step step)
     {
@@ -143,7 +143,9 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_im
         size_t frame_ind = step % dataset.steps_per_class_;
         size_t frame_start = frame_ind * dataset.image_size_;
         for (size_t i = frame_start; i < frame_start + dataset.image_size_; ++i)
+        {
             if (data[i]) message.push_back(i - frame_start);
+        }
         return message;
     };
 }
@@ -160,7 +162,9 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_inference_i
         size_t frame_ind = step % dataset.steps_per_class_;
         size_t frame_start = frame_ind * dataset.image_size_;
         for (size_t i = frame_start; i < frame_start + dataset.image_size_; ++i)
+        {
             if (data[i]) message.push_back(i - frame_start);
+        }
         return message;
     };
 }
