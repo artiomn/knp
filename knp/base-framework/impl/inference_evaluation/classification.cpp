@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <utility>
 
+
 namespace knp::framework::inference_evaluation::classification
 {
 
@@ -32,7 +33,7 @@ class EvaluationHelper
 {
 public:
     EvaluationHelper(
-        knp::framework::data_processing::classification::Dataset const &dataset, size_t classes_amount,
+        const knp::framework::data_processing::classification::Dataset &dataset, size_t classes_amount,
         size_t steps_per_class)
         : classes_amount_(classes_amount),
           steps_per_class_(steps_per_class),
@@ -57,7 +58,7 @@ private:
     std::vector<Prediction> predictions_;
     const size_t classes_amount_, steps_per_class_;
     std::vector<size_t> prediction_votes_;
-    knp::framework::data_processing::classification::Dataset const &dataset_;
+    const knp::framework::data_processing::classification::Dataset &dataset_;
 };
 
 
@@ -117,7 +118,7 @@ std::vector<InferenceResultForClass> EvaluationHelper::process_inference_predict
             ++prediction_results[cur_data.first].no_votes_;
         else if (prediction.predicted_class_ != cur_data.first)
             ++prediction_results[cur_data.first].incorrectly_predicted_;
-        else
+        else  //votes has been cast and predicted class == correct class
             ++prediction_results[cur_data.first].correctly_predicted_;
     }
     return prediction_results;
@@ -132,6 +133,7 @@ std::vector<InferenceResultForClass> process_inference_results(
     EvaluationHelper helper(dataset, classes_amount, steps_per_class);
     knp::core::messaging::SpikeData firing_neuron_indices;
     auto spikes_iter = spikes.begin();
+
     for (size_t step = 0; step < dataset.steps_required_for_inference_; ++step)
     {
         while (spikes_iter != spikes.end() && spikes_iter->header_.send_time_ == step)
@@ -143,6 +145,7 @@ std::vector<InferenceResultForClass> process_inference_results(
         helper.process_spikes(firing_neuron_indices, step);
         firing_neuron_indices.clear();
     }
+
     return helper.process_inference_predictions();
 }
 
@@ -161,6 +164,5 @@ void write_inference_results_to_stream_as_csv(
                        << recall << ',' << f_measure << std::endl;
     }
 }
-
 
 }  //namespace knp::framework::inference_evaluation::classification

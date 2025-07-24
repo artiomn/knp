@@ -27,11 +27,13 @@
 #include <utility>
 #include <vector>
 
+
 namespace knp::framework::projection
 {
 
 /**
- * @brief add wta(winner takes all) handlers to network
+ * @brief add WTA handlers to network.
+ * @details WTA stands for winner takes all
  * @param executor model executor
  * @param winners_amount amount of winners
  * @param borders borders for wta
@@ -39,8 +41,8 @@ namespace knp::framework::projection
  * @return vector with uids of handlers
  */
 KNP_DECLSPEC std::vector<knp::core::UID> add_wta_handlers(
-    knp::framework::ModelExecutor& executor, size_t winners_amount, std::vector<size_t> const& borders,
-    std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>> const& wta_data);
+    knp::framework::ModelExecutor& executor, size_t winners_amount, const std::vector<size_t>& borders,
+    const std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>>& wta_data);
 
 
-}  //namespace knp::framework::projection
+}  // namespace knp::framework::projection

@@ -24,6 +24,7 @@
 
 #include <tests_common.h>
 
+
 TEST(WinnerTakesAllTest, HandlersPush)
 {
     knp::framework::Model model({});

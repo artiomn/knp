@@ -108,7 +108,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // Start model.
     std::cout << get_time_string() << ": inference started\n";
     model_executor.start(
-        [&](size_t step)
+        [&dataset](size_t step)
         {
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
             return step != dataset.steps_required_for_inference_;

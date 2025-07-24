@@ -28,11 +28,12 @@
 #include <utility>
 #include <vector>
 
+
 namespace knp::framework::data_processing::classification
 {
 
 /**
- * @brief A class that represents processed dataset
+ * @brief A struct that represents processed dataset
  */
 struct Dataset
 {
@@ -61,4 +62,5 @@ struct Dataset
      */
     size_t steps_required_for_inference_;
 };
-}  //namespace knp::framework::data_processing::classification
+
+}  // namespace knp::framework::data_processing::classification

@@ -31,13 +31,12 @@ TEST(ModelMonitoring, AggregatedSpikesLogger)
     knp::testing::BLIFATPopulation population{knp::testing::neuron_generator, 1};
 
     {  //stop spikes from happening
-        const auto& params = population.get_neurons_parameters();
-        for (size_t i = 0; i < params.size(); i++)
+        auto params = population.get_neurons_parameters();
+        for (auto& param : params)
         {
-            auto param = params[i];
             param.activation_threshold_ = std::numeric_limits<double>::max();
-            population.set_neuron_parameters(i, param);
         }
+        population.set_neurons_parameters(params);
     }
 
     knp::testing::DeltaProjection input_projection = knp::testing::DeltaProjection{
@@ -135,14 +134,12 @@ TEST(ModelMonitoring, SpikesLogger)
     knp::testing::BLIFATPopulation population{knp::testing::neuron_generator, 1};
 
     {  //stop spikes from happening
-        const auto& params = population.get_neurons_parameters();
-        for (size_t i = 0; i < params.size(); i++)
+        auto params = population.get_neurons_parameters();
+        for (auto& param : params)
         {
-            auto param = params[i];
             param.activation_threshold_ = std::numeric_limits<double>::max();
-            //todo change this to set_neuron_parameters when #69 gets fixed
-            population.set_neuron_parameters(i, param);
         }
+        population.set_neurons_parameters(params);
     }
 
     knp::testing::DeltaProjection input_projection = knp::testing::DeltaProjection{

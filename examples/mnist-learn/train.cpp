@@ -41,13 +41,16 @@ constexpr size_t aggregated_spikes_logging_period = 4e3;
 
 constexpr size_t projection_weights_logging_period = 1e5;
 
+constexpr size_t wta_winners_amount = 1;
+
 namespace fs = std::filesystem;
+
+namespace images_classification = knp::framework::data_processing::classification::images;
 
 
 // Create channel map for training.
 auto build_channel_map_train(
-    const AnnotatedNetwork &network, knp::framework::Model &model,
-    knp::framework::data_processing::classification::images::Dataset const &dataset)
+    const AnnotatedNetwork &network, knp::framework::Model &model, const images_classification::Dataset &dataset)
 {
     // Create future channels uids randomly.
     knp::core::UID input_image_channel_raster;
@@ -64,11 +67,8 @@ auto build_channel_map_train(
     // Create and fill a channel map.
     knp::framework::ModelLoader::InputChannelMap channel_map;
     channel_map.insert(
-        {input_image_channel_raster,
-         knp::framework::data_processing::classification::images::make_training_images_spikes_generator(dataset)});
-    channel_map.insert(
-        {input_image_channel_classes,
-         knp::framework::data_processing::classification::images::make_training_labels_generator(dataset)});
+        {input_image_channel_raster, images_classification::make_training_images_spikes_generator(dataset)});
+    channel_map.insert({input_image_channel_classes, images_classification::make_training_labels_generator(dataset)});
 
     return channel_map;
 }
@@ -100,8 +100,7 @@ knp::framework::Network get_network_for_inference(
 
 
 AnnotatedNetwork train_mnist_network(
-    const fs::path &path_to_backend, knp::framework::data_processing::classification::images::Dataset const &dataset,
-    const fs::path &log_path)
+    const fs::path &path_to_backend, const images_classification::Dataset &dataset, const fs::path &log_path)
 {
     AnnotatedNetwork example_network = create_example_network(num_subnetworks);
     std::filesystem::create_directory("mnist_network");
@@ -124,7 +123,8 @@ AnnotatedNetwork train_mnist_network(
     {
         std::vector<size_t> wta_borders;
         for (size_t i = 0; i < 10; ++i) wta_borders.push_back(15 * i);
-        knp::framework::projection::add_wta_handlers(model_executor, 1, wta_borders, example_network.data_.wta_data_);
+        knp::framework::projection::add_wta_handlers(
+            model_executor, wta_winners_amount, wta_borders, example_network.data_.wta_data_);
     }
 
     // All loggers go here

@@ -33,6 +33,7 @@ TEST(DataProcessing, ImageClassification)
     auto dataset = knp::framework::data_processing::classification::images::process_data(
         images_stream, labels_stream, training_amount, dataset_split, image_size, steps_per_image,
         [](std::vector<uint8_t> const&) -> std::vector<bool> { return {true}; });
+
     ASSERT_EQ(dataset.image_size_, image_size);
     ASSERT_EQ(dataset.steps_per_class_, steps_per_image);
     ASSERT_EQ(dataset.steps_required_for_training_, 10);
@@ -45,7 +46,6 @@ TEST(DataProcessing, ImageClassification)
     ASSERT_EQ(dataset.data_for_training_[1].first, 1);
     ASSERT_EQ(dataset.data_for_training_[1].second.size(), 1);
     ASSERT_EQ(dataset.data_for_training_[1].second[0], true);
-
 
     ASSERT_EQ(dataset.data_for_inference_.size(), 1);
     ASSERT_EQ(dataset.data_for_inference_[0].first, 2);

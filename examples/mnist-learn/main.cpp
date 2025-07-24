@@ -41,22 +41,27 @@ constexpr size_t classes_amount = 10;
 
 int main(int argc, char** argv)
 {
-    if (argc < 3)
+    if (argc < 3 || argc > 4)
     {
-        std::cerr << "Not enough parameters.\n First parameter: path to frames file.\n "
-                     "Second parameter: path to labels file.\n Third parameter (optional) path to log output directory."
-                  << std::endl;
+        std::cerr
+            << "You need to provide 2-3 arguments,\n1: path to images raw data\n2: path to images labels\n3(optional): "
+               "path to folder for logs"
+            << std::endl;
         return EXIT_FAILURE;
     }
+
+    std::filesystem::path images_file_path = argv[1];
+    std::filesystem::path labels_file_path = argv[2];
+
     std::filesystem::path log_path;
-    if (argc >= 4) log_path = argv[3];
+    if (argc == 4) log_path = argv[3];
 
     // Defines path to backend, on which to run a network.
     std::filesystem::path path_to_backend =
         std::filesystem::path(argv[0]).parent_path() / "knp-cpu-multi-threaded-backend";
 
-    std::ifstream images_stream(argv[1], std::ios::binary);
-    std::ifstream labels_stream(argv[2], std::ios::in);
+    std::ifstream images_stream(images_file_path, std::ios::binary);
+    std::ifstream labels_stream(labels_file_path, std::ios::in);
 
     auto dataset = knp::framework::data_processing::classification::images::process_data(
         images_stream, labels_stream, images_amount_to_train, dataset_split, image_size, steps_per_image,
