@@ -176,7 +176,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         // 1. Trainable input projection.
         ResourceDeltaProjection input_projection = knp::framework::projection::creators::all_to_all<ResourceSynapse>(
             knp::core::UID{false}, population_uids[INPUT], input_size, num_input_neurons,
-            [&](size_t, size_t) { return afferent_synapse; });
+            [&afferent_synapse](size_t, size_t) { return afferent_synapse; });
         result.data_.projections_from_raster_.push_back(input_projection.get_uid());
         input_projection.unlock_weights();  // Trainable
         result.network_.add_projection(input_projection);
@@ -187,7 +187,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         const DeltaSynapseData default_activating_synapse{1, 1, knp::synapse_traits::OutputType::BLOCKING};
         DeltaProjection projection_2 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             knp::core::UID{false}, population_uids[DOPAMINE], pop_data[INPUT].pd_.size_, pop_data[DOPAMINE].pd_.size_,
-            [&](size_t, size_t) { return default_activating_synapse; });
+            [&default_activating_synapse](size_t, size_t) { return default_activating_synapse; });
         result.network_.add_projection(projection_2);
         result.data_.wta_data_[i].second.push_back(projection_2.get_uid());
 
@@ -196,7 +196,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         const DeltaSynapseData default_dopamine_synapse{dopamine_value, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             population_uids[DOPAMINE], population_uids[INPUT], pop_data[DOPAMINE].pd_.size_, pop_data[INPUT].pd_.size_,
-            [&](size_t, size_t) { return default_dopamine_synapse; });
+            [&default_dopamine_synapse](size_t, size_t) { return default_dopamine_synapse; });
         result.network_.add_projection(projection_3);
         result.data_.inference_internal_projection_.insert(projection_3.get_uid());
 
@@ -205,7 +205,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         default_synapse.weight_ = 9;
         DeltaProjection projection_4 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             knp::core::UID{false}, population_uids[OUTPUT], pop_data[INPUT].pd_.size_, pop_data[OUTPUT].pd_.size_,
-            [&](size_t, size_t) { return default_synapse; });
+            [&default_synapse](size_t, size_t) { return default_synapse; });
         result.data_.wta_data_[i].second.push_back(projection_4.get_uid());
         result.network_.add_projection(projection_4);
         result.data_.inference_internal_projection_.insert(projection_4.get_uid());
@@ -215,7 +215,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         const DeltaSynapseData default_blocking_synapse{-20, 1, knp::synapse_traits::OutputType::BLOCKING};
         DeltaProjection projection_5 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             population_uids[OUTPUT], population_uids[GATE], pop_data[OUTPUT].pd_.size_, pop_data[GATE].pd_.size_,
-            [&](size_t, size_t) { return default_blocking_synapse; });
+            [&default_blocking_synapse](size_t, size_t) { return default_blocking_synapse; });
         result.network_.add_projection(projection_5);
         result.data_.inference_internal_projection_.insert(projection_5.get_uid());
 
@@ -223,7 +223,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         // 6. Strong excitatory projection going from ground truth classes.
         DeltaProjection projection_6 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             knp::core::UID{false}, population_uids[DOPAMINE], num_possible_labels, pop_data[DOPAMINE].pd_.size_,
-            [&](size_t, size_t) { return default_synapse; });
+            [&default_synapse](size_t, size_t) { return default_synapse; });
         result.network_.add_projection(projection_6);
         result.data_.projections_from_classes_.push_back(projection_6.get_uid());
 
@@ -233,7 +233,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         slow_synapse.delay_ = 10;
         DeltaProjection projection_7 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             knp::core::UID{false}, population_uids[GATE], num_possible_labels, pop_data[GATE].pd_.size_,
-            [&](size_t, size_t) { return slow_synapse; });
+            [&slow_synapse](size_t, size_t) { return slow_synapse; });
         result.network_.add_projection(projection_7);
         result.data_.projections_from_classes_.push_back(projection_7.get_uid());
 
@@ -244,7 +244,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         DeltaProjection projection_8 =
             knp::framework::projection::creators::exclusive<knp::synapse_traits::DeltaSynapse>(
                 knp::core::UID{false}, population_uids[GATE], num_possible_labels,
-                [&](size_t, size_t) { return inhibitory_synapse; });
+                [&inhibitory_synapse](size_t, size_t) { return inhibitory_synapse; });
         result.data_.projections_from_classes_.push_back(projection_8.get_uid());
         result.network_.add_projection(projection_8);
 
@@ -254,7 +254,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         weak_excitatory_synapse.weight_ = 3;
         DeltaProjection projection_9 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             population_uids[GATE], population_uids[INPUT], pop_data[GATE].pd_.size_, pop_data[INPUT].pd_.size_,
-            [&](size_t, size_t) { return weak_excitatory_synapse; });
+            [&weak_excitatory_synapse](size_t, size_t) { return weak_excitatory_synapse; });
         result.network_.add_projection(projection_9);
         result.data_.inference_internal_projection_.insert(projection_9.get_uid());
     }
