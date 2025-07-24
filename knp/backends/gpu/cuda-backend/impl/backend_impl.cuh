@@ -172,7 +172,7 @@ struct CUDAProjection
     /**
      * @brief Container of synapse parameters.
      */
-    thrust::device_vector<Synapse> synapses_;
+//    thrust::device_vector<Synapse> synapses_;
 
     /**
      * @brief Messages container.
@@ -408,7 +408,7 @@ protected:
      */
     __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-        thrust::device_vector<cuda::SynapticImpactMessage> &messages,
+//        thrust::device_vector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);
 
     /**
@@ -419,7 +419,7 @@ protected:
      */
     __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-        thrust::device_vector<cuda::SpikeMessage> &messages,
+  //      thrust::device_vector<cuda::SpikeMessage> &messages,
         SynapticMessageQueue &message_queue,
         std::uint64_t step_n);
 
@@ -429,9 +429,9 @@ private:
     ProjectionContainer projections_;
 
     // cppcheck-suppress unusedStructMember
-    std::vector<CUDAPopulationVariants> device_populations_;
+//    std::vector<CUDAPopulationVariants> device_populations_;
     // cppcheck-suppress unusedStructMember
-    std::vector<CUDAProjectionVariants> device_projections_;
+//    std::vector<CUDAProjectionVariants> device_projections_;
 
     knp::backends::gpu::cuda::CUDAMessageBus message_bus_;
 

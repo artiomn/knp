@@ -60,7 +60,7 @@ public:
     using UidSet = thrust::device_vector<UID>;
     __host__ __device__ Subscription() = default;
     __host__ __device__ Subscription(const Subscription &) = default;
-    __host__ __device__ ~Subscription() = default;
+    __host__ ~Subscription() = default;
 
 public:
     /**

@@ -120,7 +120,7 @@ void CUDABackendImpl::load_populations(const std::vector<PopulationVariants> &po
 {
 //    SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
-    device_populations_.clear();
+/*    device_populations_.clear();
     device_populations_.reserve(populations.size());
 
     for (const auto &population : populations)
@@ -141,6 +141,7 @@ void CUDABackendImpl::load_populations(const std::vector<PopulationVariants> &po
             },
             population);
     }
+*/
 //    SPDLOG_DEBUG("All populations loaded.");
 }
 
@@ -148,6 +149,7 @@ void CUDABackendImpl::load_populations(const std::vector<PopulationVariants> &po
 void CUDABackendImpl::load_projections(const std::vector<ProjectionVariants> &projections)
 {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
+/*
     projections_.clear();
     projections_.reserve(projections.size());
 
@@ -178,7 +180,7 @@ void CUDABackendImpl::load_projections(const std::vector<ProjectionVariants> &pr
             },
             projection);
     }
-
+*/
 //    SPDLOG_DEBUG("All projections loaded.");
 }
 
@@ -211,7 +213,7 @@ void CUDABackendImpl::_init()
 
 __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl::calculate_population(
     CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-    thrust::device_vector<cuda::SynapticImpactMessage> &messages,
+//    thrust::device_vector<cuda::SynapticImpactMessage> &messages,
     std::uint64_t step_n)
 {
     // TODO rework
@@ -246,7 +248,7 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
     }
 
     // process_inputs(population, messages);
-    for (const cuda::SynapticImpactMessage message : messages)
+/*    for (const cuda::SynapticImpactMessage message : messages)
     {
         for (const cuda::SynapticImpact impact : message.impacts_)
         {
@@ -273,7 +275,6 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
                     break;
             }
 
-            /*
             if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
             {
                 if (impact.synapse_type_ == synapse_traits::OutputType::EXCITATORY)
@@ -281,10 +282,10 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
                     neuron.is_being_forced_ |= message.is_forcing_;
                 }
             }
-            */
            population.neurons_[impact.postsynaptic_neuron_index_] = neuron;
         }
     }
+*/
     //
 
     // calculate_neurons_post_input_state(population, neuron_indexes);
@@ -372,7 +373,7 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
 
 __device__ void CUDABackendImpl::calculate_projection(
     CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-    thrust::device_vector<cuda::SpikeMessage> &messages,
+//    thrust::device_vector<cuda::SpikeMessage> &messages,
     SynapticMessageQueue &message_queue,
     std::uint64_t step_n)
 {

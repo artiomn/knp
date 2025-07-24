@@ -30,15 +30,15 @@
 // Как у нас работает бэк:
 // 0. Мы индексируем index_messages() сообщения нужных нам типов (или всех типов?) и сохраняем вектор индексов.
 // 1. каждая популяция получает входные сообщения и формирует, но не отправляет выходное сообщение.
-//  1.1. Входные сообщения выдаются в виде "указатель на все сообщения + индексы интересующих" 
-// 2. когда все популяции отработали, мы: 
+//  1.1. Входные сообщения выдаются в виде "указатель на все сообщения + индексы интересующих"
+// 2. когда все популяции отработали, мы:
 //  2.1. чистим шину clean()
 //  2.2. получаем сообщения receive_message() от популяций (в цикле)
 //  2.3. отправляем сообщения в эндпойнт и получаем сообщения из эндпойнта (synchronize)
 // потом мы проходим по проекциям (параллельно или нет), и они формируют сообщения
 // мы чистим шину от спайковых сообщений (clean), получаем сообщения от проекций (в цикле) и отправляем их в эндпойнт.
-// таким образом, конкретного step-а у нас попросту не образуется. Степ состоит из clear(), 
-// for(...) if(get_num_messages > 0) send_message(get_stored_messages) и sync(). 
+// таким образом, конкретного step-а у нас попросту не образуется. Степ состоит из clear(),
+// for(...) if(get_num_messages > 0) send_message(get_stored_messages) и sync().
 // Все эти функции вызываются из бэкенда чем-то вроде do_message_exchange().
 
 
@@ -80,16 +80,18 @@ __host__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::devic
 
 // Нам надо на хосте иметь размеры подписок, чтобы выделить вектор. Но подписки у нас в cuda-variant.
 // Так что обрабатываем их в куда-ядре
-__global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions, 
+__global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions,
                                       thrust::device_vector<uint64_t> &result)
 {
     uint64_t id = threadIdx.x + blockIdx.x;
     if (id >= subscriptions.size()) return;
-    uint64_t senders_num = ::cuda::std::visit([](const auto &s) 
-    { 
-        return s.get_senders().size(); 
+/*    uint64_t senders_num = ::cuda::std::visit([](const auto &s)
+    {
+        return s.get_senders().size();
     }, static_cast<const SubscriptionVariant&>(subscriptions[id]));
+
     result[id] = senders_num;
+*/
 }
 
 
@@ -105,7 +107,7 @@ __host__ thrust::device_vector<uint64_t> get_senders_numbers(const CUDAMessageBu
 
 // фигачим вектор, его задача в том чтобы для каждой подписки и каждого отправителя был свой вектор, зарезервированный под размер
 // всех сообщений. На самом деле бы лучше сделать это для каждой подписки нужного типа, но логика будет сложнее.
-DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::SubscriptionContainer &subscriptions, uint64_t size_z)
+__host__ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::SubscriptionContainer &subscriptions, uint64_t size_z)
 {
     DevVec<DevVec<DevVec<uint64_t>>> res;
     uint64_t size_x = subscriptions.size();
@@ -119,9 +121,9 @@ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::Subscripti
         {
             DevVec<uint64_t> sub_buf;
             sub_buf.reserve(size_z);
-            buf.push_back(std::move(sub_buf));
+            //buf.push_back(std::move(sub_buf));
         }
-        res.push_back(std::move(buf));
+        // res.push_back(std::move(buf));
     }
     return res;
 }
@@ -132,7 +134,7 @@ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::Subscripti
  * @param senders vector of senders, we select one based on thread
  */
 __global__ void find_by_sender(
-    const thrust::device_vector<cuda::UID> &senders, 
+    const thrust::device_vector<cuda::UID> &senders,
     const CUDAMessageBus::MessageBuffer &messages,
     thrust::device_ptr<DevVec<uint64_t>> sub_message_indices,
     int type_index)
@@ -140,13 +142,13 @@ __global__ void find_by_sender(
     int sender_index = blockIdx.x + threadIdx.x;
     if (sender_index >= senders.size()) return;
     cuda::UID uid = senders[sender_index];
-    for (uint64_t i = 0; i < messages.size(); ++i) 
+    for (uint64_t i = 0; i < messages.size(); ++i)
     {
         const cuda::MessageVariant &msg = messages[i];
         if (msg.index() != type_index) continue;
         cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) {return msg.header_.sender_uid_; }, msg);
-        // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid); 
-        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i); 
+        // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid);
+//        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i);
 
     }
 }
@@ -155,7 +157,7 @@ __global__ void find_by_sender(
 // Так, надо найти вектор сообщений с известным получателем и известного типа. Это несложно.
 // Что нам надо: для каждого получателя получить отправителей. Запустить поиск по отправителю. Собрать результаты в вектор.
 // Что нам надо для верхней функции: набор подписок и индекс типа, вектор сообщений, размеры для набора и вектора.
-// Ещё нужен вектор для результата: 
+// Ещё нужен вектор для результата:
 __global__ void find_messages_by_receiver(
         const CUDAMessageBus::SubscriptionContainer &subscriptions,
         const CUDAMessageBus::MessageBuffer &messages,
@@ -164,7 +166,7 @@ __global__ void find_messages_by_receiver(
 {
     uint64_t sub_index = threadIdx.x + blockIdx.x;
     if (sub_index >= subscriptions.size()) return;
-    const SubscriptionVariant &subscription = subscriptions[sub_index];
+/*    const SubscriptionVariant &subscription = subscriptions[sub_index];
     if (subscription.index() != type_index) return;
     const DevVec<cuda::UID> &senders = ::cuda::std::visit([](const auto &sub) { return sub.get_senders(); }, subscription);
     uint64_t buf_size = messages.size();
@@ -174,6 +176,7 @@ __global__ void find_messages_by_receiver(
     const int num_blocks = subscriptions.size() / threads_per_block + 1;
     thrust::device_ptr<DevVec<DevVec<uint64_t>>> ptr = message_indices.data();
     find_by_sender<<<num_blocks, num_threads>>>(senders, messages, (ptr + sub_index)->data(), type_index);
+*/
 }
 
 
@@ -241,7 +244,7 @@ __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
         thrust::device_vector<MessageType> &result_messages)
 {
     // locate messages
-    
+
 }
 
 
