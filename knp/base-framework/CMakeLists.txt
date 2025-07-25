@@ -40,9 +40,6 @@ include(knp-functions)
 
 file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
 
-source_group(source REGULAR_EXPRESSION "impl/.*")
-source_group(headers FILES ${${PROJECT_NAME}_headers} REGULAR_EXPRESSION "include/.*")
-
 knp_get_hdf5_target(HDF5_LIB)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
