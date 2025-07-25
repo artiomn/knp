@@ -76,7 +76,7 @@ private:
     ValueType in_interval_end_;
     ValueType out_interval_start_;
     ValueType out_interval_end_;
-    double intervals_rescaler_;
+    ValueType intervals_rescaler_;
 };
 
 }  // namespace knp::framework
