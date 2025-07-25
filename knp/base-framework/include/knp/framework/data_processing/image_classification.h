@@ -47,8 +47,10 @@ struct Dataset : classification::Dataset
 
 
 /**
- * @brief Create a simple image to spikes converter, its gonna send spikes for active_steps steps, and it will not send
- * any for steps_per_image-active_steps steps.
+ * @brief Create a incrementing image to spikes converter, its gonna send spikes for active_steps steps, and it will not
+ * send any for steps_per_image-active_steps steps.
+ * @detail This converter considered incrementing because it will add state_increment_factor * image_pixel to some
+ * table, and when sum is greater than 1, it will add spike
  * @param steps_per_image amount of steps required for a single image to be passed to model in form of spikes.
  * @param active_steps amount of active steps, active steps are steps when spikes being sent, must me < steps_per_image.
  * @param image_size total image size.
@@ -57,7 +59,7 @@ struct Dataset : classification::Dataset
  * function call expression lifetime.
  * @return A functor that converts image raw data to spikes.
  */
-KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_simple_image_to_spikes_converter(
+KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_incrementing_image_to_spikes_converter(
     size_t steps_per_image, size_t active_steps, size_t image_size, float state_increment_factor,
     std::vector<float> &&states);
 

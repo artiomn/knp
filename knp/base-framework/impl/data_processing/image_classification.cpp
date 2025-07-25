@@ -24,7 +24,7 @@
 namespace knp::framework::data_processing::classification::images
 {
 
-std::vector<bool> simple_image_to_spikes(
+std::vector<bool> incrementing_image_to_spikes(
     const std::vector<uint8_t> &image, std::vector<float> &states, size_t steps_per_image, size_t active_steps,
     size_t image_size, float state_increment_factor)
 {
@@ -51,12 +51,14 @@ std::vector<bool> simple_image_to_spikes(
 }
 
 
-std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_simple_image_to_spikes_converter(
+std::function<std::vector<bool>(std::vector<uint8_t> const &)> make_incrementing_image_to_spikes_converter(
     size_t steps_per_image, size_t active_steps, size_t image_size, float state_increment_factor,
     std::vector<float> &&states)
 {
-    return [=, &states](std::vector<uint8_t> const &image) -> std::vector<bool> {
-        return simple_image_to_spikes(image, states, steps_per_image, active_steps, image_size, state_increment_factor);
+    return [=, &states](std::vector<uint8_t> const &image) -> std::vector<bool>
+    {
+        return incrementing_image_to_spikes(
+            image, states, steps_per_image, active_steps, image_size, state_increment_factor);
     };
 }
 
@@ -80,12 +82,12 @@ Dataset process_data(
     dataset.image_size_ = image_size;
     dataset.steps_per_class_ = steps_per_image;
 
-    {  // Process dataset
+    {  // Process dataset.
         std::vector<uint8_t> image_reading_buffer(image_size, 0);
 
         while (images_stream.good() && labels_stream.good())
         {
-            images_stream.read(reinterpret_cast<char *>(&*image_reading_buffer.begin()), image_size);
+            images_stream.read(reinterpret_cast<char *>(image_reading_buffer.data()), image_size);
             auto spikes_frame = image_to_spikes(image_reading_buffer);
 
             std::string str;
@@ -101,7 +103,7 @@ Dataset process_data(
 
     /*
      * The idea is that, if dataset is too big for required training amount, then inference will be bigger than
-     * training, so to compensate we make inference smaller, according to dataset_split
+     * training, so to compensate we make inference smaller, according to dataset_split.
      */
     if (training_amount < dataset.data_for_training_.size())
     {

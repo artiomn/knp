@@ -38,15 +38,16 @@ constexpr size_t images_amount_to_train = 10000;
 constexpr float dataset_split = 0.8;
 constexpr size_t classes_amount = 10;
 
+namespace data_processing = knp::framework::data_processing::classification::images;
+namespace inference_evaluation = knp::framework::inference_evaluation::classification;
 
 int main(int argc, char** argv)
 {
     if (argc < 3 || argc > 4)
     {
-        std::cerr
-            << "You need to provide 2-3 arguments,\n1: path to images raw data\n2: path to images labels\n3(optional): "
-               "path to folder for logs"
-            << std::endl;
+        std::cerr << "You need to provide 2[3] arguments,\n1: path to images raw data\n2: path to images labels\n[3]: "
+                     "path to folder for logs"
+                  << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -63,9 +64,9 @@ int main(int argc, char** argv)
     std::ifstream images_stream(images_file_path, std::ios::binary);
     std::ifstream labels_stream(labels_file_path, std::ios::in);
 
-    auto dataset = knp::framework::data_processing::classification::images::process_data(
+    auto dataset = data_processing::process_data(
         images_stream, labels_stream, images_amount_to_train, dataset_split, image_size, steps_per_image,
-        knp::framework::data_processing::classification::images::make_simple_image_to_spikes_converter(
+        data_processing::make_incrementing_image_to_spikes_converter(
             steps_per_image, active_steps, image_size, state_increment_factor, std::vector<float>(image_size, 0.f)));
 
     std::cout << "Processed dataset, training will last " << dataset.steps_required_for_training_
@@ -80,11 +81,9 @@ int main(int argc, char** argv)
 
     // Evaluate results.
     auto const& processed_inference_results =
-        knp::framework::inference_evaluation::classification::process_inference_results(
-            spikes, dataset, classes_amount, steps_per_image);
+        inference_evaluation::process_inference_results(spikes, dataset, classes_amount, steps_per_image);
 
-    knp::framework::inference_evaluation::classification::write_inference_results_to_stream_as_csv(
-        std::cout, processed_inference_results);
+    write_inference_results_to_stream_as_csv(std::cout, processed_inference_results);
 
     return EXIT_SUCCESS;
 }

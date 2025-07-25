@@ -79,5 +79,4 @@ struct InferenceResultForClass
 KNP_DECLSPEC void write_inference_results_to_stream_as_csv(
     std::ostream &results_stream, const std::vector<InferenceResultForClass> &inference_results);
 
-
 }  //namespace knp::framework::inference_evaluation::classification

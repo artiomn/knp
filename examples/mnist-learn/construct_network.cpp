@@ -21,11 +21,8 @@
 
 #include "construct_network.h"
 
-#include <knp/core/population.h>
-#include <knp/core/projection.h>
-#include <knp/framework/sonata/network_io.h>
-#include <knp/neuron-traits/all_traits.h>
-#include <knp/synapse-traits/all_traits.h>
+#include "shared_network.h"
+
 
 // A list of short type names to make reading easier.
 using DeltaSynapseData = knp::synapse_traits::synapse_parameters<knp::synapse_traits::DeltaSynapse>;
@@ -38,37 +35,6 @@ using BlifatPopulation = knp::core::Population<knp::neuron_traits::BLIFATNeuron>
 using ResourceBlifatPopulation = knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron>;
 using ResourceNeuron = knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron;
 using ResourceNeuronData = knp::neuron_traits::neuron_parameters<ResourceNeuron>;
-
-// Network hyperparameters. You may want to fine-tune these.
-constexpr float default_threshold = 8.571F;
-constexpr float min_synaptic_weight = -0.7;
-constexpr float max_synaptic_weight = 0.864249F;
-constexpr float base_weight_value = 0.000F;
-constexpr int neuron_dopamine_period = 10;
-constexpr int synapse_dopamine_period = 10;
-constexpr float l_neuron_potential_decay = 1.0 - 1.0 / 3.0;
-constexpr float dopamine_parameter = 0.042F;
-constexpr float dopamine_value = dopamine_parameter;
-constexpr float threshold_weight_coeff = 0.023817F;
-
-//
-// Network geometry.
-//
-
-// Number of neurons reserved per a single digit.
-constexpr size_t neurons_per_column = 15;
-
-// Ten possible digits, one column per each.
-constexpr size_t num_possible_labels = 10;
-
-// All columns are a part of the same population.
-constexpr size_t num_input_neurons = neurons_per_column * num_possible_labels;
-
-// Number of pixels for a single MNIST image.
-constexpr size_t input_size = 28 * 28;
-
-// Dense input projection from 28 * 28 image to population of 150 neurons.
-constexpr size_t input_projection_size = input_size * num_input_neurons;
 
 
 // Intermediate population neurons.
@@ -151,7 +117,6 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
     result.data_.wta_data_.back().first.push_back(population_uids[INPUT]);
     return std::make_pair(population_uids, pop_data);
 }
-
 
 // Create network for MNIST.
 AnnotatedNetwork create_example_network(int num_compound_networks)

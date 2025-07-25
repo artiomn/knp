@@ -33,32 +33,32 @@ namespace knp::framework::data_processing::classification
 {
 
 /**
- * @brief A struct that represents processed dataset
+ * @brief A struct that represents processed dataset.
  */
 struct Dataset
 {
     /**
-     * @brief Vector of pairs of label and class data in spikes form(distributed in several steps)
+     * @brief Vector of pairs of label and class data in spikes form, distributed in several steps.
      */
     std::vector<std::pair<unsigned, std::vector<bool>>> data_for_training_;
 
     /**
-     * @brief Vector of pairs of label and class data in spikes form(distributed in several steps)
+     * @brief Vector of pairs of label and class data in spikes form, distributed in several steps.
      */
     std::vector<std::pair<unsigned, std::vector<bool>>> data_for_inference_;
 
     /**
-     * @brief Amount of steps the converted class data will be sent
+     * @brief Amount of steps the converted class data will be sent.
      */
     size_t steps_per_class_;
 
     /**
-     * @brief Amount of steps required for training
+     * @brief Amount of steps required for training.
      */
     size_t steps_required_for_training_;
 
     /**
-     * @brief Amount of steps required for inference
+     * @brief Amount of steps required for inference.
      */
     size_t steps_required_for_inference_;
 };
