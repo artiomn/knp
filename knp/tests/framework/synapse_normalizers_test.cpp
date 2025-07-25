@@ -20,6 +20,7 @@
  */
 
 #include <knp/framework/normalization/normalize_synapses.h>
+#include <knp/framework/normalization/synapse_accessors.h>
 #include <knp/framework/projection/creators.h>
 #include <knp/synapse-traits/delta.h>
 
@@ -34,7 +35,8 @@ TEST(SynapseNormalizers, NormalizeWeight)
     auto proj = knp::framework::projection::creators::all_to_all<typename knp::synapse_traits::DeltaSynapse>(
         knp::core::UID(), knp::core::UID(), src_pop_size, dest_pop_size);
 
-    auto wa = WeightAccessor<knp::synapse_traits::DeltaSynapse>(IntervalRecalculator<float>(10, 20, 0, 1));
+    auto wa = knp::framework::projection::WeightAccessor<knp::synapse_traits::DeltaSynapse>(
+        IntervalRecalculator<float>(10, 20, 0, 1));
 
     knp::framework::normalize_synapses(proj, wa);
 }

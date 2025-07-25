@@ -25,19 +25,14 @@
 #include <knp/core/projection.h>
 #include <knp/framework/network.h>
 
+#include <functional>
+
 
 /**
  * @brief Framework namespace.
  */
 namespace knp::framework
 {
-
-/**
- * @brief Synapse value corrector function type.
- */
-template <typename ValueType>
-using ValueCorrector = std::function<ValueType(const ValueType)>;
-
 
 /**
  * @brief Iterate over synapses in projection normalize parameters.
