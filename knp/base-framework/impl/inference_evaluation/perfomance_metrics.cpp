@@ -45,4 +45,4 @@ float get_f_measure(float precision, float recall)
     return 2.F * precision * recall / (precision + recall);
 }
 
-}  //namespace knp::framework::inference_evaluation
+}  // namespace knp::framework::inference_evaluation

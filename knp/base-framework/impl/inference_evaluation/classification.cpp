@@ -144,4 +144,4 @@ void write_inference_results_to_stream_as_csv(
     }
 }
 
-}  //namespace knp::framework::inference_evaluation::classification
+}  // namespace knp::framework::inference_evaluation::classification

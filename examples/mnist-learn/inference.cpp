@@ -29,13 +29,13 @@
 #include <knp/framework/network.h>
 #include <knp/framework/projection/wta.h>
 #include <knp/framework/sonata/network_io.h>
-#include <knp/synapse-traits/all_traits.h>
 
 #include <filesystem>
 #include <map>
 #include <utility>
 
 #include "construct_network.h"
+#include "shared_network.h"
 #include "time_string.h"
 
 constexpr size_t aggregated_spikes_logging_period = 4e3;
@@ -82,7 +82,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     std::vector<knp::core::UID> wta_uids;
     {
         std::vector<size_t> wta_borders;
-        for (size_t i = 0; i < 10; ++i) wta_borders.push_back(15 * i);
+        for (size_t i = 0; i < num_possible_labels; ++i) wta_borders.push_back(neurons_per_column * i);
         wta_uids = knp::framework::projection::add_wta_handlers(
             model_executor, 1, wta_borders, described_network.data_.wta_data_);
     }
