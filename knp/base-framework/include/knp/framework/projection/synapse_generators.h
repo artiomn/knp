@@ -39,6 +39,7 @@
  */
 namespace knp::framework::projection::synapse_generators
 {
+
 /**
  * @brief For populations of size `N x M` generates connections such as: `0 ->
  * 0`, `0 -> 1`, `0 -> 2`, ..., `0 -> M`, `1 -> 0`, `1 -> 1`, ..., `1 -> M`, ..., `N -> M`.
@@ -106,8 +107,9 @@ template <typename SynapseType>
 
 
 /**
- * @brief Size of populations must be same. For example if populations size is 3, then synapses amount is 6,
+ * @brief For example if populations size is 3, then synapses amount is 6,
  * and generator will generate synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time.
+ * @pre Population sizes must be equal.
  * @param populations_size size of populations, they are supposed to be the same.
  * @param syn_gen generator of synapse parameters.
  * @return synapse generator.
@@ -132,7 +134,7 @@ template <typename SynapseType>
 
 
 /**
- * @brief Populations size should be same. For the populations of size `N x N` generates connections such as: `0 -> 0`,
+ * @brief For the populations of size `N x N` generates connections such as: `0 -> 0`,
  * `1 -> 1`, `2 -> 2`, ..., `N -> N`.
  * @pre Population sizes must be equal.
  * @param population_size neuron count in populations.
