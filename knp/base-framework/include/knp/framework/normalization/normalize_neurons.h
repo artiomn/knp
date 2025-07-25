@@ -23,6 +23,9 @@
 
 #include <knp/core/core.h>
 #include <knp/core/population.h>
+#include <knp/framework/network.h>
+
+#include <functional>
 
 
 /**
@@ -38,7 +41,7 @@ namespace knp::framework
  */
 template <typename NeuronType>
 void normalize_neurons(
-    knp::core::Population<SynapseType> &population,
+    knp::core::Population<NeuronType> &population,
     std::function<void(typename knp::core::Population<NeuronType>::NeuronParameters &)> accessor)
 {
     for (auto &neuron : population)
@@ -53,10 +56,10 @@ void normalize_neurons(
  * @param network Network to normalize.
  * @param accessor Function used for access synapse field and normalization..
  */
-template <typename SynapseType>
+template <typename NeuronType>
 void normalize_neurons(
     knp::framework::Network &network,
-    std::function<void(typename knp::core::Projection<SynapseType>::SynapseParameters &)> accessor)
+    std::function<void(typename knp::core::Population<NeuronType>::NeuronParameters &)> accessor)
 {
     for (auto &population_variant : network.get_populations())
     {
@@ -73,10 +76,10 @@ void normalize_neurons(
  * @param accessor Function used for access neuron field and normalization.
  * @return copy of the network with normalized neurons.
  */
-template <typename SynapseType>
+template <typename NeuronType>
 knp::framework::Network normalize_neurons(
     const knp::framework::Network &network,
-    std::function<void(typename knp::core::Projection<SynapseType>::SynapseParameters &)> accessor)
+    std::function<void(typename knp::core::Population<NeuronType>::NeuronParameters &)> accessor)
 {
     auto new_network = network;
 

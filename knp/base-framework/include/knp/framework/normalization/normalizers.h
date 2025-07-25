@@ -29,6 +29,12 @@
  */
 namespace knp::framework
 {
+/**
+ * @brief Synapse value corrector function type.
+ */
+template <typename ValueType>
+using ValueCorrector = std::function<ValueType(const ValueType)>;
+
 
 /**
  * @brief The Rescaler class need to rescale one interval to another.
@@ -56,7 +62,7 @@ public:
     }
 
     /**
-     * @brief operator () makes rescaling.
+     * @brief operator () performs rescaling.
      * @param value value to rescale.
      * @return rescaled value.
      */

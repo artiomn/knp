@@ -22,6 +22,7 @@
 #pragma once
 
 #include <knp/core/projection.h>
+#include <knp/framework/normalization/normalizers.h>
 #include <knp/synapse-traits/all_traits.h>
 
 
@@ -34,18 +35,31 @@ namespace knp::framework
 /**
  * @brief The WeightAccessor class
  */
-template <typename SynapseType>
 class WeightAccessor
 {
 public:
-    using ValueType = decltype(knp::core::Projection<SynapseType>::SynapseParameters::weight_);
+    /**
+     * @brief Synapse weight value type.
+     */
+    using ValueType = float;
+    /**
+     * @brief Value corrector type.
+     */
     using VCType = knp::framework::ValueCorrector<ValueType>;
 
 public:
+    /**
+     * @brief WeightAccessor constructor.
+     * @param value_corrector normalizer function.
+     */
     explicit WeightAccessor(VCType value_corrector) : value_corrector_(value_corrector) {}
 
-    template <typename SynapseType1>
-    void operator()(typename knp::core::Projection<typename SynapseType1>::SynapseParameters& synapse)
+    /**
+     * @brief operator () perfrorms weight correction.
+     * @param synapse real synapse data.
+     */
+    template <typename SynapseType>
+    void operator()(typename knp::core::Projection<typename SynapseType>::SynapseParameters& synapse)
     {
         std::cout << synapse.weight_ << std::endl;
         synapse.weight_ = value_corrector_(synapse.weight_);
