@@ -35,38 +35,34 @@ namespace knp::framework
 /**
  * @brief The WeightAccessor class
  */
+template <typename ValueType>
 class WeightAccessor
 {
 public:
     /**
-     * @brief Synapse weight value type.
-     */
-    using ValueType = float;
-    /**
      * @brief Value corrector type.
      */
-    using VCType = knp::framework::ValueCorrector<ValueType>;
+    using ValueCorrectorType = typename knp::framework::ValueCorrector<ValueType>;
 
 public:
     /**
      * @brief WeightAccessor constructor.
      * @param value_corrector normalizer function.
      */
-    explicit WeightAccessor(VCType value_corrector) : value_corrector_(value_corrector) {}
+    explicit WeightAccessor(ValueCorrectorType value_corrector) : value_corrector_(value_corrector) {}
 
     /**
      * @brief operator () perfrorms weight correction.
      * @param synapse real synapse data.
      */
-    template <typename SynapseType>
-    void operator()(typename knp::core::Projection<typename SynapseType>::SynapseParameters& synapse)
+    template <typename SynapseType = knp::synapse_traits::DeltaSynapse>
+    void operator()(typename knp::core::Projection<SynapseType>::SynapseParameters& synapse)
     {
-        std::cout << synapse.weight_ << std::endl;
         synapse.weight_ = value_corrector_(synapse.weight_);
     }
 
 private:
-    VCType value_corrector_;
+    ValueCorrectorType value_corrector_;
 };
 
 }  // namespace knp::framework
