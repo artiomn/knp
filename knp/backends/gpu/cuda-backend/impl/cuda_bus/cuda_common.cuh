@@ -32,6 +32,17 @@ namespace knp::backends::gpu::cuda
 constexpr int tag_size = 16;
 using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 
+// bool __host__ is_equal(const UID &first, const UID &second)
+// {
+//     auto compare = [&first, &second] __global__ (bool &result) 
+//     {
+//         result = (first == second);
+//     };
+//     bool result;
+//     compare<<<1, 1>>>(result);
+//     return result;
+// }
+
 UID to_gpu_uid(const knp::core::UID &uid)
 {
     UID result;

@@ -50,7 +50,7 @@ constexpr int threads_per_block = 256;
 template <class T>
 using DevVec = thrust::device_vector<T>;
 
-
+/*
 template <typename MessageType>
 __host__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
 {
@@ -76,10 +76,8 @@ __host__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::devic
 
     return true;
 }
+*/
 
-
-// Нам надо на хосте иметь размеры подписок, чтобы выделить вектор. Но подписки у нас в cuda-variant.
-// Так что обрабатываем их в куда-ядре
 __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions,
                                       thrust::device_vector<uint64_t> &result)
 {
@@ -201,7 +199,7 @@ __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint6
 template <typename MessageType>
 __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
-    auto sub_iter = thrust::find_if(thrust::device, subscriptions_.begin(), subscriptions_.end(),
+    auto sub_iter = std::find_if(subscriptions_.begin(), subscriptions_.end(),
     [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
     {
         return std::visit([&receiver](const auto &arg)
@@ -241,7 +239,7 @@ __host__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 
 template <class MessageType>
 __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
-        thrust::device_vector<MessageType> &result_messages)
+        device_lib::CudaVector<MessageType> &result_messages)
 {
     // locate messages
 

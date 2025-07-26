@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <thrust/device_vector.h>
+//#include <thrust/device_vector.h>
 
 #include <knp/core/uid.h>
 #include <knp/core/message_endpoint.h>
@@ -53,8 +53,8 @@ public:
      * @brief Construct GPU message bus.
      * @param external_endpoint message endpoint used for message exchange with host.
      */
-    explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) : cpu_endpoint_{std::move(external_endpoint)} 
-    {}
+    // explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) : cpu_endpoint_{std::move(external_endpoint)} 
+    // {}
 
 public:
     /**
@@ -67,7 +67,31 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    __host__ bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders); // Done
+    __host__ bool subscribe(const UID &receiver, const device_lib::CudaVector<UID> &senders)
+    {
+        for (size_t index = 0; index < subscriptions_.size(); ++index)
+        {
+            const auto subscr = subscriptions_[index];
+            const bool is_sub_exists = ::cuda::std::visit(
+                [&receiver](auto &arg)
+                {
+                    using T = std::decay_t<decltype(arg)>;
+                    return std::is_same<MessageType, typename T::MessageType>::value &&
+                        (arg.get_receiver_uid() == receiver);
+                },
+                subscr);
+
+            // TODO: Check, that senders contain all senders in the formal parameter or `senders` has something new?
+            if (is_sub_exists)
+            {
+                return false;
+            }
+        }
+
+        subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
+
+        return true;
+    }
 
     /**
      * @brief Unsubscribe from messages of a specified type.
@@ -110,7 +134,7 @@ public:
      */
     template <class MessageType>
     __device__ void receive_messages(const cuda::UID &receiver_uid,
-                                      thrust::device_vector<MessageType> &result_messages);
+                                    device_lib::CudaVector<MessageType> &result_messages);
 
 
     __device__ cuda::MessageVariant& get_message(uint64_t message_index);
@@ -119,9 +143,9 @@ public:
     /**
      * @brief Type of subscription container.
      */
-    using SubscriptionContainer = thrust::device_vector<SubscriptionVariant>;
+    using SubscriptionContainer = device_lib::CudaVector<SubscriptionVariant>;
 
-    using MessageBuffer = thrust::device_vector<cuda::MessageVariant>; // device_lib::CudaVector<cuda::MessageVariant>
+    using MessageBuffer = device_lib::CudaVector<cuda::MessageVariant>;
 
     /**
      * @brief Get access to subscription container of the endpoint.
@@ -153,4 +177,9 @@ private:
 
 };
 
+template<>
+__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const device_lib::CudaVector<UID>&);
+
+template<>
+__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const device_lib::CudaVector<UID>&);
 }  // namespace knp::backends::gpu::cuda

@@ -21,15 +21,17 @@
 
 #pragma once
 
-#include <thrust/copy.h>
+// #include <thrust/copy.h>
 #include <thrust/device_vector.h>
-#include <thrust/find.h>
+#include <thrust/logical.h>
+// #include <thrust/find.h>
 #include <thrust/execution_policy.h>
 
 #include <boost/mp11.hpp>
 #include <cuda/std/iterator>
 #include <algorithm>
 
+#include "../cuda_lib/vector.cuh"
 #include "cuda_common.cuh"
 #include "messaging.cuh"
 
@@ -57,10 +59,10 @@ public:
     /**
      * @brief Internal container for UIDs.
      */
-    using UidSet = thrust::device_vector<UID>;
-    __host__ __device__ Subscription() = default;
+    using UidSet = device_lib::CudaVector<UID>;
+    __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
     __host__ __device__ Subscription(const Subscription &) = default;
-    __host__ ~Subscription() = default;
+    __host__ __device__ ~Subscription() = default;
 
 public:
     /**
@@ -68,7 +70,7 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
+    __host__ __device__ Subscription(const UID &receiver, const device_lib::CudaVector<UID> &senders) :
         receiver_(receiver) { add_senders(senders); }
 
     /**
@@ -91,10 +93,17 @@ public:
      */
     __device__ __host__ bool remove_sender(const UID &uid)
     {
-        auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
-        if (senders_.end() == erase_iter) return false;
-        senders_.erase(erase_iter);
-        return true;
+        // auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
+        uint64_t index = 0;
+        for (uint64_t index = 0; index < senders_.size(); ++index)
+        {
+            if (senders_[index] == uid)
+            {
+                senders_.erase(index);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -132,9 +141,23 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __device__ __host__ bool has_sender(const UID &uid) const
+    [[nodiscard]] __host__ bool has_sender(const UID &uid) const
     {
-        return thrust::find(thrust::device, senders_.begin(), senders_.end(), uid) != senders_.end();
+        thrust::device_vector<bool> results(senders_.size(), false);
+        auto has_sender_core = [this] __global__ (const UID &uid, thrust::device_vector<bool> &results) 
+        {
+            uint64_t index = threadIdx.x + blockIdx.x;
+            if (index >= senders_.size()) return;
+            results[index] = (senders_[index] == uid);
+        };
+        size_t num_threads = std::min<size_t>(senders_.size(), 256); // TODO change 256 to named constant
+        size_t num_blocks = (senders_.size() - 1) / num_threads + 1;
+        has_sender_core<<<num_blocks, num_threads>>>(uid, results);
+        return thrust::any_of(results.begin(), results.end(), ::cuda::std::identity{});
+
+
+        // return std::find(senders_.begin(), senders_.end(), uid) != senders_.end();
+        // return thrust::find(thrust::host, senders_.begin(), senders_.end(), uid) != senders_.end();
     }
 
 public:
@@ -169,7 +192,7 @@ private:
     /**
      * @brief Receiver UID.
      */
-    const UID receiver_;
+    UID receiver_;
 
     /**
      * @brief Set of sender UIDs.

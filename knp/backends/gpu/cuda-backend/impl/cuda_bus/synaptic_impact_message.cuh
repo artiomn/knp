@@ -27,8 +27,7 @@
 #include <limits>
 #include <map>
 #include <unordered_map>
-#include <thrust/device_vector.h>
-
+#include "../cuda_lib/vector.cuh"
 #include "message_header.cuh"
 
 
@@ -107,7 +106,7 @@ struct SynapticImpactMessage
     /**
      * @brief Impact values.
      */
-    thrust::device_vector<SynapticImpact> impacts_;
+    knp::backends::gpu::cuda::device_lib::CudaVector<SynapticImpact> impacts_;
 };
 
 

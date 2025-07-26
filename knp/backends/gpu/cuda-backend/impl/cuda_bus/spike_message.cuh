@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include <thrust/device_vector.h>
-
+// #include <thrust/device_vector.h>
+#include "../cuda_lib/vector.cuh"
 #include "message_header.cuh"
 
 
@@ -41,7 +41,7 @@ using SpikeIndex = uint32_t;
 /**
  * @brief List of spike indexes.
  */
-using SpikeData = thrust::device_vector<SpikeIndex>;
+using SpikeData = knp::backends::gpu::cuda::device_lib::CudaVector<SpikeIndex>;
 
 
 /**
