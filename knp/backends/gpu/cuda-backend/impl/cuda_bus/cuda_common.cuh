@@ -46,14 +46,22 @@ using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 UID to_gpu_uid(const knp::core::UID &uid)
 {
     UID result;
-    cudaMemcpy(result.data(), uid.tag.data, sizeof(uint8_t) * tag_size, cudaMemcpyHostToDevice);
+    for (size_t i = 0; i < tag_size; ++i)
+    {
+        result[i] = uid.tag.data[i];
+    }
+    // cudaMemcpy(result.data(), uid.tag.data, sizeof(uint8_t) * tag_size, cudaMemcpyHostToHost);
     return result;
 }
 
 knp::core::UID to_cpu_uid(const UID &uid)
 {
     knp::core::UID result;
-    cudaMemcpy(result.tag.data, uid.data(), sizeof(uint8_t) * tag_size, cudaMemcpyDeviceToHost);
+    for (size_t i = 0; i < tag_size; ++i)
+    {
+        result.tag.data[i] = uid[i];
+    }
+    // cudaMemcpy(result.tag.data, uid.data(), sizeof(uint8_t) * tag_size, cudaMemcpyHostToHost);
     return result;
 }
 

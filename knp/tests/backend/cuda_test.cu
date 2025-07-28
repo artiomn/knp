@@ -128,14 +128,21 @@ TEST(CudaBackendSuite, CudaUidConversionTest)
 }
 
 
-TEST(CudaBackendSuite, CudaSubscription)
+TEST(CudaBackendSuite, MessagesTest)
 {
     using namespace knp::backends::gpu::cuda;
     SpikeMessage message_1;
     SynapticImpactMessage message_2;
     ASSERT_EQ(message_1.neuron_indexes_.size(), 0);
     ASSERT_EQ(message_2.impacts_.size(), 0);
-    // Subscription<SpikeMessage> subscription;
+}
+
+
+TEST(CudaBackendSuite, CudaSubscription)
+{
+    using namespace knp::backends::gpu::cuda;
+    Subscription<SpikeMessage> subscription;
+    std::cout << sizeof(subscription); // TODO tmp
 }
 
 

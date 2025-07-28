@@ -60,30 +60,31 @@ public:
      * @brief Internal container for UIDs.
      */
     using UidSet = device_lib::CudaVector<UID>;
-    __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
+    // __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
+    __host__ __device__ Subscription() = default;
     __host__ __device__ Subscription(const Subscription &) = default;
     __host__ __device__ ~Subscription() = default;
 
 public:
-    /**
-     * @brief Subscription constructor.
-     * @param receiver receiver UID.
-     * @param senders list of sender UIDs.
-     */
-    __host__ __device__ Subscription(const UID &receiver, const device_lib::CudaVector<UID> &senders) :
-        receiver_(receiver) { add_senders(senders); }
+    // /**
+    //  * @brief Subscription constructor.
+    //  * @param receiver receiver UID.
+    //  * @param senders list of sender UIDs.
+    //  */
+    // __host__ __device__ Subscription(const UID &receiver, const device_lib::CudaVector<UID> &senders) :
+    //     receiver_(receiver) { add_senders(senders); }
 
-    /**
-     * @brief Get list of sender UIDs.
-     * @return senders UIDs.
-     */
-    [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
+    // /**
+    //  * @brief Get list of sender UIDs.
+    //  * @return senders UIDs.
+    //  */
+    // [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
 
-    /**
-     * @brief Get UID of the entity that receives messages via the subscription.
-     * @return UID.
-     */
-    [[nodiscard]] __device__ __host__ UID get_receiver_uid() const { return receiver_; }
+    // /**
+    //  * @brief Get UID of the entity that receives messages via the subscription.
+    //  * @return UID.
+    //  */
+    // [[nodiscard]] __device__ __host__ UID get_receiver_uid() const { return receiver_; }
 
     /**
      * @brief Unsubscribe from a sender.
@@ -112,7 +113,7 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __device__ __host__ bool add_sender(const UID &uid)
+    __host__ bool add_sender(const UID &uid)
     {
         if (has_sender(uid)) return false;
 
@@ -121,28 +122,33 @@ public:
         return true;
     }
 
-    /**
-     * @brief Add several senders to the subscription.
-     * @param senders vector of sender UIDs.
-     * @return number of senders added.
-     */
-    __device__ __host__ size_t add_senders(const thrust::device_vector<UID> &senders)
-    {
-        const size_t size_before = senders_.size();
+    // /**
+    //  * @brief Add several senders to the subscription.
+    //  * @param senders vector of sender UIDs.
+    //  * @return number of senders added.
+    //  */
+    // __device__ __host__ size_t add_senders(const thrust::device_vector<UID> &senders)
+    // {
+    //     const size_t size_before = senders_.size();
 
-        senders_.reserve(size_before + senders.size());
-        thrust::copy(thrust::device, senders.begin(), senders.end(), ::cuda::std::back_inserter(senders_));
+    //     senders_.reserve(size_before + senders.size());
+    //     thrust::copy(thrust::device, senders.begin(), senders.end(), ::cuda::std::back_inserter(senders_));
 
-        return senders_.size() - size_before;
-    }
+    //     return senders_.size() - size_before;
+    // }
 
     /**
      * @brief Check if a sender with the given UID exists.
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __host__ bool has_sender(const UID &uid) const
+    [[nodiscard]] __host__ __device__ bool has_sender(const UID &uid) const
     {
+        #ifdef __CUDA_ARCH__
+        for (size_t i = 0; i < senders_.size())
+            if (senders_[i] == uid) return true;
+        return false;
+        #else
         thrust::device_vector<bool> results(senders_.size(), false);
         auto has_sender_core = [this] __global__ (const UID &uid, thrust::device_vector<bool> &results) 
         {
@@ -154,10 +160,10 @@ public:
         size_t num_blocks = (senders_.size() - 1) / num_threads + 1;
         has_sender_core<<<num_blocks, num_threads>>>(uid, results);
         return thrust::any_of(results.begin(), results.end(), ::cuda::std::identity{});
+        #endif
 
-
-        // return std::find(senders_.begin(), senders_.end(), uid) != senders_.end();
-        // return thrust::find(thrust::host, senders_.begin(), senders_.end(), uid) != senders_.end();
+    //     // return std::find(senders_.begin(), senders_.end(), uid) != senders_.end();
+    //     // return thrust::find(thrust::host, senders_.begin(), senders_.end(), uid) != senders_.end();
     }
 
 public:
@@ -189,6 +195,7 @@ public:
     // __device__ void clear_messages() { messages_.clear(); }
 
 private:
+
     /**
      * @brief Receiver UID.
      */
