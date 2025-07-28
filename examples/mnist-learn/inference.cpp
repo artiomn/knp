@@ -40,6 +40,8 @@
 
 constexpr size_t aggregated_spikes_logging_period = 4e3;
 
+constexpr size_t wta_winners_amount = 1;
+
 namespace fs = std::filesystem;
 
 
@@ -84,7 +86,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
         std::vector<size_t> wta_borders;
         for (size_t i = 0; i < num_possible_labels; ++i) wta_borders.push_back(neurons_per_column * i);
         wta_uids = knp::framework::projection::add_wta_handlers(
-            model_executor, 1, wta_borders, described_network.data_.wta_data_);
+            model_executor, wta_winners_amount, wta_borders, described_network.data_.wta_data_);
     }
 
     auto all_senders_names = described_network.data_.population_names_;
