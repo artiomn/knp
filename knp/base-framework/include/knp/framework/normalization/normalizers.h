@@ -25,19 +25,21 @@
 
 
 /**
- * @brief Framework namespace.
+ * @brief Framework normalization namespace.
  */
-namespace knp::framework
+namespace knp::framework::normalization
 {
 /**
  * @brief Synapse value corrector function type.
+ * @tparam ValueType Type of the value to correct.
  */
 template <typename ValueType>
-using ValueCorrector = std::function<ValueType(const ValueType)>;
+using ValueCorrector = std::function<ValueType(const ValueType &)>;
 
 
 /**
  * @brief The Rescaler class need to rescale one interval to another.
+ * @tparam ValueType rescaler in and out parameters type.
  */
 template <typename ValueType>
 class Rescaler
@@ -66,7 +68,7 @@ public:
      * @param value value to rescale.
      * @return rescaled value.
      */
-    ValueType operator()(ValueType value)
+    ValueType operator()(const ValueType &value)
     {
         return out_interval_start_ + (value - in_interval_start_) * intervals_rescaler_;
     }
@@ -79,4 +81,4 @@ private:
     ValueType intervals_rescaler_;
 };
 
-}  // namespace knp::framework
+}  // namespace knp::framework::normalization
