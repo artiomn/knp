@@ -27,42 +27,40 @@
 
 
 /**
- * @brief Framework namespace.
+ * @brief Framework normalization namespace.
  */
-namespace knp::framework
+namespace knp::framework::normalization
 {
 
 /**
- * @brief The WeightAccessor class
+ * @brief The WeightAccessor class need to access `weight_` synapse field.
+ * @tparam SynapseType Type of the synapse to correct.
  */
-template <typename ValueType>
-class WeightAccessor
+template <typename SynapseType>
+struct WeightAccessor
 {
-public:
     /**
-     * @brief Value corrector type.
+     * @brief Synapse parameters type.
      */
-    using ValueCorrectorType = typename knp::framework::ValueCorrector<ValueType>;
-
-public:
+    using SynapseParametersType = typename knp::core::Projection<SynapseType>::SynapseParameters;
     /**
-     * @brief WeightAccessor constructor.
-     * @param value_corrector normalizer function.
+     * @brief Synapse weight type.
      */
-    explicit WeightAccessor(ValueCorrectorType value_corrector) : value_corrector_(value_corrector) {}
+    using WeightType = decltype(SynapseParametersType::weight_);
 
     /**
-     * @brief operator () perfrorms weight correction.
-     * @param synapse real synapse data.
+     * @brief return weight.
+     * @param syn_params synapse parameters.
+     * @return synapse weight value.
      */
-    template <typename SynapseType = knp::synapse_traits::DeltaSynapse>
-    void operator()(typename knp::core::Projection<SynapseType>::SynapseParameters& synapse)
-    {
-        synapse.weight_ = value_corrector_(synapse.weight_);
-    }
+    WeightType operator()(const SynapseParametersType &syn_params) const { return syn_params.weight_; }
 
-private:
-    ValueCorrectorType value_corrector_;
+    /**
+     * @brief perfrorms weight correction.
+     * @param syn_params synapse parameters.
+     * @param weight synapse weight.
+     */
+    void operator()(SynapseParametersType &syn_params, const WeightType &weight) const { syn_params.weight_ = weight; }
 };
 
-}  // namespace knp::framework
+}  // namespace knp::framework::normalization
