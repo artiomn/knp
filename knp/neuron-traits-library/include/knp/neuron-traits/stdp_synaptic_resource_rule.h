@@ -101,7 +101,7 @@ struct neuron_parameters<SynapticResourceSTDPNeuron<NeuronType>> : public neuron
 
     /**
      * @brief Coefficient for the `additional_threshold_` neuron parameter.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_.
      */
     float synapse_sum_threshold_coefficient_ = 0.0F;

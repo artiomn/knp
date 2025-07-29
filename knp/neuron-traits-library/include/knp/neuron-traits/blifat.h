@@ -63,8 +63,8 @@ struct default_values<BLIFATNeuron>
 
     /**
      * @brief The parameter defines a constant part of the threshold for membrane potential.
-     * @details After membrane potentional reaches the threshold value, the neuron generates a spike.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @details After membrane potential reaches the threshold value, the neuron generates a spike.
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_. 
      */
     constexpr static double activation_threshold_ = 1.0;
@@ -73,15 +73,15 @@ struct default_values<BLIFATNeuron>
      * @brief The parameter defines a dynamic part of the threshold for membrane potential.
      * @details After neuron generates a spike, the `dynamic_threshold_` value increases by 
      * the `threshold_increment_` value.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_.
      */
     constexpr static double dynamic_threshold_ = 0.;
 
     /**
-     * @brief The parameter defines an additional part of the threshold for memnrane potential.
+     * @brief The parameter defines an additional part of the threshold for membrane potential.
      * @details The parameter is used for mechanisms that are implemented in specific neuron types.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_.
      */
     constexpr static double additional_threshold_ = 0.;
@@ -193,15 +193,15 @@ struct neuron_parameters<BLIFATNeuron>
 
     /**
      * @brief The parameter defines a constant part of the threshold for membrane potential.
-     * @details After membrane potentional reaches the threshold value, the neuron generates a spike.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @details After membrane potential reaches the threshold value, the neuron generates a spike.
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_. 
      */
     double activation_threshold_ = default_values<BLIFATNeuron>::activation_threshold_;
     /**
-     * @brief The parameter defines an additional part of the threshold for memnrane potential.
+     * @brief The parameter defines an additional part of the threshold for membrane potential.
      * @details The parameter is used for mechanisms that are implemented in specific neuron types.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_.
      */
     double additional_threshold_ = default_values<BLIFATNeuron>::additional_threshold_;
@@ -209,7 +209,7 @@ struct neuron_parameters<BLIFATNeuron>
      * @brief The parameter defines a dynamic part of the threshold for membrane potential.
      * @details After neuron generates a spike, the `dynamic_threshold_` value increases by 
      * the `threshold_increment_` value.
-     * @note Current threshold value for membrane potentional is composed from three parameters:
+     * @note Current threshold value for membrane potential is composed from three parameters:
      * activation_threshold_, dynamic_threshold_, and additional_threshold_.
      */
     double dynamic_threshold_ = default_values<BLIFATNeuron>::dynamic_threshold_;
