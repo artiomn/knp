@@ -23,6 +23,7 @@
 
 // #include <thrust/copy.h>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <thrust/logical.h>
 // #include <thrust/find.h>
 #include <thrust/execution_policy.h>
@@ -38,6 +39,13 @@
 
 namespace knp::backends::gpu::cuda
 {
+
+__global__ void has_sender_core(const UID &uid, device_lib::CudaVector<UID> senders, thrust::device_vector<bool> &results) 
+{
+    uint64_t index = threadIdx.x + blockIdx.x + blockDim.x;
+    if (index >= senders.size()) return;
+    results[index] = (senders[index] == uid);
+}
 
 /**
  * @brief The Subscription class is used for message exchange between the network entities.
@@ -66,19 +74,27 @@ public:
     __host__ __device__ ~Subscription() = default;
 
 public:
-    // /**
-    //  * @brief Subscription constructor.
-    //  * @param receiver receiver UID.
-    //  * @param senders list of sender UIDs.
-    //  */
-    // __host__ __device__ Subscription(const UID &receiver, const device_lib::CudaVector<UID> &senders) :
-    //     receiver_(receiver) { add_senders(senders); }
+    /**
+     * @brief Subscription constructor.
+     * @param receiver receiver UID.
+     * @param senders list of sender UIDs.
+     */
+    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
+        receiver_(receiver) 
+    { 
+        #ifdef __CUDA_ARCH__
+        for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
+        #else
+        thrust::host_vector<UID> host_vec = senders;
+        for (size_t i = 0; i < host_vec.size(); ++i) add_sender(host_vec[i]);
+        #endif
+    }
 
-    // /**
-    //  * @brief Get list of sender UIDs.
-    //  * @return senders UIDs.
-    //  */
-    // [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
+    /**
+     * @brief Get list of sender UIDs.
+     * @return senders UIDs.
+     */
+    [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
 
     // /**
     //  * @brief Get UID of the entity that receives messages via the subscription.
@@ -113,7 +129,7 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __host__ bool add_sender(const UID &uid)
+    __host__ __device__ bool add_sender(const UID &uid)
     {
         if (has_sender(uid)) return false;
 
@@ -127,7 +143,7 @@ public:
     //  * @param senders vector of sender UIDs.
     //  * @return number of senders added.
     //  */
-    // __device__ __host__ size_t add_senders(const thrust::device_vector<UID> &senders)
+    // __host__ size_t add_senders(const thrust::device_vector<UID> &senders)
     // {
     //     const size_t size_before = senders_.size();
 
@@ -145,20 +161,14 @@ public:
     [[nodiscard]] __host__ __device__ bool has_sender(const UID &uid) const
     {
         #ifdef __CUDA_ARCH__
-        for (size_t i = 0; i < senders_.size())
+        for (size_t i = 0; i < senders_.size(); ++i)
             if (senders_[i] == uid) return true;
         return false;
         #else
         thrust::device_vector<bool> results(senders_.size(), false);
-        auto has_sender_core = [this] __global__ (const UID &uid, thrust::device_vector<bool> &results) 
-        {
-            uint64_t index = threadIdx.x + blockIdx.x;
-            if (index >= senders_.size()) return;
-            results[index] = (senders_[index] == uid);
-        };
         size_t num_threads = std::min<size_t>(senders_.size(), 256); // TODO change 256 to named constant
         size_t num_blocks = (senders_.size() - 1) / num_threads + 1;
-        has_sender_core<<<num_blocks, num_threads>>>(uid, results);
+        has_sender_core<<<num_blocks, num_threads>>>(uid, senders_,results);
         return thrust::any_of(results.begin(), results.end(), ::cuda::std::identity{});
         #endif
 
@@ -195,7 +205,6 @@ public:
     // __device__ void clear_messages() { messages_.clear(); }
 
 private:
-
     /**
      * @brief Receiver UID.
      */

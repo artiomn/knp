@@ -138,10 +138,13 @@ TEST(CudaBackendSuite, MessagesTest)
 }
 
 
-TEST(CudaBackendSuite, CudaSubscription)
+TEST(CudaBackendSuite, CudaHostSubscription)
 {
     using namespace knp::backends::gpu::cuda;
-    Subscription<SpikeMessage> subscription;
+    UID receiver_uid = to_gpu_uid(knp::core::UID{});
+    UID sender_1 = to_gpu_uid(knp::core::UID{}), sender_2 = to_gpu_uid(knp::core::UID{});
+    ASSERT_NE(sender_1, sender_2);
+    Subscription<SpikeMessage> subscription(receiver_uid, {sender_1});
     std::cout << sizeof(subscription); // TODO tmp
 }
 
