@@ -38,7 +38,7 @@ struct CuMallocAllocator
     using size_type = size_t;
     using difference_type = std::ptrdiff_t;
 
-    __device__ T* allocate(size_t n, const void* hint)
+    __host__ __device__ T* allocate(size_t n, const void* hint)
     {
         T *data = nullptr;
         if (n > 0)
@@ -49,23 +49,23 @@ struct CuMallocAllocator
         return data;
     }
 
-    __device__ T* allocate(size_t n)
+    __host__ __device__ T* allocate(size_t n)
     {
         return allocate(n, nullptr);
     }
 
     template <class... Args>
-    __device__ static void construct(T* p, Args&&... args)
+    __host__ __device__ static void construct(T* p, Args&&... args)
     {
         *p = T(std::forward<Args>(args)...);
     }
 
-    __device__ static void destroy(T* p)
+    __host__ __device__ static void destroy(T* p)
     {
         p->~T();
     }
 
-    __device__ void deallocate(T* p, size_t n = 0)
+    __host__ __device__ void deallocate(T* p, size_t n = 0)
     {
         call_and_check(cudaFree(p));
     }

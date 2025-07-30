@@ -35,27 +35,27 @@
  */
 namespace knp::backends::gpu::cuda::device_lib
 {
+constexpr size_t threads_per_block = 256;
 
 template <typename T, typename Allocator = CuMallocAllocator<T>>
 class CudaVector
 {
 public:
     using value_type = T;
-
 public:
     __host__ __device__ explicit CudaVector(size_t size = 0) : capacity_(size), size_(size), data_(nullptr)
     {
         #ifdef __CUDA_ARCH__
         data_ = allocator_.allocate(size_);
         for (size_t i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);  
-        #else
-        auto construct_core = [] __global__ (size_t in_size, T* &data, Allocator allocator) 
-        { 
-            if (in_size == 0) return;
-            data = allocator.allocate(in_size);
-            for (size_t i = 0; i < in_size; ++i) allocator.construct(data + i);  
-        };
-        construct_core<<<1, 1>>>(size_, data_, allocator_);
+        #else        
+        if (size_) 
+        {
+            size_t num_blocks = (size_ + threads_per_block - 1) / threads_per_block;
+            data_ = allocator_.allocate(size_);
+            init_kernel<<<num_blocks, threads_per_block>>>(size_, data_, allocator_);
+            cudaDeviceSynchronize();
+        }
         #endif
     }
     
@@ -66,13 +66,10 @@ public:
         for (size_t i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
         allocator_.deallocate(data_, size_); 
         #else
-        auto destruct_core = [] __global__ (size_t size, T* &data, Allocator allocator)
-        {
-            if (size == 0) return;
-            for (size_t i = 0; i < size; ++i) decltype(allocator)::destroy(data + i);
-            allocator.deallocate(data, size); 
-        };
-        destruct_core<<<1, 1>>>(size_, data_, allocator_);
+        size_t num_blocks = (size_ + threads_per_block - 1) / threads_per_block;
+        destruct_kernel<<<num_blocks, threads_per_block>>>(size_, data_, allocator_);
+        cudaDeviceSynchronize();
+        allocator_.deallocate(data_, size_);
         #endif
 
     }
@@ -233,6 +230,9 @@ public:
     __host__ __device__ T* end() { return data_ + size_; }
 
 private:
+
+
+
     __device__ void dev_reserve(size_t new_capacity)
     {
                 if (new_capacity <= capacity_) return;
@@ -288,6 +288,24 @@ private:
     size_t capacity_;
     // Current element.
     size_t size_;
+};
+
+
+template <class T, class Allocator>
+__global__ void init_kernel(size_t in_size, T* data, Allocator allocator) 
+{ 
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= in_size) return;
+    allocator.construct(data + i);  
+}
+
+
+template<class T, class Allocator>
+__global__ void destruct_kernel(size_t size, T* &data, Allocator allocator)
+{
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= size) return;
+    decltype(allocator)::destroy(data + i);  
 };
 
 } // namespace knp::backends::gpu::cuda::device_lib.

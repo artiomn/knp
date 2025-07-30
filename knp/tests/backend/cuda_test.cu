@@ -119,6 +119,17 @@ __global__ void run_bus()
 }*/
 
 
+TEST(CudaBaseSuite, CudaVectorConstruct)
+{
+    using namespace knp::backends::gpu::cuda;
+
+    device_lib::CudaVector<uint64_t> cuda_vec_1;
+    device_lib::CudaVector<uint64_t> cuda_vec_2(10);
+    ASSERT_EQ(cuda_vec_1.size(), 0);
+    ASSERT_EQ(cuda_vec_2.size(), 10);
+}
+
+
 TEST(CudaBackendSuite, CudaUidConversionTest)
 {
     knp::core::UID orig_uid;

@@ -29,9 +29,9 @@
 namespace knp::backends::gpu::cuda::device_lib
 {
 
-#define call_and_check(ans) { gpu_assert((ans), __FILE__, __LINE__); }
+#define call_and_check(ans) { cgpu_assert((ans), __FILE__, __LINE__); }
 
-__device__ inline void gpu_assert(cudaError_t code, const char *file, int line)
+__host__ __device__ inline void cgpu_assert(cudaError_t code, const char *file, int line)
 {
    if (code != cudaSuccess)
    {

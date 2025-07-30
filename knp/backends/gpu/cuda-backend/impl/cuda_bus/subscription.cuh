@@ -164,8 +164,9 @@ public:
         return false;
         #else
         thrust::device_vector<bool> results(senders_.size(), false);
-        size_t num_threads = std::min<size_t>(senders_.size(), 256); // TODO change 256 to named constant
-        size_t num_blocks = (senders_.size() - 1) / num_threads + 1;
+        constexpr uint32_t threads_per_block = 256;
+        size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
+        size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
         has_sender_core<<<num_blocks, num_threads>>>(uid, senders_,results);
         return thrust::any_of(results.begin(), results.end(), ::cuda::std::identity{});
         #endif
