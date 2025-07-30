@@ -138,20 +138,18 @@ public:
         return true;
     }
 
-    // /**
-    //  * @brief Add several senders to the subscription.
-    //  * @param senders vector of sender UIDs.
-    //  * @return number of senders added.
-    //  */
-    // __host__ size_t add_senders(const thrust::device_vector<UID> &senders)
-    // {
-    //     const size_t size_before = senders_.size();
-
-    //     senders_.reserve(size_before + senders.size());
-    //     thrust::copy(thrust::device, senders.begin(), senders.end(), ::cuda::std::back_inserter(senders_));
-
-    //     return senders_.size() - size_before;
-    // }
+    /**
+     * @brief Add several senders to the subscription.
+     * @param senders vector of sender UIDs.
+     * @return number of senders added.
+     */
+    __host__ __device__ size_t add_senders(const thrust::device_vector<UID> &senders)
+    {
+        size_t result = 0;
+        for (size_t i = 0; i < senders.size(); ++i)
+            result += add_sender(senders[i]);
+        return result;
+    }
 
     /**
      * @brief Check if a sender with the given UID exists.

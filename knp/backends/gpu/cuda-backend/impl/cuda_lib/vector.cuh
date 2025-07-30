@@ -49,12 +49,13 @@ public:
         data_ = allocator_.allocate(size_);
         for (size_t i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);  
         #else
-        auto construct_core = [this] __global__ () 
+        auto construct_core = [] __global__ (size_t in_size, T* &data, Allocator allocator) 
         { 
-            data_ = allocator_.allocate(size_);
-            for (size_t i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);  
+            if (in_size == 0) return;
+            data = allocator.allocate(in_size);
+            for (size_t i = 0; i < in_size; ++i) allocator.construct(data + i);  
         };
-        construct_core<<<1, 1>>>();
+        construct_core<<<1, 1>>>(size_, data_, allocator_);
         #endif
     }
     
@@ -65,12 +66,13 @@ public:
         for (size_t i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
         allocator_.deallocate(data_, size_); 
         #else
-        auto destruct_core = [this] __global__ ()
+        auto destruct_core = [] __global__ (size_t size, T* &data, Allocator allocator)
         {
-            for (size_t i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
-            allocator_.deallocate(data_, size_); 
+            if (size == 0) return;
+            for (size_t i = 0; i < size; ++i) decltype(allocator)::destroy(data + i);
+            allocator.deallocate(data, size); 
         };
-        destruct_core<<<1, 1>>>();
+        destruct_core<<<1, 1>>>(size_, data_, allocator_);
         #endif
 
     }

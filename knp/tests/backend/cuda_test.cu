@@ -145,7 +145,9 @@ TEST(CudaBackendSuite, CudaHostSubscription)
     UID sender_1 = to_gpu_uid(knp::core::UID{}), sender_2 = to_gpu_uid(knp::core::UID{});
     ASSERT_NE(sender_1, sender_2);
     Subscription<SpikeMessage> subscription(receiver_uid, {sender_1});
-    std::cout << sizeof(subscription); // TODO tmp
+    ASSERT_EQ(subscription.get_senders().size(), 1);
+    ASSERT_TRUE(subscription.has_sender(sender_1));
+    ASSERT_FALSE(subscription.has_sender(sender_2));
 }
 
 
