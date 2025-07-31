@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <knp/framework/data_processing/image_classification.h>
+#include <knp/framework/data_processing/classification/image.h>
 
 #include <filesystem>
 #include <set>

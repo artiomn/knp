@@ -44,5 +44,4 @@ KNP_DECLSPEC std::vector<knp::core::UID> add_wta_handlers(
     knp::framework::ModelExecutor& executor, size_t winners_amount, const std::vector<size_t>& borders,
     const std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>>& wta_data);
 
-
 }  // namespace knp::framework::projection

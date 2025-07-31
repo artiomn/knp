@@ -35,14 +35,16 @@
 
 /**
  * @brief Synapse generators namespace.
- * @detail Generators make connections between presynaptic population neurons to postsynaptic population neurons.
  */
 namespace knp::framework::projection::synapse_generators
 {
 
 /**
- * @brief For populations of size `N x M` generates connections such as: `0 ->
- * 0`, `0 -> 1`, `0 -> 2`, ..., `0 -> M`, `1 -> 0`, `1 -> 1`, ..., `1 -> M`, ..., `N -> M`.
+ * @brief Make connections between each presynaptic population (source) neuron to each postsynaptic population
+ * (destination) neuron.
+ * @details Simple generator that generates connections from source neuron index to all destination indexes and
+ * otherwise. For populations of size `N x M` generates connections such as: `0 -> 0`, `0 -> 1`, `0 -> 2`, ...,
+ * `0 -> M`, `1 -> 0`, `1 -> 1`, ..., `1 -> M`, ..., `N -> M`.
  * @param presynaptic_pop_size presynaptic population neuron count.
  * @param postsynaptic_pop_size postsynaptic population neuron count.
  * @param syn_gen generator of synapse parameters.
@@ -67,8 +69,11 @@ template <typename SynapseType>
 
 
 /**
- * @brief For example if population0_size is 2 and population1_size is 4, then synapses amount
- * must be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
+ * @brief Make connections between neurons of presynaptic and postsynaptic populations, so that neurons from a
+ * population with a less size have consequent connections with neurons from the other population, and the number of
+ * connections for each neuron of a population with less size is determined by that size.
+ * @details For example if presynaptic population's size is 2 and postsynaptic population's size is 4, then synapses
+ * amount must be 4, and generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3. So generator will distribute
  * connections evenly.
  * @param presynaptic_pop_size size of first population.
  * @param postsynaptic_pop_size size of second population.
@@ -85,9 +90,9 @@ template <typename SynapseType>
     return [presynaptic_pop_size, postsynaptic_pop_size,
             syn_gen](size_t index) -> std::optional<typename knp::core::Projection<SynapseType>::Synapse>
     {
-        size_t from_index;
-        size_t pack_size;
-        size_t to_index;
+        size_t from_index = 0;
+        size_t pack_size = 0;
+        size_t to_index = 0;
 
         if (presynaptic_pop_size >= postsynaptic_pop_size)
         {
@@ -107,7 +112,9 @@ template <typename SynapseType>
 
 
 /**
- * @brief For example if populations size is 3, then synapses amount is 6,
+ * @brief Make connections between each presynaptic population neuron to each postsynaptic population neuron with
+ * exception of neurons whose indexes are the same.
+ * @details For example if populations size is 3, then synapses amount is 6,
  * and generator will generate synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time.
  * @pre Population sizes must be equal.
  * @param populations_size size of populations, they are supposed to be the same.
@@ -123,8 +130,8 @@ template <typename SynapseType>
     return
         [populations_size, syn_gen](size_t index) -> std::optional<typename knp::core::Projection<SynapseType>::Synapse>
     {
-        size_t from_index;
-        size_t to_index;
+        size_t from_index = 0;
+        size_t to_index = 0;
         from_index = index / (populations_size - 1);
         to_index = index % (populations_size - 1);
         if (to_index >= from_index) ++to_index;
@@ -134,8 +141,9 @@ template <typename SynapseType>
 
 
 /**
- * @brief For the populations of size `N x N` generates connections such as: `0 -> 0`,
- * `1 -> 1`, `2 -> 2`, ..., `N -> N`.
+ * @brief Make one-to-one connections between neurons of presynaptic and postsynaptic populations.
+ * @details Simple generator that generates connections from source neuron index to the same destination index.
+ * For the populations of size `N x N` generates connections such as: `0 -> 0`, `1 -> 1`, `2 -> 2`, ..., `N -> N`.
  * @pre Population sizes must be equal.
  * @param population_size neuron count in populations.
  * @param syn_gen generator of synapse parameters.

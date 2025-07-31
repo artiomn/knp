@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-#include <knp/framework/data_processing/image_classification.h>
 #include <knp/framework/inference_evaluation/classification.h>
 
 #include <filesystem>
@@ -27,12 +26,12 @@
 #include <iostream>
 
 #include "inference.h"
+#include "shared_network.h"
 #include "time_string.h"
 #include "train.h"
 
 constexpr size_t active_steps = 10;
 constexpr size_t steps_per_image = 20;
-constexpr size_t image_size = 28 * 28;
 constexpr float state_increment_factor = 1.f / 255;
 constexpr size_t images_amount_to_train = 10000;
 constexpr float dataset_split = 0.8;
@@ -55,7 +54,7 @@ int main(int argc, char** argv)
     std::filesystem::path labels_file_path = argv[2];
 
     std::filesystem::path log_path;
-    if (argc == 4) log_path = argv[3];
+    if (4 == argc) log_path = argv[3];
 
     // Defines path to backend, on which to run a network.
     std::filesystem::path path_to_backend =
@@ -64,13 +63,14 @@ int main(int argc, char** argv)
     std::ifstream images_stream(images_file_path, std::ios::binary);
     std::ifstream labels_stream(labels_file_path, std::ios::in);
 
-    auto dataset = data_processing::process_data(
-        images_stream, labels_stream, images_amount_to_train, dataset_split, image_size, steps_per_image,
-        data_processing::make_incrementing_image_to_spikes_converter(
-            steps_per_image, active_steps, image_size, state_increment_factor, std::vector<float>(image_size, 0.f)));
+    data_processing::Dataset dataset;
+    dataset.process_labels_and_images(
+        images_stream, labels_stream, images_amount_to_train, classes_amount, input_size, steps_per_image,
+        dataset.make_incrementing_image_to_spikes_converter(active_steps, state_increment_factor));
+    dataset.split(dataset_split);
 
-    std::cout << "Processed dataset, training will last " << dataset.steps_required_for_training_
-              << " steps, inference " << dataset.steps_required_for_inference_ << " steps" << std::endl;
+    std::cout << "Processed dataset, training will last " << dataset.get_steps_required_for_training()
+              << " steps, inference " << dataset.get_steps_required_for_inference() << " steps" << std::endl;
 
     // Construct network and run training.
     AnnotatedNetwork trained_network = train_mnist_network(path_to_backend, dataset, log_path);
@@ -80,10 +80,10 @@ int main(int argc, char** argv)
     std::cout << get_time_string() << ": inference finished  -- output spike count is " << spikes.size() << std::endl;
 
     // Evaluate results.
-    auto const& processed_inference_results =
-        inference_evaluation::process_inference_results(spikes, dataset, classes_amount, steps_per_image);
+    inference_evaluation::InferenceResultForClass::InferenceResultsProcessor inference_processor;
+    inference_processor.process_inference_results(spikes, dataset);
 
-    write_inference_results_to_stream_as_csv(std::cout, processed_inference_results);
+    inference_processor.write_inference_results_to_stream_as_csv(std::cout);
 
     return EXIT_SUCCESS;
 }
