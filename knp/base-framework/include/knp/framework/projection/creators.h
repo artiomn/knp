@@ -95,6 +95,7 @@ template <typename SynapseType>
  * @brief For example if populations size is 3, then synapses amount is 6,
  * and generator will generate synapses as follows: 0-1, 0-2, 1-0, 1-2, 2-0, 2-1. So it excludes one synapse at a time.
  * @pre Population sizes must be equal.
+ * @warning It doesn't get "real" populations and can't be used with populations that contain non-contiguous indexes.
  * @param presynaptic_uid presynaptic population UID.
  * @param postsynaptic_uid postsynaptic population UID.
  * @param pops_size size of populations, they are supposed to be the same

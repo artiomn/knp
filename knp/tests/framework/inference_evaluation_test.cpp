@@ -23,33 +23,43 @@
 
 #include <tests_common.h>
 
+class ClassificationTestHelper : public knp::framework::data_processing::classification::Dataset
+{
+public:
+    ClassificationTestHelper()
+    {
+        steps_required_for_inference_ = 4;
+        steps_per_class_ = 1;
+        classes_amount_ = 2;
+        data_for_inference_ = {{1, {}}, {1, {}}, {0, {}}, {0, {}}};
+    }
+};
 
 TEST(InferenceEvaluation, Classification)
 {
-    knp::framework::data_processing::classification::Dataset dataset;
-    dataset.steps_required_for_inference_ = 4;
-    dataset.steps_per_class_ = 1;
-    dataset.data_for_inference_ = {{1, {}}, {1, {}}, {0, {}}, {0, {}}};
+    ClassificationTestHelper dataset;
     std::vector<knp::core::messaging::SpikeMessage> spikes;
     spikes.push_back({{knp::core::UID(false), 0}, {1, 3}});
     spikes.push_back({{knp::core::UID(false), 1}, {5, 1}});
     spikes.push_back({{knp::core::UID(false), 2}, {2, 0}});
     spikes.push_back({{knp::core::UID(false), 3}, {3, 1}});
 
-    auto res = knp::framework::inference_evaluation::classification::process_inference_results(
-        spikes, dataset, 2, dataset.steps_per_class_);
+    knp::framework::inference_evaluation::classification::InferenceResultForClass::InferenceResultsProcessor processor;
+    processor.process_inference_results(spikes, dataset);
 
-    ASSERT_EQ(res[0].total_, 2);
-    ASSERT_EQ(res[0].correctly_predicted_, 1);
-    ASSERT_EQ(res[0].incorrectly_predicted_, 1);
-    ASSERT_EQ(res[0].no_votes_, 0);
-    ASSERT_EQ(res[1].total_, 2);
-    ASSERT_EQ(res[1].correctly_predicted_, 2);
-    ASSERT_EQ(res[1].incorrectly_predicted_, 0);
-    ASSERT_EQ(res[1].no_votes_, 0);
+    auto const& res = processor.get_inference_results();
+
+    ASSERT_EQ(res[0].get_total(), 2);
+    ASSERT_EQ(res[0].get_correctly_predicted(), 1);
+    ASSERT_EQ(res[0].get_incorrectly_predicted(), 1);
+    ASSERT_EQ(res[0].get_no_votes(), 0);
+    ASSERT_EQ(res[1].get_total(), 2);
+    ASSERT_EQ(res[1].get_correctly_predicted(), 2);
+    ASSERT_EQ(res[1].get_incorrectly_predicted(), 0);
+    ASSERT_EQ(res[1].get_no_votes(), 0);
 
     std::stringstream csv_res;
-    knp::framework::inference_evaluation::classification::write_inference_results_to_stream_as_csv(csv_res, res);
+    processor.write_inference_results_to_stream_as_csv(csv_res);
 
     ASSERT_EQ(
         csv_res.str(),

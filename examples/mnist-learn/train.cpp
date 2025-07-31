@@ -66,9 +66,8 @@ auto build_channel_map_train(
 
     // Create and fill a channel map.
     knp::framework::ModelLoader::InputChannelMap channel_map;
-    channel_map.insert(
-        {input_image_channel_raster, images_classification::make_training_images_spikes_generator(dataset)});
-    channel_map.insert({input_image_channel_classes, images_classification::make_training_labels_generator(dataset)});
+    channel_map.insert({input_image_channel_raster, dataset.make_training_images_spikes_generator()});
+    channel_map.insert({input_image_channel_classes, dataset.make_training_labels_generator()});
 
     return channel_map;
 }
@@ -154,7 +153,7 @@ AnnotatedNetwork train_mnist_network(
         [&dataset](size_t step)
         {
             if (step % 20 == 0) std::cout << "Step: " << step << std::endl;
-            return step != dataset.steps_required_for_training_;
+            return step != dataset.get_steps_required_for_training();
         });
 
     std::cout << get_time_string() << ": learning finished\n";

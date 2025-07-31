@@ -19,36 +19,40 @@
  * limitations under the License.
  */
 
-#include <knp/framework/data_processing/image_classification.h>
+#include <knp/framework/data_processing/classification/image.h>
 
 #include <tests_common.h>
 
 
 TEST(DataProcessing, ImageClassification)
 {
-    constexpr size_t training_amount = 10, image_size = 1, steps_per_image = 1;
+    constexpr size_t training_amount = 10, classes_amount = 3, image_size = 1, steps_per_image = 1;
     constexpr float dataset_split = 2.F / 3.F;
     std::stringstream images_stream("\x01\x02\x03");
     std::stringstream labels_stream("0\n1\n2\n");
-    auto dataset = knp::framework::data_processing::classification::images::process_data(
-        images_stream, labels_stream, training_amount, dataset_split, image_size, steps_per_image,
+    knp::framework::data_processing::classification::images::Dataset dataset;
+    dataset.process_labels_and_images(
+        images_stream, labels_stream, training_amount, classes_amount, image_size, steps_per_image,
         [](std::vector<uint8_t> const&) -> std::vector<bool> { return {true}; });
+    dataset.split(dataset_split);
 
-    ASSERT_EQ(dataset.image_size_, image_size);
-    ASSERT_EQ(dataset.steps_per_class_, steps_per_image);
-    ASSERT_EQ(dataset.steps_required_for_training_, 10);
-    ASSERT_EQ(dataset.steps_required_for_inference_, 1);
+    ASSERT_EQ(dataset.get_image_size(), image_size);
+    ASSERT_EQ(dataset.get_amount_of_classes(), classes_amount);
+    ASSERT_EQ(dataset.get_required_training_amount(), training_amount);
+    ASSERT_EQ(dataset.get_steps_per_class(), steps_per_image);
+    ASSERT_EQ(dataset.get_steps_required_for_training(), training_amount);
+    ASSERT_EQ(dataset.get_steps_required_for_inference(), 1);
 
-    ASSERT_EQ(dataset.data_for_training_.size(), 2);
-    ASSERT_EQ(dataset.data_for_training_[0].first, 0);
-    ASSERT_EQ(dataset.data_for_training_[0].second.size(), 1);
-    ASSERT_EQ(dataset.data_for_training_[0].second[0], true);
-    ASSERT_EQ(dataset.data_for_training_[1].first, 1);
-    ASSERT_EQ(dataset.data_for_training_[1].second.size(), 1);
-    ASSERT_EQ(dataset.data_for_training_[1].second[0], true);
+    ASSERT_EQ(dataset.get_data_for_training().size(), 2);
+    ASSERT_EQ(dataset.get_data_for_training()[0].first, 0);
+    ASSERT_EQ(dataset.get_data_for_training()[0].second.size(), 1);
+    ASSERT_EQ(dataset.get_data_for_training()[0].second[0], true);
+    ASSERT_EQ(dataset.get_data_for_training()[1].first, 1);
+    ASSERT_EQ(dataset.get_data_for_training()[1].second.size(), 1);
+    ASSERT_EQ(dataset.get_data_for_training()[1].second[0], true);
 
-    ASSERT_EQ(dataset.data_for_inference_.size(), 1);
-    ASSERT_EQ(dataset.data_for_inference_[0].first, 2);
-    ASSERT_EQ(dataset.data_for_inference_[0].second.size(), 1);
-    ASSERT_EQ(dataset.data_for_inference_[0].second[0], true);
+    ASSERT_EQ(dataset.get_data_for_inference().size(), 1);
+    ASSERT_EQ(dataset.get_data_for_inference()[0].first, 2);
+    ASSERT_EQ(dataset.get_data_for_inference()[0].second.size(), 1);
+    ASSERT_EQ(dataset.get_data_for_inference()[0].second[0], true);
 }

@@ -21,7 +21,6 @@
 
 #include "inference.h"
 
-#include <knp/framework/data_processing/image_classification.h>
 #include <knp/framework/model.h>
 #include <knp/framework/model_executor.h>
 #include <knp/framework/monitoring/model.h>
@@ -58,9 +57,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // and the population IDs.
     knp::framework::ModelLoader::InputChannelMap channel_map;
     knp::core::UID input_image_channel_uid;
-    channel_map.insert(
-        {input_image_channel_uid,
-         knp::framework::data_processing::classification::images::make_inference_images_spikes_generator(dataset)});
+    channel_map.insert({input_image_channel_uid, dataset.make_inference_images_spikes_generator()});
 
     for (auto i : described_network.data_.output_uids_) model.add_output_channel(o_channel_uid, i);
     for (auto image_proj_uid : described_network.data_.projections_from_raster_)
@@ -113,7 +110,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
         [&dataset](size_t step)
         {
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
-            return step != dataset.steps_required_for_inference_;
+            return step != dataset.get_steps_required_for_inference();
         });
     // Updates the output channel.
     auto spikes = out_channel.update();

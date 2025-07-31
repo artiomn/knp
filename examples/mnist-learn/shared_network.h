@@ -1,8 +1,8 @@
 /**
  * @file construct_network.cpp
  * @brief Functions for network construction.
- * @kaspersky_support A. Vartenkov
- * @date 03.12.2024
+ * @kaspersky_support D. Postnikov
+ * @date 28.07.2025
  * @license Apache 2.0
  * @copyright © 2024 AO Kaspersky Lab
  *
@@ -50,8 +50,14 @@ constexpr size_t num_possible_labels = 10;
 // All columns are a part of the same population.
 constexpr size_t num_input_neurons = neurons_per_column * num_possible_labels;
 
+// Number of pixels in width for a single MNIST image.
+constexpr size_t input_size_width = 28;
+
+// Number of pixels in height for a single MNIST image.
+constexpr size_t input_size_height = 28;
+
 // Number of pixels for a single MNIST image.
-constexpr size_t input_size = 28 * 28;
+constexpr size_t input_size = input_size_width * input_size_height;
 
 // Dense input projection from 28 * 28 image to population of 150 neurons.
 constexpr size_t input_projection_size = input_size * num_input_neurons;
