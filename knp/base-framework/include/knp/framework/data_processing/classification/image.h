@@ -1,6 +1,6 @@
 /**
- * @file image_classification.h
- * @brief Processing of dataset
+ * @file image.h
+ * @brief Processing of dataset of images.
  * @kaspersky_support D. Postnikov
  * @date 14.07.2025
  * @license Apache 2.0
@@ -36,7 +36,7 @@ namespace knp::framework::data_processing::classification::images
 /**
  * @brief A class that represents processed dataset of images.
  */
-class Dataset : public classification::Dataset
+class KNP_DECLSPEC Dataset : public classification::Dataset
 {
 public:
     /**
@@ -49,7 +49,7 @@ public:
      * @param steps_per_image Amount of steps required to send image in spikes form to a model.
      * @param image_to_spikes Converter or raw image data to spikes form.
      */
-    KNP_DECLSPEC void process_labels_and_images(
+    void process_labels_and_images(
         std::istream &images_stream, std::istream &labels_stream, size_t training_amount, size_t classes_amount,
         size_t image_size, size_t steps_per_image,
         std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes);
@@ -58,21 +58,21 @@ public:
      * @brief Make generator of spikes, from training labels, for channel.
      * @return A functor for generating spikes from dataset.
      */
-    [[nodiscard]] KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)>
-    make_training_labels_generator() const;
+    [[nodiscard]] std::function<knp::core::messaging::SpikeData(knp::core::Step)> make_training_labels_generator()
+        const;
 
     /**
      * @brief Make generator of spikes, from training images in form of spikes, for channel.
      * @return A functor for generating spikes from dataset.
      */
-    [[nodiscard]] KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)>
+    [[nodiscard]] std::function<knp::core::messaging::SpikeData(knp::core::Step)>
     make_training_images_spikes_generator() const;
 
     /**
      * @brief Make generator of spikes, from inference images in form of spikes, for channel.
      * @return A functor for generating spikes from dataset.
      */
-    [[nodiscard]] KNP_DECLSPEC std::function<knp::core::messaging::SpikeData(knp::core::Step)>
+    [[nodiscard]] std::function<knp::core::messaging::SpikeData(knp::core::Step)>
     make_inference_images_spikes_generator() const;
 
     /**
@@ -85,7 +85,7 @@ public:
      * @param state_increment_factor How much to increment to spike accumulator.
      * @return A functor that converts image raw data to spikes.
      */
-    [[nodiscard]] KNP_DECLSPEC std::function<std::vector<bool>(std::vector<uint8_t> const &)>
+    [[nodiscard]] std::function<std::vector<bool>(std::vector<uint8_t> const &)>
     make_incrementing_image_to_spikes_converter(size_t active_steps, float state_increment_factor) const;
 
     /**

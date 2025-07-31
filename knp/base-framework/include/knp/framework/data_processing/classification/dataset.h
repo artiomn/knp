@@ -1,5 +1,5 @@
 /**
- * @file classification_dataset.h
+ * @file dataset.h
  * @brief Definition of classification dataset
  * @kaspersky_support D. Postnikov
  * @date 21.07.2025
@@ -35,9 +35,9 @@ namespace knp::framework::data_processing::classification
 /**
  * @brief A class that represents processed dataset.
  */
-class Dataset
+class KNP_DECLSPEC Dataset
 {
-public:
+protected:
     /**
      * @brief Destructor.
      */
@@ -74,12 +74,13 @@ public:
      */
     Dataset& operator=(Dataset&& dataset) = default;
 
+public:
     /**
      * @brief Split dataset on train/inference.
-     * @param split Where to split. Must be from 0 to 1, for example 0.8 will split dataset so 80% dedicated for
-     * tranining and 20% for inference.
+     * @param split_percent Percentage that shows how to split dataset. Must be from 0 to 1, for example 0.8 will split
+     * dataset so 80% dedicated for tranining and 20% for inference.
      */
-    KNP_DECLSPEC virtual void split(float split);
+    virtual void split(float split_percent);
 
     /**
      * @brief Get data for training.

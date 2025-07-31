@@ -30,6 +30,32 @@
 namespace knp::framework::inference_evaluation::classification
 {
 
+class InferenceResultForClass::InferenceResultsProcessor::EvaluationHelper
+{
+public:
+    explicit EvaluationHelper(const knp::framework::data_processing::classification::Dataset &dataset);
+
+    void process_spikes(const knp::core::messaging::SpikeData &firing_neuron_indices, size_t step);
+
+    [[nodiscard]] std::vector<InferenceResultForClass> process_inference_predictions() const;
+
+private:
+    struct Prediction
+    {
+        size_t predicted_class_ = 0;
+        size_t votes_ = 0;
+    };
+
+    // All predictions of model.
+    std::vector<Prediction> predictions_;
+
+    // Votes for some class each steps_per_class_ steps.
+    std::vector<size_t> class_votes_;
+
+    const knp::framework::data_processing::classification::Dataset &dataset_;
+};
+
+
 InferenceResultForClass::InferenceResultsProcessor::EvaluationHelper::EvaluationHelper(
     const knp::framework::data_processing::classification::Dataset &dataset)
     : class_votes_(dataset.get_amount_of_classes(), 0), dataset_(dataset)
@@ -102,6 +128,7 @@ void InferenceResultForClass::InferenceResultsProcessor::process_inference_resul
 
     inference_results_ = helper.process_inference_predictions();
 }
+
 
 void InferenceResultForClass::InferenceResultsProcessor::write_inference_results_to_stream_as_csv(
     std::ostream &results_stream)

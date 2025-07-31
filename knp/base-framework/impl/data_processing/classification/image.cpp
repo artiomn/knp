@@ -1,6 +1,6 @@
 /**
- * @file image_classification.cpp
- * @brief Processing of dataset
+ * @file image.cpp
+ * @brief Processing of dataset of images.
  * @kaspersky_support D. Postnikov
  * @date 14.07.2025
  * @license Apache 2.0
@@ -35,21 +35,19 @@ void Dataset::process_labels_and_images(
     required_training_amount_ = training_amount;
     classes_amount_ = classes_amount;
 
-    {  // Process dataset.
-        std::vector<uint8_t> image_reading_buffer(image_size, 0);
+    std::vector<uint8_t> image_reading_buffer(image_size, 0);
 
-        while (images_stream.good() && labels_stream.good())
-        {
-            images_stream.read(reinterpret_cast<char *>(image_reading_buffer.data()), image_size);
-            auto spikes_frame = image_to_spikes(image_reading_buffer);
+    while (images_stream.good() && labels_stream.good())
+    {
+        images_stream.read(reinterpret_cast<char *>(image_reading_buffer.data()), image_size);
+        auto spikes_frame = image_to_spikes(image_reading_buffer);
 
-            std::string str;
-            if (!std::getline(labels_stream, str).good()) break;
-            int label = std::stoi(str);
+        std::string str;
+        if (!std::getline(labels_stream, str).good()) break;
+        int label = std::stoi(str);
 
-            // Push to training data set because we dont know dataset size yet for a split
-            data_for_training_.push_back({label, std::move(spikes_frame)});
-        }
+        // Push to training data set because we dont know dataset size yet for a split
+        data_for_training_.push_back({label, std::move(spikes_frame)});
     }
 }
 
@@ -59,7 +57,12 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
     return [this](knp::core::Step step)
     {
         knp::core::messaging::SpikeData message;
-        message.push_back(data_for_training_[(step / steps_per_class_) % data_for_training_.size()].first);
+
+        size_t frame_index = step / steps_per_class_;
+
+        size_t looped_frame_index = frame_index % data_for_training_.size();
+
+        message.push_back(data_for_training_[looped_frame_index].first);
         return message;
     };
 }
@@ -70,9 +73,16 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
     return [this](knp::core::Step step)
     {
         knp::core::messaging::SpikeData message;
-        auto const &data = data_for_training_[(step / steps_per_class_) % data_for_training_.size()].second;
+
+        size_t frame_index = step / steps_per_class_;
+
+        size_t looped_frame_index = frame_index % data_for_training_.size();
+
+        auto const &data = data_for_training_[looped_frame_index].second;
+
         size_t local_step = step % steps_per_class_;
         size_t frame_start = local_step * image_size_;
+
         for (size_t i = frame_start; i < frame_start + image_size_; ++i)
         {
             if (data[i]) message.push_back(i - frame_start);
@@ -87,9 +97,16 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_in
     return [this](knp::core::Step step)
     {
         knp::core::messaging::SpikeData message;
-        auto const &data = data_for_inference_[(step / steps_per_class_) % data_for_inference_.size()].second;
+
+        size_t frame_index = step / steps_per_class_;
+
+        size_t looped_frame_index = frame_index % data_for_inference_.size();
+
+        auto const &data = data_for_inference_[looped_frame_index].second;
+
         size_t local_step = step % steps_per_class_;
         size_t frame_start = local_step * image_size_;
+
         for (size_t i = frame_start; i < frame_start + image_size_; ++i)
         {
             if (data[i]) message.push_back(i - frame_start);
@@ -129,4 +146,4 @@ std::function<std::vector<bool>(std::vector<uint8_t> const &)> Dataset::make_inc
     };
 }
 
-}  //namespace knp::framework::data_processing::classification::images
+}  // namespace knp::framework::data_processing::classification::images

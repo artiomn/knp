@@ -1,6 +1,6 @@
 /**
- * @file classification_dataset.h
- * @brief Definition of classification dataset
+ * @file dataset.cpp
+ * @brief Definition of classification dataset.
  * @kaspersky_support D. Postnikov
  * @date 29.07.2025
  * @license Apache 2.0
@@ -25,9 +25,9 @@
 namespace knp::framework::data_processing::classification
 {
 
-void Dataset::split(float split)
+void Dataset::split(float split_percent)
 {
-    size_t split_beginning = static_cast<size_t>(static_cast<float>(data_for_training_.size()) * split + 0.5F);
+    size_t split_beginning = static_cast<float>(data_for_training_.size()) * split_percent + 0.5F;
     for (size_t i = split_beginning; i < data_for_training_.size(); ++i)
         data_for_inference_.emplace_back(std::move(data_for_training_[i]));
     data_for_training_.erase(data_for_training_.begin() + split_beginning, data_for_training_.end());
@@ -40,7 +40,8 @@ void Dataset::split(float split)
     {
         data_for_training_.resize(required_training_amount_);
         data_for_inference_.resize(
-            static_cast<size_t>(static_cast<float>(data_for_training_.size()) / split) - data_for_training_.size());
+            static_cast<size_t>(static_cast<float>(data_for_training_.size()) / split_percent) -
+            data_for_training_.size());
         steps_required_for_training_ = steps_per_class_ * data_for_training_.size();
         steps_required_for_inference_ = steps_per_class_ * data_for_inference_.size();
     }
