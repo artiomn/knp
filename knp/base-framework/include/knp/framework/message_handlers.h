@@ -57,8 +57,7 @@ public:
     }
 
     /**
-     * @brief Function call operator.
-     * @details The method processes a number of messages and returns indexes of spiked neurons.
+     * @brief Call operator to process a number of messages and return indexes of spiked neurons.
      * @param messages vector of spike messages.
      * @return random indexes of no more than N spiked neurons.
      * @note It is assumed that the method receives no more than one message per step. 
@@ -101,8 +100,7 @@ public:
     }
 
     /**
-     * @brief Function call operator.
-     * @details The method divides spike messages into groups, sorts them by number of spikes 
+     * @brief Call operator to divide spike messages into groups, sort them by number of spikes 
      * and return indexes of spiked neurons from the top N groups.
      * @param messages vector of spike messages.
      * @return set of indexes of spikes neurons from the top N groups.
@@ -127,7 +125,7 @@ class KNP_DECLSPEC KWtaPerGroup
 public:
     /**
      * @brief Functor constructor.
-     * @note For example, we have a set of spike messages 0, 1, 2, 3, 4, 5. If `group_borders` 
+     * @details For example, we have a set of spike messages 0, 1, 2, 3, 4, 5. If `group_borders` 
      * is {2, 4}, the set of spike messages will be divided into the following groups: 
      * [0, 1], [2, 3], and [4, 5]. 
      * @param group_borders vector of spike message indexes that define right borders for 
@@ -142,8 +140,7 @@ public:
     }
 
     /**
-     * @brief Function call operator.
-     * @details The method divides spike messages into groups and returns random N indexes of 
+     * @brief Call operator to divide spike messages into groups and return random N indexes of 
      * spiked messages from each group.
      * @param messages vector of spike messages.
      * @return set of random N indexes of spiked messages.
@@ -164,8 +161,7 @@ class KNP_DECLSPEC SpikeUnionHandler
 {
 public:
     /**
-     * @brief Function call operator.
-     * @details The method receives a vector of messages and returns a set of indexes of 
+     * @brief Call operator to receive a vector of messages and return a set of indexes of 
      * all spiked neurons.
      * @param messages vector of spike messages.
      * @return vector of neuron indexes that spiked in at least one message.
