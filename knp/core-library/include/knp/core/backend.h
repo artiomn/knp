@@ -171,8 +171,8 @@ public:
     virtual void select_devices(const std::set<UID> &uids);
 
     /**
-     * @brief Select devices on which to run the backend.
-     * @param device selected for backend device.
+     * @brief Select a device on which to run the backend.
+     * @param device selected device.
      */
     virtual void select_device(std::unique_ptr<Device> &&device);
 
