@@ -34,7 +34,7 @@ namespace knp::framework::inference_evaluation::classification
 /**
  * @brief Processed inference result for single class.
  */
-class InferenceResultForClass
+class KNP_DECLSPEC InferenceResultForClass
 {
 public:
     /**
@@ -51,6 +51,8 @@ public:
 
     /**
      * @brief Get how much times prediction happened with no votes.
+     * @details Prediction with no votes can happen when model did no votes, so we cant decide what model actually
+     * predicted. So we use first possible class, and increment no votes counter.
      * @ret Amount of times prediction happened with no votes.
      */
     [[nodiscard]] size_t get_no_votes() const { return no_votes_; }
@@ -64,7 +66,7 @@ public:
     /**
      * @detail A class to process inference results.
      */
-    class InferenceResultsProcessor
+    class KNP_DECLSPEC InferenceResultsProcessor
     {
     public:
         /**
@@ -73,7 +75,7 @@ public:
          * @param dataset Dataset.
          * @return processed inference results for each class.
          */
-        KNP_DECLSPEC void process_inference_results(
+        void process_inference_results(
             const std::vector<knp::core::messaging::SpikeMessage> &spikes,
             const knp::framework::data_processing::classification::Dataset &dataset);
 
@@ -81,7 +83,7 @@ public:
          * @brief Put inference results for each class to a stream in form of csv.
          * @param results_stream stream for output.
          */
-        KNP_DECLSPEC void write_inference_results_to_stream_as_csv(std::ostream &results_stream);
+        void write_inference_results_to_stream_as_csv(std::ostream &results_stream);
 
         /**
          * @brief Get inference results.
@@ -98,61 +100,7 @@ public:
         /**
          * @brief An internal class to help with evaluation.
          */
-        class EvaluationHelper
-        {
-        public:
-            /**
-             * @brief Constructor.
-             * @param dataset Dataset.
-             */
-            KNP_DECLSPEC explicit EvaluationHelper(
-                const knp::framework::data_processing::classification::Dataset &dataset);
-
-            /**
-             * @brief Process spikes each step.
-             * @param firing_neuron_indices Indices of firing neurons.
-             * @param step Step.
-             */
-            KNP_DECLSPEC void process_spikes(const knp::core::messaging::SpikeData &firing_neuron_indices, size_t step);
-
-            /**
-             * @brief Calculate predictions staistics.
-             * @ret Predictions statistics for each class.
-             */
-            [[nodiscard]] KNP_DECLSPEC std::vector<InferenceResultForClass> process_inference_predictions() const;
-
-        private:
-            /**
-             * @brief Struct that represents prediction status.
-             */
-            struct Prediction
-            {
-                /**
-                 * @brief Predicted class.
-                 */
-                size_t predicted_class_ = 0;
-
-                /**
-                 * @brief Amount of votes.
-                 */
-                size_t votes_ = 0;
-            };
-
-            /**
-             * @brief All predictions of model.
-             */
-            std::vector<Prediction> predictions_;
-
-            /**
-             * @brief Votes for some class each steps_per_class_ steps.
-             */
-            std::vector<size_t> class_votes_;
-
-            /**
-             * @brief Reference to dataset.
-             */
-            const knp::framework::data_processing::classification::Dataset &dataset_;
-        };
+        class EvaluationHelper;
     };
 
 private:

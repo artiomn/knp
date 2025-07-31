@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include <knp/core/impexp.h>
 #include <knp/core/messaging/messaging.h>
 
 
@@ -31,7 +32,7 @@ namespace knp::framework::inference_evaluation
  * @param correct_predictions Correct predictions.
  * @param incorrect_predictions Incorrect predictions.
  */
-float get_precision(size_t correct_predictions, size_t incorrect_predictions);
+KNP_DECLSPEC float get_precision(size_t correct_predictions, size_t incorrect_predictions);
 
 
 /**
@@ -39,7 +40,7 @@ float get_precision(size_t correct_predictions, size_t incorrect_predictions);
  * @param correct_predictions Correct predictions.
  * @param incorrect_predictions Incorrect predictions.
  */
-float get_recall(size_t correct_predictions, size_t incorrect_predictions);
+KNP_DECLSPEC float get_recall(size_t correct_predictions, size_t incorrect_predictions);
 
 
 /**
@@ -47,6 +48,6 @@ float get_recall(size_t correct_predictions, size_t incorrect_predictions);
  * @param precision Model's precision.
  * @param recall Model's recall.
  */
-float get_f_measure(float precision, float recall);
+KNP_DECLSPEC float get_f_measure(float precision, float recall);
 
 }  //namespace knp::framework::inference_evaluation
