@@ -1,6 +1,6 @@
 /**
  * @file inference_evaluation_test.cpp
- * @brief Inference evaluation test
+ * @brief Inference evaluation test.
  * @kaspersky_support D. Postnikov
  * @date 21.08.2025
  * @license Apache 2.0
@@ -49,20 +49,22 @@ TEST(InferenceEvaluation, Classification)
 
     auto const& res = processor.get_inference_results();
 
-    ASSERT_EQ(res[0].get_total(), 2);
-    ASSERT_EQ(res[0].get_correctly_predicted(), 1);
-    ASSERT_EQ(res[0].get_incorrectly_predicted(), 1);
-    ASSERT_EQ(res[0].get_no_votes(), 0);
-    ASSERT_EQ(res[1].get_total(), 2);
-    ASSERT_EQ(res[1].get_correctly_predicted(), 2);
-    ASSERT_EQ(res[1].get_incorrectly_predicted(), 0);
-    ASSERT_EQ(res[1].get_no_votes(), 0);
+    ASSERT_EQ(res[0].get_total_votes(), 2);
+    ASSERT_EQ(res[0].get_true_positives(), 1);
+    ASSERT_EQ(res[0].get_false_negatives(), 0);
+    ASSERT_EQ(res[0].get_false_positives(), 1);
+    ASSERT_EQ(res[0].get_true_negatives(), 2);
+    ASSERT_EQ(res[1].get_total_votes(), 2);
+    ASSERT_EQ(res[1].get_true_positives(), 2);
+    ASSERT_EQ(res[1].get_false_negatives(), 0);
+    ASSERT_EQ(res[1].get_false_positives(), 0);
+    ASSERT_EQ(res[1].get_true_negatives(), 2);
 
     std::stringstream csv_res;
     processor.write_inference_results_to_stream_as_csv(csv_res);
 
     ASSERT_EQ(
         csv_res.str(),
-        "CLASS,TOTAL_VOTES,CORRECT_VOTES,INCORRECT_VOTES,NO_VOTES,PRECISION,RECALL,F_MEASURE\n0,2,1,1,0,0.5,0.5,0.5\n1,"
-        "2,2,0,0,1,1,1\n");
+        "CLASS,TOTAL_VOTES,TRUE_POSITIVES,FALSE_NEGATIVES,FALSE_POSITIVES,TRUE_NEGATIVES,PRECISION,RECALL,PREVALENCE,"
+        "ACCURACY,F_MEASURE\n0,2,1,0,1,2,1,0.5,0.25,0.75,0.666667\n1,2,2,0,0,2,0,1,0.5,1,0\n");
 }

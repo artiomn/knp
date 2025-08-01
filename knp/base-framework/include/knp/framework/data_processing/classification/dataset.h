@@ -1,6 +1,6 @@
 /**
  * @file dataset.h
- * @brief Definition of classification dataset
+ * @brief Definition of classification dataset.
  * @kaspersky_support D. Postnikov
  * @date 21.07.2025
  * @license Apache 2.0

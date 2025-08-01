@@ -1,6 +1,6 @@
 /**
  * @file wta_test.cpp
- * @brief Test for winner takes all
+ * @brief Test for winner takes all.
  * @kaspersky_support D. Postnikov
  * @date 23.07.2025
  * @license Apache 2.0

@@ -1,6 +1,6 @@
 /**
  * @file data_processing_test.cpp
- * @brief Data processing test
+ * @brief Data processing test.
  * @kaspersky_support D. Postnikov
  * @date 21.08.2025
  * @license Apache 2.0
@@ -55,4 +55,28 @@ TEST(DataProcessing, ImageClassification)
     ASSERT_EQ(dataset.get_data_for_inference()[0].first, 2);
     ASSERT_EQ(dataset.get_data_for_inference()[0].second.size(), 1);
     ASSERT_EQ(dataset.get_data_for_inference()[0].second[0], true);
+
+    auto train_images_spikes_gen = dataset.make_training_images_spikes_generator();
+    for (size_t i = 0; i < dataset.get_steps_required_for_training(); ++i)
+    {
+        auto res = train_images_spikes_gen(i);
+        ASSERT_EQ(res.size(), 1);
+        ASSERT_EQ(res[0], 0);
+    }
+
+    auto train_labels_gen = dataset.make_training_labels_generator();
+    for (size_t i = 0; i < dataset.get_steps_required_for_training(); ++i)
+    {
+        auto res = train_labels_gen(i);
+        ASSERT_EQ(res.size(), 1);
+        ASSERT_EQ(res[0], i % dataset.get_data_for_training().size());
+    }
+
+    auto inf_images_spikes_gen = dataset.make_inference_images_spikes_generator();
+    for (size_t i = 0; i < dataset.get_steps_required_for_inference(); ++i)
+    {
+        auto res = train_images_spikes_gen(i);
+        ASSERT_EQ(res.size(), 1);
+        ASSERT_EQ(res[0], 0);
+    }
 }
