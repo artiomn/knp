@@ -52,7 +52,7 @@ public:
     void process_labels_and_images(
         std::istream &images_stream, std::istream &labels_stream, size_t training_amount, size_t classes_amount,
         size_t image_size, size_t steps_per_image,
-        std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes);
+        std::function<Frame(std::vector<uint8_t> const &)> const &image_to_spikes);
 
     /**
      * @brief Make generator of spikes, from training labels, for channel.
@@ -85,8 +85,8 @@ public:
      * @param state_increment_factor How much to increment to spike accumulator.
      * @return A functor that converts image raw data to spikes.
      */
-    [[nodiscard]] std::function<std::vector<bool>(std::vector<uint8_t> const &)>
-    make_incrementing_image_to_spikes_converter(size_t active_steps, float state_increment_factor) const;
+    [[nodiscard]] std::function<Frame(std::vector<uint8_t> const &)> make_incrementing_image_to_spikes_converter(
+        size_t active_steps, float state_increment_factor) const;
 
     /**
      * @brief Get image size.

@@ -23,17 +23,19 @@
 
 #include <tests_common.h>
 
+
 class ClassificationTestHelper : public knp::framework::data_processing::classification::Dataset
 {
 public:
     ClassificationTestHelper()
     {
         steps_required_for_inference_ = 4;
-        steps_per_class_ = 1;
+        steps_per_frame_ = 1;
         classes_amount_ = 2;
         data_for_inference_ = {{1, {}}, {1, {}}, {0, {}}, {0, {}}};
     }
 };
+
 
 TEST(InferenceEvaluation, Classification)
 {

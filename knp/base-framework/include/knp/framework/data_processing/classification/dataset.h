@@ -95,14 +95,14 @@ public:
     [[nodiscard]] auto const& get_data_for_inference() const { return data_for_inference_; }
 
     /**
-     * @brief Get steps amount per class.
-     * @return Steps amount per class.
+     * @brief Get steps amount per frame.
+     * @return Steps amount per frame.
      */
-    [[nodiscard]] size_t get_steps_per_class() const { return steps_per_class_; }
+    [[nodiscard]] size_t get_steps_per_frame() const { return steps_per_frame_; }
 
     /**
-     * @brief Get steps amount required for training.
-     * @return Steps amount required for training.
+     * @brief Get amount of steps required for training.
+     * @return Amount of steps required for training.
      */
     [[nodiscard]] size_t get_steps_required_for_training() const { return steps_required_for_training_; }
 
@@ -124,21 +124,33 @@ public:
      */
     [[nodiscard]] size_t get_amount_of_classes() const { return classes_amount_; }
 
+    /**
+     * @brief A struct that represents a class instance in form of spikes.
+     * @details In classification we want to send class instance, that is converted to spikes form, in several steps.
+     * For example and image can be sent over 20 steps. This struct represents class instance data on those several
+     * steps. So it stores a vector of bools that represents where to send spikes over specified amount of steps. So
+     * with image example, length of this vector would be equal to steps_per_frame * image_size.
+     */
+    struct Frame
+    {
+        std::vector<bool> spikes_;
+    };
+
 protected:
     /**
-     * @brief Vector of pairs of label and class data in spikes form, distributed in several steps.
+     * @brief Vector of pairs of label and frame.
      */
-    std::vector<std::pair<unsigned, std::vector<bool>>> data_for_training_;
+    std::vector<std::pair<unsigned, Frame>> data_for_training_;
 
     /**
-     * @brief Vector of pairs of label and class data in spikes form, distributed in several steps.
+     * @brief Vector of pairs of label and frame.
      */
-    std::vector<std::pair<unsigned, std::vector<bool>>> data_for_inference_;
+    std::vector<std::pair<unsigned, Frame>> data_for_inference_;
 
     /**
-     * @brief Amount of steps the converted class data will be sent.
+     * @brief Amount of steps frame is discributed to.
      */
-    size_t steps_per_class_ = 0;
+    size_t steps_per_frame_ = 0;
 
     /**
      * @brief Amount of steps required for training.

@@ -67,7 +67,7 @@ void InferenceResultForClass::InferenceResultsProcessor::EvaluationHelper::proce
     const knp::core::messaging::SpikeData &firing_neuron_indices, size_t step)
 {
     for (auto i : firing_neuron_indices) ++class_votes_[i % dataset_.get_amount_of_classes()];
-    if (!((step + 1) % dataset_.get_steps_per_class()))
+    if (!((step + 1) % dataset_.get_steps_per_frame()))
     {
         size_t n_max = 0;
         size_t predicted_state = 0;

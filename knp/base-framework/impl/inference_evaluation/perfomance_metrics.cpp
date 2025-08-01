@@ -41,7 +41,7 @@ float get_recall(size_t true_positives, size_t false_negatives)
 
 float get_prevalence(size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives)
 {
-    size_t total = true_positives + false_negatives + false_positives + true_negatives;
+    const size_t total = true_positives + false_negatives + false_positives + true_negatives;
     if (total == 0) return 0.F;
     return static_cast<float>(true_positives + false_negatives) / total;
 }
@@ -49,7 +49,7 @@ float get_prevalence(size_t true_positives, size_t false_negatives, size_t false
 
 float get_accuracy(size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives)
 {
-    size_t total = true_positives + false_negatives + false_positives + true_negatives;
+    const size_t total = true_positives + false_negatives + false_positives + true_negatives;
     if (total == 0) return 0.F;
     return static_cast<float>(true_positives + true_negatives) / total;
 }
