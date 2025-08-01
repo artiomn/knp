@@ -33,7 +33,7 @@
 constexpr size_t active_steps = 10;
 constexpr size_t steps_per_image = 20;
 constexpr float state_increment_factor = 1.f / 255;
-constexpr size_t images_amount_to_train = 10000;
+constexpr size_t images_amount_to_train = 1000;
 constexpr float dataset_split = 0.8;
 constexpr size_t classes_amount = 10;
 

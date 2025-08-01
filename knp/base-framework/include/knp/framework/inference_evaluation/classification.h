@@ -1,6 +1,6 @@
 /**
  * @file classification.h
- * @brief Evaluation of how good model performs by inference results
+ * @brief Evaluation of how good model performs by inference results.
  * @kaspersky_support D. Postnikov
  * @date 16.07.2025
  * @license Apache 2.0
@@ -27,6 +27,8 @@
 
 #include <vector>
 
+#include "perfomance_metrics.h"
+
 
 namespace knp::framework::inference_evaluation::classification
 {
@@ -38,30 +40,34 @@ class KNP_DECLSPEC InferenceResultForClass
 {
 public:
     /**
-     * @brief Get correctly predicted.
-     * @ret Correctly predicted.
+     * @brief Get true positives.
+     * @ret Amount of times model, that is supposed  to predict dog, predicted dog when it is a dog.
      */
-    [[nodiscard]] size_t get_correctly_predicted() const { return correctly_predicted_; }
+    [[nodiscard]] size_t get_true_positives() const { return true_positives_; }
 
     /**
-     * @brief Get incorrectly predicted.
-     * @ret Incorrectly predicted.
+     * @brief Get false negatives.
+     * @ret Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
      */
-    [[nodiscard]] size_t get_incorrectly_predicted() const { return incorrectly_predicted_; }
+    [[nodiscard]] size_t get_false_negatives() const { return false_negatives_; }
 
     /**
-     * @brief Get how much times prediction happened with no votes.
-     * @details Prediction with no votes can happen when model did no votes, so we cant decide what model actually.
-     * predicted. So we use first possible class, and increment no votes counter.
-     * @ret Amount of times prediction happened with no votes.
+     * @brief Get false positives.
+     * @ret Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
      */
-    [[nodiscard]] size_t get_no_votes() const { return no_votes_; }
+    [[nodiscard]] size_t get_false_positives() const { return false_positives_; }
 
     /**
-     * @brief Get total amount of predictions.
-     * @ret Total amount of predictions.
+     * @brief Get true negatives.
+     * @ret Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a dog.
      */
-    [[nodiscard]] size_t get_total() const { return correctly_predicted_ + incorrectly_predicted_ + no_votes_; }
+    [[nodiscard]] size_t get_true_negatives() const { return true_negatives_; }
+
+    /**
+     * @brief Shortcut for getting total votes.
+     * @ret Total votes.
+     */
+    [[nodiscard]] size_t get_total_votes() const { return true_positives_ + false_negatives_ + false_positives_; }
 
     /**
      * @detail A class to process inference results.
@@ -104,20 +110,7 @@ public:
     };
 
 private:
-    /**
-     * @brief Amount of correct model predictions.
-     */
-    size_t correctly_predicted_ = 0;
-
-    /**
-     * @brief Amount of incorrect model predictions.
-     */
-    size_t incorrectly_predicted_ = 0;
-
-    /**
-     * @brief Amount of model predictions when this class won, without any votes.
-     */
-    size_t no_votes_ = 0;
+    size_t true_positives_ = 0, false_negatives_ = 0, false_positives_ = 0, true_negatives_ = 0;
 };
 
 }  //namespace knp::framework::inference_evaluation::classification

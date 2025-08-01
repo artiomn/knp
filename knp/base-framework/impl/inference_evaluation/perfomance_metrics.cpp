@@ -1,6 +1,6 @@
 /**
  * @file perfomance_metrics.cpp
- * @brief Evaluation of how good model performs by inference results
+ * @brief Functions to calculate model statistics.
  * @kaspersky_support D. Postnikov
  * @date 24.07.2025
  * @license Apache 2.0
@@ -25,17 +25,33 @@
 namespace knp::framework::inference_evaluation
 {
 
-float get_precision(size_t correct_predictions, size_t incorrect_predictions)
+float get_precision(size_t true_positives, size_t false_positives)
 {
-    if (correct_predictions + incorrect_predictions == 0) return 0.F;
-    return static_cast<float>(correct_predictions) / (correct_predictions + incorrect_predictions);
+    if (true_positives + false_positives == 0) return 0.F;
+    return static_cast<float>(true_positives) / (true_positives + false_positives);
 }
 
 
-float get_recall(size_t correct_predictions, size_t incorrect_predictions)
+float get_recall(size_t true_positives, size_t false_negatives)
 {
-    if (correct_predictions + incorrect_predictions == 0) return 0.F;
-    return static_cast<float>(correct_predictions) / (correct_predictions + incorrect_predictions);
+    if (true_positives + false_negatives == 0) return 0.F;
+    return static_cast<float>(true_positives) / (true_positives + false_negatives);
+}
+
+
+float get_prevalence(size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives)
+{
+    size_t total = true_positives + false_negatives + false_positives + true_negatives;
+    if (total == 0) return 0.F;
+    return static_cast<float>(true_positives + false_negatives) / total;
+}
+
+
+float get_accuracy(size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives)
+{
+    size_t total = true_positives + false_negatives + false_positives + true_negatives;
+    if (total == 0) return 0.F;
+    return static_cast<float>(true_positives + true_negatives) / total;
 }
 
 

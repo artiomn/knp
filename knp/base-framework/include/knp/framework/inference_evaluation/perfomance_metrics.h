@@ -1,6 +1,6 @@
 /**
  * @file perfomance_metrics.h
- * @brief Evaluation of how good model performs by inference results
+ * @brief Functions to calculate model statistics.
  * @kaspersky_support D. Postnikov
  * @date 24.07.2025
  * @license Apache 2.0
@@ -28,25 +28,49 @@ namespace knp::framework::inference_evaluation
 {
 
 /**
- * @brief Calculate precision of model.
- * @param correct_predictions Correct predictions.
- * @param incorrect_predictions Incorrect predictions.
+ * @brief Calculate precision.
+ * @param true_positives Amount of times model, that is supposed to predict dog, predicted dog when it is a dog.
+ * @param false_positives Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
  */
-KNP_DECLSPEC float get_precision(size_t correct_predictions, size_t incorrect_predictions);
+KNP_DECLSPEC float get_precision(size_t true_positives, size_t false_positives);
 
 
 /**
- * @brief Calculate recall of model.
- * @param correct_predictions Correct predictions.
- * @param incorrect_predictions Incorrect predictions.
+ * @brief Calculate recall.
+ * @param true_positives Amount of times model, that is supposed to predict dog, predicted dog when it is a dog.
+ * @param false_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
  */
-KNP_DECLSPEC float get_recall(size_t correct_predictions, size_t incorrect_predictions);
+KNP_DECLSPEC float get_recall(size_t true_positives, size_t false_negatives);
 
 
 /**
- * @brief Calculate f measure of model.
- * @param precision Model's precision.
- * @param recall Model's recall.
+ * @brief Calculate prevalence.
+ * @param true_positives Amount of times model, that is supposed  to predict dog, predicted dog when it is a dog.
+ * @param false_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
+ * @param false_positives Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
+ * @param true_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a
+ * dog.
+ */
+KNP_DECLSPEC float get_prevalence(
+    size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives);
+
+
+/**
+ * @brief Calculate accuracy.
+ * @param true_positives Amount of times model, that is supposed  to predict dog, predicted dog when it is a dog.
+ * @param false_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
+ * @param false_positives Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
+ * @param true_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a
+ * dog.
+ */
+KNP_DECLSPEC float get_accuracy(
+    size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives);
+
+
+/**
+ * @brief Calculate f measure.
+ * @param precision Precision.
+ * @param recall Recall.
  */
 KNP_DECLSPEC float get_f_measure(float precision, float recall);
 

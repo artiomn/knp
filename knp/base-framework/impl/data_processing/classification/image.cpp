@@ -59,7 +59,6 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
         knp::core::messaging::SpikeData message;
 
         size_t frame_index = step / steps_per_class_;
-
         size_t looped_frame_index = frame_index % data_for_training_.size();
 
         message.push_back(data_for_training_[looped_frame_index].first);
@@ -75,7 +74,6 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
         knp::core::messaging::SpikeData message;
 
         size_t frame_index = step / steps_per_class_;
-
         size_t looped_frame_index = frame_index % data_for_training_.size();
 
         auto const &data = data_for_training_[looped_frame_index].second;

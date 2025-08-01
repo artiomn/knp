@@ -1,6 +1,6 @@
 /**
  * @file classification.cpp
- * @brief Evaluation of how good model performs by inference results
+ * @brief Evaluation of how good model performs by inference results.
  * @kaspersky_support D. Postnikov
  * @date 16.07.2025
  * @license Apache 2.0
@@ -96,12 +96,19 @@ InferenceResultForClass::InferenceResultsProcessor::EvaluationHelper::process_in
         auto const &cur_data = dataset_.get_data_for_inference()[i];
 
         if (!prediction.votes_)
-            ++prediction_results[cur_data.first].no_votes_;
+            ++prediction_results[cur_data.first].false_negatives_;
         else if (prediction.predicted_class_ != cur_data.first)
-            ++prediction_results[cur_data.first].incorrectly_predicted_;
-        else  //votes has been cast and predicted class == correct class
-            ++prediction_results[cur_data.first].correctly_predicted_;
+            ++prediction_results[cur_data.first].false_positives_;
+        else  //votes have been cast and predicted class == correct class
+            ++prediction_results[cur_data.first].true_positives_;
     }
+
+    // Calculate true negatives.
+    for (auto &res : prediction_results)
+    {
+        res.true_negatives_ = predictions_.size() - res.true_positives_ - res.false_negatives_ - res.false_positives_;
+    }
+
     return prediction_results;
 }
 
@@ -133,16 +140,24 @@ void InferenceResultForClass::InferenceResultsProcessor::process_inference_resul
 void InferenceResultForClass::InferenceResultsProcessor::write_inference_results_to_stream_as_csv(
     std::ostream &results_stream)
 {
-    results_stream << "CLASS,TOTAL_VOTES,CORRECT_VOTES,INCORRECT_VOTES,NO_VOTES,PRECISION,RECALL,F_MEASURE\n";
+    results_stream << "CLASS,TOTAL_VOTES,TRUE_POSITIVES,FALSE_NEGATIVES,FALSE_POSITIVES,TRUE_NEGATIVES,PRECISION,"
+                      "RECALL,PREVALENCE,ACCURACY,F_MEASURE\n";
     for (size_t label = 0; label < inference_results_.size(); ++label)
     {
         auto const &prediction = inference_results_[label];
-        float precision = get_precision(prediction.correctly_predicted_, prediction.incorrectly_predicted_);
-        float recall = get_recall(prediction.correctly_predicted_, prediction.incorrectly_predicted_);
+        float precision = get_precision(prediction.true_positives_, prediction.false_positives_);
+        float recall = get_recall(prediction.true_positives_, prediction.false_positives_);
+        float prevalence = get_prevalence(
+            prediction.true_positives_, prediction.false_negatives_, prediction.false_positives_,
+            prediction.true_negatives_);
+        float accuracy = get_accuracy(
+            prediction.true_positives_, prediction.false_negatives_, prediction.false_positives_,
+            prediction.true_negatives_);
         float f_measure = get_f_measure(precision, recall);
-        results_stream << label << ',' << prediction.get_total() << ',' << prediction.correctly_predicted_ << ','
-                       << prediction.incorrectly_predicted_ << ',' << prediction.no_votes_ << ',' << precision << ','
-                       << recall << ',' << f_measure << std::endl;
+        results_stream << label << ',' << prediction.get_total_votes() << ',' << prediction.true_positives_ << ','
+                       << prediction.false_negatives_ << ',' << prediction.false_positives_ << ','
+                       << prediction.true_negatives_ << ',' << precision << ',' << recall << ',' << prevalence << ','
+                       << accuracy << ',' << f_measure << std::endl;
     }
 }
 
