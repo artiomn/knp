@@ -28,10 +28,10 @@ namespace knp::framework::data_processing::classification::images
 void Dataset::process_labels_and_images(
     std::istream &images_stream, std::istream &labels_stream, size_t training_amount, size_t classes_amount,
     size_t image_size, size_t steps_per_image,
-    std::function<std::vector<bool>(std::vector<uint8_t> const &)> const &image_to_spikes)
+    std::function<Frame(std::vector<uint8_t> const &)> const &image_to_spikes)
 {
     image_size_ = image_size;
-    steps_per_class_ = steps_per_image;
+    steps_per_frame_ = steps_per_image;
     required_training_amount_ = training_amount;
     classes_amount_ = classes_amount;
 
@@ -58,7 +58,7 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
     {
         knp::core::messaging::SpikeData message;
 
-        size_t frame_index = step / steps_per_class_;
+        size_t frame_index = step / steps_per_frame_;
         size_t looped_frame_index = frame_index % data_for_training_.size();
 
         message.push_back(data_for_training_[looped_frame_index].first);
@@ -73,12 +73,12 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
     {
         knp::core::messaging::SpikeData message;
 
-        size_t frame_index = step / steps_per_class_;
+        size_t frame_index = step / steps_per_frame_;
         size_t looped_frame_index = frame_index % data_for_training_.size();
 
-        auto const &data = data_for_training_[looped_frame_index].second;
+        auto const &data = data_for_training_[looped_frame_index].second.spikes_;
 
-        size_t local_step = step % steps_per_class_;
+        size_t local_step = step % steps_per_frame_;
         size_t frame_start = local_step * image_size_;
 
         for (size_t i = frame_start; i < frame_start + image_size_; ++i)
@@ -96,12 +96,12 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_in
     {
         knp::core::messaging::SpikeData message;
 
-        size_t frame_index = step / steps_per_class_;
+        size_t frame_index = step / steps_per_frame_;
         size_t looped_frame_index = frame_index % data_for_inference_.size();
 
-        auto const &data = data_for_inference_[looped_frame_index].second;
+        auto const &data = data_for_inference_[looped_frame_index].second.spikes_;
 
-        size_t local_step = step % steps_per_class_;
+        size_t local_step = step % steps_per_frame_;
         size_t frame_start = local_step * image_size_;
 
         for (size_t i = frame_start; i < frame_start + image_size_; ++i)
@@ -113,17 +113,17 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_in
 }
 
 
-std::function<std::vector<bool>(std::vector<uint8_t> const &)> Dataset::make_incrementing_image_to_spikes_converter(
+std::function<Dataset::Frame(std::vector<uint8_t> const &)> Dataset::make_incrementing_image_to_spikes_converter(
     size_t active_steps, float state_increment_factor) const
+
 {
     std::vector<float> states;
-    return [this, active_steps, state_increment_factor,
-            states](std::vector<uint8_t> const &image) mutable -> std::vector<bool>
+    return [this, active_steps, state_increment_factor, states](std::vector<uint8_t> const &image) mutable -> Frame
     {
         if (!states.size()) states.resize(image_size_, 0.F);
 
         std::vector<bool> ret;
-        ret.reserve(steps_per_class_ * image_size_);
+        ret.reserve(steps_per_frame_ * image_size_);
 
         for (size_t i = 0; i < active_steps; ++i)
         {
@@ -139,9 +139,9 @@ std::function<std::vector<bool>(std::vector<uint8_t> const &)> Dataset::make_inc
             }
         }
 
-        ret.insert(ret.end(), (steps_per_class_ - active_steps) * image_size_, false);
+        ret.insert(ret.end(), (steps_per_frame_ - active_steps) * image_size_, false);
 
-        return ret;
+        return {std::move(ret)};
     };
 }
 

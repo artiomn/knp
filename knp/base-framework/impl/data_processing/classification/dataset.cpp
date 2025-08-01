@@ -42,13 +42,13 @@ void Dataset::split(float split_percent)
         data_for_inference_.resize(
             static_cast<size_t>(static_cast<float>(data_for_training_.size()) / split_percent) -
             data_for_training_.size());
-        steps_required_for_training_ = steps_per_class_ * data_for_training_.size();
-        steps_required_for_inference_ = steps_per_class_ * data_for_inference_.size();
+        steps_required_for_training_ = steps_per_frame_ * data_for_training_.size();
+        steps_required_for_inference_ = steps_per_frame_ * data_for_inference_.size();
     }
     else
     {
-        steps_required_for_training_ = steps_per_class_ * required_training_amount_;
-        steps_required_for_inference_ = steps_per_class_ * data_for_inference_.size();
+        steps_required_for_training_ = steps_per_frame_ * required_training_amount_;
+        steps_required_for_inference_ = steps_per_frame_ * data_for_inference_.size();
     }
 }
 
