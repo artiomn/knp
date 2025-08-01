@@ -51,7 +51,7 @@ public:
 
     /**
      * @brief Get how much times prediction happened with no votes.
-     * @details Prediction with no votes can happen when model did no votes, so we cant decide what model actually
+     * @details Prediction with no votes can happen when model did no votes, so we cant decide what model actually.
      * predicted. So we use first possible class, and increment no votes counter.
      * @ret Amount of times prediction happened with no votes.
      */
