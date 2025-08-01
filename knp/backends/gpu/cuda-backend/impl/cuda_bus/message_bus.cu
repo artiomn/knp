@@ -235,8 +235,6 @@ __host__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 
 
 
-
-
 template <class MessageType>
 __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
         device_lib::CudaVector<MessageType> &result_messages)
