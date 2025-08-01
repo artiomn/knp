@@ -99,7 +99,6 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_in
         knp::core::messaging::SpikeData message;
 
         size_t frame_index = step / steps_per_class_;
-
         size_t looped_frame_index = frame_index % data_for_inference_.size();
 
         auto const &data = data_for_inference_[looped_frame_index].second;
@@ -119,10 +118,12 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_in
 std::function<std::vector<bool>(std::vector<uint8_t> const &)> Dataset::make_incrementing_image_to_spikes_converter(
     size_t active_steps, float state_increment_factor) const
 {
-    std::vector<float> states(image_size_, 0.F);
+    std::vector<float> states;
     return [this, active_steps, state_increment_factor,
-            states = std::move(states)](std::vector<uint8_t> const &image) mutable -> std::vector<bool>
+            states](std::vector<uint8_t> const &image) mutable -> std::vector<bool>
     {
+        if (!states.size()) states.resize(image_size_, 0.F);
+
         std::vector<bool> ret;
         ret.reserve(steps_per_class_ * image_size_);
 
