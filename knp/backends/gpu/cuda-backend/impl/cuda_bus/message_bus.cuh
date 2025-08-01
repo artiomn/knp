@@ -112,7 +112,7 @@ public:
      * @brief Send a message to the message bus.
      * @param message message to send.
      */
-    __host__ void send_message(const cuda::MessageVariant &message); // Done
+    __device__ void send_message(const cuda::MessageVariant &message); // Done
 
     /**
      * @brief Delete all messages inside the bus.

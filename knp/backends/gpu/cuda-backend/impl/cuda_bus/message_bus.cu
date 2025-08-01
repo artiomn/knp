@@ -228,7 +228,7 @@ __host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
 
 
 // This is not threadsafe, make sure it's not run in parallel.
-__host__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
+__device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 {
     messages_to_route_.push_back(message);
 }
