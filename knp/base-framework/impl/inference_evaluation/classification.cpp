@@ -145,15 +145,16 @@ void InferenceResultForClass::InferenceResultsProcessor::write_inference_results
     for (size_t label = 0; label < inference_results_.size(); ++label)
     {
         auto const &prediction = inference_results_[label];
-        float precision = get_precision(prediction.true_positives_, prediction.false_positives_);
-        float recall = get_recall(prediction.true_positives_, prediction.false_positives_);
-        float prevalence = get_prevalence(
+        const float precision = get_precision(prediction.true_positives_, prediction.false_positives_);
+        const float recall = get_recall(prediction.true_positives_, prediction.false_positives_);
+        const float prevalence = get_prevalence(
             prediction.true_positives_, prediction.false_negatives_, prediction.false_positives_,
             prediction.true_negatives_);
-        float accuracy = get_accuracy(
+        const float accuracy = get_accuracy(
             prediction.true_positives_, prediction.false_negatives_, prediction.false_positives_,
             prediction.true_negatives_);
-        float f_measure = get_f_measure(precision, recall);
+        const float f_measure = get_f_measure(precision, recall);
+
         results_stream << label << ',' << prediction.get_total_votes() << ',' << prediction.true_positives_ << ','
                        << prediction.false_negatives_ << ',' << prediction.false_positives_ << ','
                        << prediction.true_negatives_ << ',' << precision << ',' << recall << ',' << prevalence << ','
