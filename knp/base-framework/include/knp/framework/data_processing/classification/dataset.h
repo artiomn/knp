@@ -143,6 +143,10 @@ public:
      */
     struct Frame
     {
+        // cppcheck-suppress unusedStructMember
+        /**
+         * @brief All spikes in frame.
+         */
         std::vector<bool> spikes_;
     };
 
