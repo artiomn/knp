@@ -58,8 +58,8 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
     {
         knp::core::messaging::SpikeData message;
 
-        size_t frame_index = step / steps_per_frame_;
-        size_t looped_frame_index = frame_index % data_for_training_.size();
+        const size_t frame_index = step / steps_per_frame_;
+        const size_t looped_frame_index = frame_index % data_for_training_.size();
 
         message.push_back(data_for_training_[looped_frame_index].first);
         return message;
@@ -73,13 +73,13 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_tr
     {
         knp::core::messaging::SpikeData message;
 
-        size_t frame_index = step / steps_per_frame_;
-        size_t looped_frame_index = frame_index % data_for_training_.size();
+        const size_t frame_index = step / steps_per_frame_;
+        const size_t looped_frame_index = frame_index % data_for_training_.size();
 
         auto const &data = data_for_training_[looped_frame_index].second.spikes_;
 
-        size_t local_step = step % steps_per_frame_;
-        size_t frame_start = local_step * image_size_;
+        const size_t local_step = step % steps_per_frame_;
+        const size_t frame_start = local_step * image_size_;
 
         for (size_t i = frame_start; i < frame_start + image_size_; ++i)
         {
@@ -96,13 +96,13 @@ std::function<knp::core::messaging::SpikeData(knp::core::Step)> Dataset::make_in
     {
         knp::core::messaging::SpikeData message;
 
-        size_t frame_index = step / steps_per_frame_;
-        size_t looped_frame_index = frame_index % data_for_inference_.size();
+        const size_t frame_index = step / steps_per_frame_;
+        const size_t looped_frame_index = frame_index % data_for_inference_.size();
 
         auto const &data = data_for_inference_[looped_frame_index].second.spikes_;
 
-        size_t local_step = step % steps_per_frame_;
-        size_t frame_start = local_step * image_size_;
+        const size_t local_step = step % steps_per_frame_;
+        const size_t frame_start = local_step * image_size_;
 
         for (size_t i = frame_start; i < frame_start + image_size_; ++i)
         {

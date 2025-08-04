@@ -42,8 +42,8 @@ public:
 private:
     struct Prediction
     {
-        size_t predicted_class_ = 0;
-        size_t votes_ = 0;
+        const size_t predicted_class_;
+        const size_t votes_;
     };
 
     // All predictions of model.

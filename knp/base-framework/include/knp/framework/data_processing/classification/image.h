@@ -36,7 +36,7 @@ namespace knp::framework::data_processing::classification::images
 /**
  * @brief A class that represents processed dataset of images.
  */
-class KNP_DECLSPEC Dataset : public classification::Dataset
+class KNP_DECLSPEC Dataset final : public classification::Dataset
 {
 public:
     /**
