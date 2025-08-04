@@ -33,7 +33,11 @@ namespace knp::framework::data_processing::classification
 {
 
 /**
- * @brief A class that represents processed dataset.
+ * @brief A class that represents  dataset.
+ * @details Dataset is supposed to abstract from actual dataset processing, and dataset characteristics, for example
+ * size of dataset. Size of dataset is not that important becase its all handled when dataset is split. Correct workflow
+ * would be to firstly process dataset, then split it, and then you can use it as you want. Splitting dataset is
+ * important because it also calculates amount of steps for training/inference.
  */
 class KNP_DECLSPEC Dataset
 {
@@ -77,8 +81,14 @@ protected:
 public:
     /**
      * @brief Split dataset on train/inference.
-     * @param split_percent Percentage that shows how to split dataset. Must be from 0 to 1, for example 0.8 will split
-     * dataset so 80% dedicated for tranining and 20% for inference.
+     * @param split_percent Percentage that shows how to split dataset.
+     * @pre Must be from 0 to 1.
+     * @details For example split_percent=0.8 dataset will be split so 80% dedicated for tranining and 20% for
+     * inference. This function not only splits dataset, it also calculates amount of training/inference steps.
+     * If dataset it too big, for example dataset have 1000 records, but we want to train only on 100 records,
+     * this function will consider that. if split_percent is 0.8, then inference will be not 1000*(1-0.8)=200, but
+     * it will be calculated according to training amount, so inference size will be 100/0.8-100=25. So actual size of
+     * dataset is not that important.
      */
     virtual void split(float split_percent);
 
