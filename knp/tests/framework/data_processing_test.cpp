@@ -60,7 +60,7 @@ TEST(DataProcessing, ImageClassification)
     auto train_images_spikes_gen = dataset.make_training_images_spikes_generator();
     for (size_t i = 0; i < dataset.get_steps_required_for_training(); ++i)
     {
-        auto res = train_images_spikes_gen(i);
+        const auto res = train_images_spikes_gen(i);
         ASSERT_EQ(res.size(), 1);
         ASSERT_EQ(res[0], 0);
     }
@@ -68,7 +68,7 @@ TEST(DataProcessing, ImageClassification)
     auto train_labels_gen = dataset.make_training_labels_generator();
     for (size_t i = 0; i < dataset.get_steps_required_for_training(); ++i)
     {
-        auto res = train_labels_gen(i);
+        const auto res = train_labels_gen(i);
         ASSERT_EQ(res.size(), 1);
         ASSERT_EQ(res[0], i % dataset.get_data_for_training().size());
     }
@@ -76,7 +76,7 @@ TEST(DataProcessing, ImageClassification)
     auto inf_images_spikes_gen = dataset.make_inference_images_spikes_generator();
     for (size_t i = 0; i < dataset.get_steps_required_for_inference(); ++i)
     {
-        auto res = train_images_spikes_gen(i);
+        const auto res = train_images_spikes_gen(i);
         ASSERT_EQ(res.size(), 1);
         ASSERT_EQ(res[0], 0);
     }
