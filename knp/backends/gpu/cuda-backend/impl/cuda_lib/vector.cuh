@@ -51,10 +51,10 @@ __global__ void construct_kernel(size_t begin, size_t end, T* data, Allocator al
 }
 
 
-template<typename T>
-__global__ void copy_construct_kernel(T* dest, const T src) 
+template<typename T, class Allocator>
+__global__ void copy_construct_kernel(T* dest, const T src, Allocator allocator) 
 {
-    new (dest) T(src);
+    allocator.construct(dest, src);
 }
 
 
@@ -124,7 +124,7 @@ public:
         reserve(size);
         #ifdef __CUDA_ARCH__
         size_ = size;
-        for (size_t i = 0; i < size_; ++i) ::new(data_ + i) T(*(vec + i));
+        for (size_t i = 0; i < size_; ++i) allocator_.construct(data_ + i, *(vec + i));
         #else
         static_assert(std::is_trivially_copyable_v<T>);
         call_and_check(cudaMemcpy(data_, vec, size * sizeof(T), cudaMemcpyHostToDevice));
@@ -244,8 +244,11 @@ public:
         #else
         auto kernel = [] __global__ (T *data_1, const T *data_2, size_t size, bool &equal)
         {
-            printf("%d\n", static_cast<int>(*data_1));
-            printf("%d\n", static_cast<int>(*data_2));
+            if (std::is_same_v<T, uint64_t>)
+            {
+                printf("%lu\n", *data_2);
+                printf("%lu\n", *data_1);
+            }
             for (size_t i = 0; i < size; ++i) if (*(data_1 + i) != *(data_2 + i)) 
             {
                 equal = false;
@@ -316,6 +319,15 @@ public:
         static_assert(std::is_trivially_copyable_v<T>);
         call_and_check(cudaMemcpy(data_ + size_, &value, sizeof(T), cudaMemcpyHostToDevice));
         ++size_;
+
+        // #ifdef DEBUG
+        if constexpr (std::is_same_v<uint64_t, T>) 
+        {
+            T val;
+            cudaMemcpy(&val, data_ + size_ - 1, sizeof(T), cudaMemcpyDeviceToHost);
+            std::cout << "Pushed back " << val << std::endl;
+        }
+        // #endif
         #endif
     }
 
@@ -344,6 +356,7 @@ public:
         cudaDeviceSynchronize();
         destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
         cudaDeviceSynchronize();
+        allocator_.deallocate(data_);
         data_ = new_data;
         capacity_ = new_capacity;
         #endif
