@@ -118,6 +118,48 @@ __global__ void run_bus()
     }
 }*/
 
+TEST(CudaContainerSuite, Memcpy)
+{
+    const uint64_t val = 112;
+    uint64_t *val_gpu;
+    uint64_t val_cpu = 0;
+    cudaMalloc(&val_gpu, sizeof(uint64_t));
+    cudaMemcpy(val_gpu, &val, sizeof(uint64_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(&val_cpu, val_gpu, sizeof(uint64_t), cudaMemcpyDeviceToHost);
+    cudaFree(val_gpu);
+    ASSERT_EQ(val, val_cpu);
+
+}
+
+TEST(CudaContainerSuite, MemcpyArray)
+{
+    const cuda::std::array<uint64_t, 4> array{1, 2, 3, 4};
+    cuda::std::array<uint64_t, 4> *array_gpu;
+    cuda::std::array<uint64_t, 4> array_cpu{4, 3, 2, 1};
+    cudaMalloc(&array_gpu, sizeof(cuda::std::array<uint64_t, 4>));
+    cudaMemcpy(array_gpu, &array, sizeof(array), cudaMemcpyHostToDevice);
+    cudaMemcpy(&array_cpu, array_gpu, sizeof(array), cudaMemcpyDeviceToHost);
+    cudaFree(array_gpu);
+    ASSERT_EQ(array, array_cpu);
+}
+
+
+TEST(CudaContainerSuite, VectorPushBack)
+{
+    using namespace knp::backends::gpu::cuda;
+    device_lib::CudaVector<uint64_t> cuda_vec;
+    ASSERT_EQ(cuda_vec.size(), 0);
+    cuda_vec.push_back(1);
+    cuda_vec.push_back(2);
+    cuda_vec.push_back(3);
+    ASSERT_EQ(cuda_vec.size(), 3);
+    ASSERT_GE(cuda_vec.capacity(), 3);
+    std::vector<uint64_t> exp_results{1, 2, 3};
+    device_lib::CudaVector res(exp_results.data(), exp_results.size());
+    // ASSERT_EQ(cuda_vec, exp_results);
+    ASSERT_EQ(cuda_vec, res);
+}
+
 
 TEST(CudaBaseSuite, CudaVectorConstruct)
 {

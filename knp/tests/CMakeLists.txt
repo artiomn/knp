@@ -144,3 +144,7 @@ add_custom_target(test_with_memcheck
         --rerun-failed --output-on-failure
     COMMAND cat "Testing/Temporary/MemoryChecker.*.log"
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/knp/tests")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options("${PROJECT_NAME}" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G>)
+endif()

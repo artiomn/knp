@@ -24,7 +24,9 @@
 #include <utility>
 
 #include <cuda_runtime.h>
-#include <thrust/device_vector.h>
+#include <thrust/equal.h>
+#include <thrust/execution_policy.h>
+#include <spdlog/spdlog.h>
 
 #include "safe_call.cuh"
 #include "cu_alloc.cuh"
@@ -45,8 +47,14 @@ __global__ void construct_kernel(size_t begin, size_t end, T* data, Allocator al
     if (end <= begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= end - begin) return;
-    allocator.construct(data + begin + i);  
-    
+    allocator.construct(data + begin + i);    
+}
+
+
+template<typename T>
+__global__ void copy_construct_kernel(T* dest, const T src) 
+{
+    new (dest) T(src);
 }
 
 
@@ -108,6 +116,21 @@ public:
             cudaDeviceSynchronize();
         }
         #endif
+    }
+
+
+    __host__ __device__ CudaVector(const T *vec, size_t size)
+    {
+        reserve(size);
+        #ifdef __CUDA_ARCH__
+        size_ = size;
+        for (size_t i = 0; i < size_; ++i) ::new(data_ + i) T(*(vec + i));
+        #else
+        static_assert(std::is_trivially_copyable_v<T>);
+        call_and_check(cudaMemcpy(data_, vec, size * sizeof(T), cudaMemcpyHostToDevice));
+        size_ = size;
+        #endif
+
     }
     
 
@@ -194,14 +217,50 @@ public:
         return *this;
     }
 
+
+    // template<class Other>
+    // __host__ CudaVector& operator=(const std::vector<Other> &vec)
+    // { 
+    // }
+
+    
     __host__ CudaVector& operator=(const std::vector<T> &vec)
     {
         static_assert(std::is_trivially_copyable_v<T>);
         clear();
         reserve(vec.size());
-        cudaMemcpy(data_, vec.data(), vec.size() * sizeof(T), cudaMemcpyHostToDevice);
+        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(T), cudaMemcpyHostToDevice));
         return *this;
     }
+
+
+    __host__ __device__ bool operator==(const CudaVector &other) const
+    {
+        if (size_ != other.size_) return false;
+        
+        #ifdef __CUDA_ARCH__
+        for (size_t i = 0; i < size_; ++i) if (*(data_ + i) != *(other.data_ + i)) return false;
+        return true;
+        #else
+        auto kernel = [] __global__ (T *data_1, const T *data_2, size_t size, bool &equal)
+        {
+            printf("%d\n", static_cast<int>(*data_1));
+            printf("%d\n", static_cast<int>(*data_2));
+            for (size_t i = 0; i < size; ++i) if (*(data_1 + i) != *(data_2 + i)) 
+            {
+                equal = false;
+                return;
+            }
+            equal = true;
+        };
+        bool equal;
+        kernel<<<1, 1>>>(data_, other.data_, size_, equal);
+        return equal;
+
+        // return thrust::equal(thrust::device, data_, data_ + size_, other.data_);
+        #endif
+    }
+
 
     // Sets size to 0 without reallocation or changing capacity.
     __host__ __device__ void clear() 
@@ -228,7 +287,7 @@ public:
         #else
         static_assert(std::is_trivially_copyable_v<T>());
         T result;
-        cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost);
+        call_and_check(cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost));
         return result;
         #endif
     }
@@ -255,7 +314,7 @@ public:
         data_[size_++] = value;
         #else
         static_assert(std::is_trivially_copyable_v<T>);
-        cudaMemcpy(data_ + size_, &value, sizeof(T), cudaMemcpyHostToDevice);
+        call_and_check(cudaMemcpy(data_ + size_, &value, sizeof(T), cudaMemcpyHostToDevice));
         ++size_;
         #endif
     }
@@ -286,6 +345,7 @@ public:
         destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
         cudaDeviceSynchronize();
         data_ = new_data;
+        capacity_ = new_capacity;
         #endif
     }
 
@@ -370,11 +430,11 @@ private:
 
 
     Allocator allocator_;
-    T* data_;
+    T* data_ = nullptr;
     // Maximum elements count.
-    size_t capacity_;
+    size_t capacity_ = 0;
     // Current element.
-    size_t size_;
+    size_t size_ = 0;
 };
 
 

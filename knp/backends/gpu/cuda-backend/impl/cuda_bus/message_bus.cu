@@ -78,6 +78,7 @@ __host__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::devic
 }
 */
 
+
 __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions,
                                       thrust::device_vector<uint64_t> &result)
 {
