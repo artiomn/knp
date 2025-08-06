@@ -96,6 +96,28 @@ auto get_blocks_config(size_t num_total)
     return std::make_pair(num_blocks, num_threads);
 }
 
+
+template<typename T>
+__global__ void kernel(T *data_1, const T *data_2, size_t size, bool &equal)
+{
+    printf("A: %p, %p\n", data_2, data_1);
+//        #ifdef __CUDA_ARCH__
+    if (std::is_same_v<T, uint64_t>)
+    {
+        printf("%lu\n", *data_2);
+        printf("%lu\n", *data_1);
+    }
+    for (size_t i = 0; i < size; ++i) if (*(data_1 + i) != *(data_2 + i)) 
+    {
+        equal = false;
+        return;
+    }
+//#endif
+    equal = true;
+};
+
+
+
 template <typename T, typename Allocator = CuMallocAllocator<T>>
 class CudaVector
 {
@@ -242,20 +264,6 @@ public:
         for (size_t i = 0; i < size_; ++i) if (*(data_ + i) != *(other.data_ + i)) return false;
         return true;
         #else
-        auto kernel = [] __global__ (T *data_1, const T *data_2, size_t size, bool &equal)
-        {
-            if (std::is_same_v<T, uint64_t>)
-            {
-                printf("%lu\n", *data_2);
-                printf("%lu\n", *data_1);
-            }
-            for (size_t i = 0; i < size; ++i) if (*(data_1 + i) != *(data_2 + i)) 
-            {
-                equal = false;
-                return;
-            }
-            equal = true;
-        };
         bool equal;
         kernel<<<1, 1>>>(data_, other.data_, size_, equal);
         return equal;
