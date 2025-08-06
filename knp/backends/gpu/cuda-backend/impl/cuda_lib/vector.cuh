@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <utility>
 
 #include <cuda_runtime.h>
@@ -98,22 +99,23 @@ auto get_blocks_config(size_t num_total)
 
 
 template<typename T>
-__global__ void kernel(T *data_1, const T *data_2, size_t size, bool &equal)
+__global__ void equal_kernel(T *data_1, const T *data_2, size_t size, bool *equal)
 {
-    printf("A: %p, %p\n", data_2, data_1);
+    printf("Starting\n");
 //        #ifdef __CUDA_ARCH__
-    if (std::is_same_v<T, uint64_t>)
+    for (size_t i = 0; i < size; ++i) 
     {
-        printf("%lu\n", *data_2);
-        printf("%lu\n", *data_1);
-    }
-    for (size_t i = 0; i < size; ++i) if (*(data_1 + i) != *(data_2 + i)) 
-    {
-        equal = false;
-        return;
+        printf("Index %lu\n", i);
+        if (*(data_1 + i) != *(data_2 + i)) 
+        {
+            printf("Not equal!\n");
+            *equal = false;
+            return;
+        }
     }
 //#endif
-    equal = true;
+    printf("Equal!\n");
+    *equal = true;
 };
 
 
@@ -265,7 +267,11 @@ public:
         return true;
         #else
         bool equal;
-        kernel<<<1, 1>>>(data_, other.data_, size_, equal);
+        bool *d_equal; 
+        cudaMalloc(&d_equal, sizeof(bool));
+        equal_kernel<<<1, 1>>>(data_, other.data_, size_, d_equal);
+        cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice);
+        cudaFree(d_equal);
         return equal;
 
         // return thrust::equal(thrust::device, data_, data_ + size_, other.data_);
@@ -286,17 +292,30 @@ public:
         size_ = 0; 
     }
 
-    __device__ T& operator[](size_t index)
+    // __device__ T& operator[](size_t index)
+    // {
+    //     return data_[index];
+    // }
+
+    __host__ __device__ bool set(uint64_t index, const T &value)
     {
-        return data_[index];
+
+        if (index >= size_) return false;
+        #ifdef __CUDA_ARCH__ 
+        data_[index] = value;
+        #else
+        static_assert(std::is_trivially_copyable_v<T>);
+        cudaMemcpy(data_ + index, &value, sizeof(T), cudaMemcpyHostToDevice);
+        #endif
+        return true;
     }
 
-    __host__ __device__ const T& operator[](size_t index) const
+    __host__ __device__ T operator[](size_t index) const
     {
         #ifdef __CUDA_ARCH__
         return data_[index];
         #else
-        static_assert(std::is_trivially_copyable_v<T>());
+        static_assert(std::is_trivially_copyable_v<T>);
         T result;
         call_and_check(cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost));
         return result;
@@ -404,6 +423,8 @@ public:
 
     __host__ __device__ T* end() { return data_ + size_; }
 
+
+
 private:
     __device__ void dev_reserve(size_t new_capacity)
     {
@@ -457,6 +478,22 @@ private:
     // Current element.
     size_t size_ = 0;
 };
+
+
+template<class T>
+std::ostream &operator<<(std::ostream &stream, const CudaVector<T> &vec) 
+{
+    if (vec.size() == 0) 
+    {
+        stream << "{}";
+        return stream;
+    }
+    stream << "{";
+    for (size_t i = 0; i < vec.size() - 1; ++i)
+        stream << vec[i] << ", ";
+    stream << vec[vec.size() - 1] << "}";  
+    return stream;  
+}
 
 
 
