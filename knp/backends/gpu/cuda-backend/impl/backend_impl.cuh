@@ -365,7 +365,7 @@ public:
     /**
      * @copydoc knp::core::Backend::_step()
      */
-    __device__ void _step();
+    __global__ void _step();
 
     /**
      * @brief Stop training by locking all projections.
@@ -433,7 +433,7 @@ private:
     // cppcheck-suppress unusedStructMember
 //    std::vector<CUDAProjectionVariants> device_projections_;
 
-    knp::backends::gpu::cuda::CUDAMessageBus message_bus_;
+    knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
 
     cuda::SpikeData neuron_indexes;
 };

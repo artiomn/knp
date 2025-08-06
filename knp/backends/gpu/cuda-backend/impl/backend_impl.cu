@@ -60,11 +60,10 @@ constexpr bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 }
 
 
-__device__ void CUDABackendImpl::_step()
+__global__ void CUDABackendImpl::_step()
 {
-/*
-    // SPDLOG_DEBUG("Starting step #{}...", get_step());
-    message_bus_.route_messages();
+    SPDLOG_DEBUG("Starting step #{}...", get_step());
+/*    message_bus_.route_messages();
     // message_bus_.receive_all_messages();
     // Calculate populations. This is the same as inference.
     for (auto &population : populations_)
@@ -248,9 +247,9 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
     }
 
     // process_inputs(population, messages);
-/*    for (const cuda::SynapticImpactMessage message : messages)
+    for (const cuda::SynapticImpactMessage &message : messages)
     {
-        for (const cuda::SynapticImpact impact : message.impacts_)
+        for (const cuda::SynapticImpact &impact : message.impacts_)
         {
             neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron> neuron =
                 population.neurons_[impact.postsynaptic_neuron_index_];
@@ -275,17 +274,17 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
                     break;
             }
 
-            if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
+            /*if constexpr (has_dopamine_plasticity<BlifatLikeNeuron>())
             {
                 if (impact.synapse_type_ == synapse_traits::OutputType::EXCITATORY)
                 {
                     neuron.is_being_forced_ |= message.is_forcing_;
                 }
-            }
-           population.neurons_[impact.postsynaptic_neuron_index_] = neuron;
+            }*/
+            population.neurons_[impact.postsynaptic_neuron_index_] = neuron;
         }
     }
-*/
+
     //
 
     // calculate_neurons_post_input_state(population, neuron_indexes);
