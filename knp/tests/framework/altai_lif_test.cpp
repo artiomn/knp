@@ -31,7 +31,9 @@
 
 #include <algorithm>
 
+
 using Synapse = knp::synapse_traits::DeltaSynapse;
+
 
 namespace knp::testing
 {

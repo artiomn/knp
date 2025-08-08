@@ -21,13 +21,13 @@ on:
       - '!/docker/**'
       - '!/tools/**'
       - '!/ci/**'
-  pull_request:
-    branches: [ "master" ]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
   linux_build:
     runs-on: ${{ matrix.os }}
-
+    environment: pr-review-required
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
