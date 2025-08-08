@@ -99,7 +99,7 @@ struct CUDAProjection
     /**
      * @brief Container of synapse parameters.
      */
-//    thrust::device_vector<Synapse> synapses_;
+    thrust::device_vector<Synapse> synapses_;
 
     /**
      * @brief Messages container.

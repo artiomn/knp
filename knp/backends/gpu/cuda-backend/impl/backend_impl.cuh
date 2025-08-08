@@ -297,7 +297,7 @@ protected:
      */
     __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-  //      thrust::device_vector<cuda::SpikeMessage> &messages,
+        knp::backends::gpu::cuda::device_lib::CudaVector<cuda::SpikeMessage> &messages,
         SynapticMessageQueue &message_queue,
         std::uint64_t step_n);
 

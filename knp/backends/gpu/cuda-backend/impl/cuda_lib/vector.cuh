@@ -257,6 +257,11 @@ public:
         return size_;
     }
 
+    __host__ __device__ bool empty() const
+    {
+        return 0 == size_;
+    }
+
     __host__ __device__ T* data()
     {
         return data_;
