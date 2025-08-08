@@ -21,6 +21,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include "../uid.cuh"
+
 
 /**
  * @brief Messaging namespace.

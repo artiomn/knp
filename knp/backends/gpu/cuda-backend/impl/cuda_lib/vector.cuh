@@ -21,7 +21,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
+#include <vector>
 #include <utility>
 
 #include <cuda_runtime.h>
@@ -32,62 +34,16 @@
 #include "safe_call.cuh"
 #include "cu_alloc.cuh"
 
+#include "vector_kernels.cuh"
+
 
 /**
  * @brief Namespace for CUDA message bus implementations.
  */
 namespace knp::backends::gpu::cuda::device_lib
 {
+
 constexpr size_t threads_per_block = 256;
-
-
-// TODO : Move kernels to a different .h file.
-template <class T, class Allocator>
-__global__ void construct_kernel(size_t begin, size_t end, T* data, Allocator allocator)
-{
-    if (end <= begin) return;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return;
-    allocator.construct(data + begin + i);    
-}
-
-
-template<typename T, class Allocator>
-__global__ void copy_construct_kernel(T* dest, const T src, Allocator allocator) 
-{
-    allocator.construct(dest, src);
-}
-
-
-template <class T>
-__global__ void copy_kernel(size_t begin, size_t end, T* data_to, const T* data_from)
-{
-    if (end <= begin) return;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return; 
-    *(data_to + begin + i) = *(data_from + begin + i);
-}
-
-
-template <class T>
-__global__ void move_kernel(size_t begin, size_t end, T* data_to, T* data_from)
-{
-    if (end <= begin) return;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return;
-    *(data_to + begin + i) = ::cuda::std::move(*(data_from + begin + i));
-
-}
-
-
-template<class T, class Allocator>
-__global__ void destruct_kernel(size_t begin, size_t end, T* &data, Allocator allocator)
-{
-    if (end < begin) return;
-    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return;
-    allocator.destroy(data + begin + i);
-}
 
 
 auto get_blocks_config(size_t num_total)
@@ -96,28 +52,6 @@ auto get_blocks_config(size_t num_total)
     size_t num_blocks = (num_total + threads_per_block - 1) / threads_per_block;
     return std::make_pair(num_blocks, num_threads);
 }
-
-
-template<typename T>
-__global__ void equal_kernel(T *data_1, const T *data_2, size_t size, bool *equal)
-{
-    printf("Starting\n");
-//        #ifdef __CUDA_ARCH__
-    for (size_t i = 0; i < size; ++i) 
-    {
-        printf("Index %lu\n", i);
-        if (*(data_1 + i) != *(data_2 + i)) 
-        {
-            printf("Not equal!\n");
-            *equal = false;
-            return;
-        }
-    }
-//#endif
-    printf("Equal!\n");
-    *equal = true;
-};
-
 
 
 template <typename T, typename Allocator = CuMallocAllocator<T>>
@@ -130,9 +64,9 @@ public:
     {
         #ifdef __CUDA_ARCH__
         data_ = allocator_.allocate(size_);
-        for (size_t i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);  
-        #else        
-        if (size_) 
+        for (size_t i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);
+        #else
+        if (size_)
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             data_ = allocator_.allocate(capacity_);
@@ -141,7 +75,6 @@ public:
         }
         #endif
     }
-
 
     __host__ __device__ CudaVector(const T *vec, size_t size)
     {
@@ -154,22 +87,19 @@ public:
         call_and_check(cudaMemcpy(data_, vec, size * sizeof(T), cudaMemcpyHostToDevice));
         size_ = size;
         #endif
-
     }
-    
 
     __host__ __device__ ~CudaVector()
     {
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
-        allocator_.deallocate(data_, size_); 
+        allocator_.deallocate(data_, size_);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
         cudaDeviceSynchronize();
         if (capacity_) allocator_.deallocate(data_, capacity_);
         #endif
-
     }
 
     // Copy constructor.
@@ -219,7 +149,7 @@ public:
             for (size_t i = 0; i < other.size_; ++i)
             {
                 allocator_.construct(data_ + i);
-                data_[i] = other.data_[i]; 
+                data_[i] = other.data_[i];
             }
         }
         return *this;
@@ -237,17 +167,15 @@ public:
         allocator_.deallocate(data_);
         data_ = other.data_;
         other.data_ = nullptr;
-    
+
         return *this;
     }
 
-
     // template<class Other>
     // __host__ CudaVector& operator=(const std::vector<Other> &vec)
-    // { 
+    // {
     // }
 
-    
     __host__ CudaVector& operator=(const std::vector<T> &vec)
     {
         static_assert(std::is_trivially_copyable_v<T>);
@@ -257,17 +185,16 @@ public:
         return *this;
     }
 
-
     __host__ __device__ bool operator==(const CudaVector &other) const
     {
         if (size_ != other.size_) return false;
-        
+
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < size_; ++i) if (*(data_ + i) != *(other.data_ + i)) return false;
         return true;
         #else
         bool equal;
-        bool *d_equal; 
+        bool *d_equal;
         cudaMalloc(&d_equal, sizeof(bool));
         equal_kernel<<<1, 1>>>(data_, other.data_, size_, d_equal);
         cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice);
@@ -278,9 +205,8 @@ public:
         #endif
     }
 
-
     // Sets size to 0 without reallocation or changing capacity.
-    __host__ __device__ void clear() 
+    __host__ __device__ void clear()
     {
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
@@ -289,7 +215,7 @@ public:
         destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
         cudaDeviceSynchronize();
         #endif
-        size_ = 0; 
+        size_ = 0;
     }
 
     // __device__ T& operator[](size_t index)
@@ -299,9 +225,8 @@ public:
 
     __host__ __device__ bool set(uint64_t index, const T &value)
     {
-
         if (index >= size_) return false;
-        #ifdef __CUDA_ARCH__ 
+        #ifdef __CUDA_ARCH__
         data_[index] = value;
         #else
         static_assert(std::is_trivially_copyable_v<T>);
@@ -348,7 +273,7 @@ public:
         ++size_;
 
         // #ifdef DEBUG
-        if constexpr (std::is_same_v<uint64_t, T>) 
+        if constexpr (std::is_same_v<uint64_t, T>)
         {
             T val;
             cudaMemcpy(&val, data_ + size_ - 1, sizeof(T), cudaMemcpyDeviceToHost);
@@ -389,7 +314,7 @@ public:
         #endif
     }
 
-    __host__ __device__ void resize(size_t new_size) 
+    __host__ __device__ void resize(size_t new_size)
     {
         if (new_size == size_) return;
         #ifdef __CUDA_ARCH__
@@ -423,8 +348,6 @@ public:
 
     __host__ __device__ T* end() { return data_ + size_; }
 
-
-
 private:
     __device__ void dev_reserve(size_t new_capacity)
     {
@@ -439,9 +362,9 @@ private:
             new_data[i] = data_[i];
             allocator_.destroy(data_ + i);
         }
-        
+
         allocator_.deallocate(data_);
-        
+
         data_ = new_data;
         capacity_ = new_capacity;
     }
@@ -479,23 +402,4 @@ private:
     size_t size_ = 0;
 };
 
-
-template<class T>
-std::ostream &operator<<(std::ostream &stream, const CudaVector<T> &vec) 
-{
-    if (vec.size() == 0) 
-    {
-        stream << "{}";
-        return stream;
-    }
-    stream << "{";
-    for (size_t i = 0; i < vec.size() - 1; ++i)
-        stream << vec[i] << ", ";
-    stream << vec[vec.size() - 1] << "}";  
-    return stream;  
-}
-
-
-
-
-} // namespace knp::backends::gpu::cuda::device_lib.
+} // namespace knp::backends::gpu::cuda::device_lib

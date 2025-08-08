@@ -1,6 +1,6 @@
 /**
- * @file cuda_common.cuh
- * @brief Common CUDA header class.
+ * @file uid.cuh
+ * @brief CUDA UID implementation.
  * @kaspersky_support Artiom N.
  * @date 28.03.2025
  * @license Apache 2.0
@@ -34,7 +34,7 @@ using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 
 // bool __host__ is_equal(const UID &first, const UID &second)
 // {
-//     auto compare = [&first, &second] __global__ (bool &result) 
+//     auto compare = [&first, &second] __global__ (bool &result)
 //     {
 //         result = (first == second);
 //     };
@@ -43,7 +43,20 @@ using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 //     return result;
 // }
 
-UID to_gpu_uid(const knp::core::UID &uid)
+inline cuda::UID uid_to_cuda(const knp::core::UID &source)
+{
+    cuda::UID result;
+
+    for (size_t i = 0; i < source.tag.size(); ++i)
+    {
+        result[i] = *(source.tag.begin() + i);
+    }
+
+    return result;
+}
+
+
+cuda::UID to_gpu_uid(const knp::core::UID &uid)
 {
     UID result;
     for (size_t i = 0; i < tag_size; ++i)
@@ -54,7 +67,8 @@ UID to_gpu_uid(const knp::core::UID &uid)
     return result;
 }
 
-knp::core::UID to_cpu_uid(const UID &uid)
+
+knp::core::UID to_cpu_uid(const cuda::UID &uid)
 {
     knp::core::UID result;
     for (size_t i = 0; i < tag_size; ++i)
@@ -65,4 +79,4 @@ knp::core::UID to_cpu_uid(const UID &uid)
     return result;
 }
 
-}
+} // namespace knp::backends::gpu::cuda

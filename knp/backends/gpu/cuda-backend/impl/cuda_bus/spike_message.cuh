@@ -24,6 +24,7 @@
 // #include <thrust/device_vector.h>
 #include "../cuda_lib/vector.cuh"
 #include "message_header.cuh"
+#include "../uid.cuh"
 
 
 /**
@@ -64,4 +65,4 @@ struct SpikeMessage
      */
 };
 
-}  // namespace knp::core::messaging
+}  // namespace knp::backends::gpu::cuda

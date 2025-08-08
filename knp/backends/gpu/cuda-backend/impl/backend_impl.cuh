@@ -1,5 +1,5 @@
 /**
- * @file backend.h
+ * @file backend_impl.cuh
  * @brief Class definition for CUDA GPU backend.
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
@@ -22,11 +22,8 @@
 #pragma once
 
 #include <knp/core/messaging/messaging.h>
-#include <knp/core/population.h>
-#include <knp/core/projection.h>
+#include <knp/core/message_bus.h>
 #include <knp/devices/gpu_cuda.h>
-#include <knp/neuron-traits/all_traits.h>
-#include <knp/synapse-traits/all_traits.h>
 
 #include <thrust/device_free.h>
 #include <thrust/device_malloc.h>
@@ -47,140 +44,16 @@
 #include <boost/mp11.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include "projection.cuh"
+#include "population.cuh"
 #include "cuda_bus/message_bus.cuh"
+
 
 /**
  * @brief Namespace for single-threaded backend.
  */
 namespace knp::backends::gpu::cuda
 {
-
-inline cuda::UID uid_to_cuda(const knp::core::UID &source)
-{
-    cuda::UID result;
-
-    for (size_t i = 0; i < source.tag.size(); ++i)
-    {
-        result[i] = *(source.tag.begin() + i);
-    }
-
-    return result;
-}
-
-
-/**
- * @brief The CUDAPopulation class is a definition of a CUDA neurons population.
- */
-template <typename NeuronType>
-struct CUDAPopulation
-{
-    /**
-     * @brief Type of the population neurons.
-     */
-    using PopulationNeuronType = NeuronType;
-    /**
-     * @brief Population of neurons with the specified neuron type.
-     */
-    using PopulationType = CUDAPopulation<NeuronType>;
-    /**
-     * @brief Neuron parameters and their values for the specified neuron type.
-     */
-    using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
-
-    /**
-     * @brief Constructor.
-     * @param population source population.
-     */
-    explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
-        : uid_{uid_to_cuda(population.get_uid())},
-          neurons_{population.get_neurons_parameters()}
-    {
-    }
-
-    /**
-     * @brief UID.
-     */
-    cuda::UID uid_;
-    /**
-     * @brief Neurons.
-     */
-    thrust::device_vector<NeuronParameters> neurons_;
-};
-
-
-/**
- * @brief The CUDAProjection class is a definition of a CUDA synapses.
- */
-template <typename SynapseType>
-struct CUDAProjection
-{
-    /**
-     * @brief Type of the projection synapses.
-     */
-    using ProjectionSynapseType = SynapseType;
-    /**
-     * @brief Projection of synapses with the specified synapse type.
-     */
-    using ProjectionType = CUDAProjection<SynapseType>;
-    /**
-     * @brief Parameters of the specified synapse type.
-     */
-    using SynapseParameters = typename synapse_traits::synapse_parameters<SynapseType>;
-
-    /**
-     * @brief Synapse description structure that contains synapse parameters and indexes of the associated neurons.
-     */
-    using Synapse = thrust::tuple<SynapseParameters, uint32_t, uint32_t>;
-
-    /**
-     * @brief Constructor.
-     * @param projection source projection.
-     */
-    explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
-        : uid_(uid_to_cuda(projection.get_uid())),
-          presynaptic_uid_(uid_to_cuda(projection.get_presynaptic())),
-          postsynaptic_uid_(uid_to_cuda(projection.get_postsynaptic())),
-          is_locked_(thrust::device_malloc<bool>(1))
-    {
-        *is_locked_ = projection.is_locked();
-    }
-    /**
-     * @brief Destructor.
-     */
-    ~CUDAProjection() { thrust::device_free(is_locked_); }
-
-    /**
-     * @brief UID.
-     */
-    cuda::UID uid_;
-
-    /**
-     * @brief UID of the population that sends spikes to the projection (presynaptic population)
-     */
-    cuda::UID presynaptic_uid_;
-
-    /**
-     * @brief UID of the population that receives synapse responses from this projection (postsynaptic population).
-     */
-    cuda::UID postsynaptic_uid_;
-
-    /**
-     * @brief Return `false` if the weight change for synapses is not locked.
-     */
-    thrust::device_ptr<bool> is_locked_;
-
-    /**
-     * @brief Container of synapse parameters.
-     */
-//    thrust::device_vector<Synapse> synapses_;
-
-    /**
-     * @brief Messages container.
-     */
-    // cppcheck-suppress unusedStructMember
-    std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
-};
-
 
 /**
  * @brief The CUDABackend class is a definition of an interface to the CUDA GPU backend.
@@ -267,8 +140,13 @@ public:
     using ProjectionConstIterator = typename ProjectionContainer::const_iterator;
 
 public:
-    // TODO : do we need it?
-    CUDABackendImpl() = default;
+    /**
+     * @brief Constructor.
+     * @paaram cpu_bus Bus to exchange backend with external world.
+     */
+    CUDABackendImpl() {}
+    // CUDABackendImpl(knp::core::MessageBus &cpu_bus) : cpu_message_bus_{cpu_bus} {}
+
     /**
      * @brief Destructor for CUDA backend.
      */
@@ -365,7 +243,7 @@ public:
     /**
      * @copydoc knp::core::Backend::_step()
      */
-    __global__ void _step();
+    __device__ void _step();
 
     /**
      * @brief Stop training by locking all projections.
@@ -408,7 +286,7 @@ protected:
      */
     __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-//        thrust::device_vector<cuda::SynapticImpactMessage> &messages,
+        knp::backends::gpu::cuda::device_lib::CudaVector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);
 
     /**
@@ -433,7 +311,9 @@ private:
     // cppcheck-suppress unusedStructMember
 //    std::vector<CUDAProjectionVariants> device_projections_;
 
-    knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
+//    knp::core::MessageBus &cpu_message_bus_;
+
+//    knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
 
     cuda::SpikeData neuron_indexes;
 };

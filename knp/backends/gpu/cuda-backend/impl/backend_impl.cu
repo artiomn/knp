@@ -20,7 +20,6 @@
  */
 
 
-#include "backend_impl.cuh"
 #include <knp/devices/gpu_cuda.h>
 #include <knp/meta/assert_helpers.h>
 #include <knp/meta/stringify.h>
@@ -32,6 +31,10 @@
 #include <vector>
 
 #include <boost/mp11.hpp>
+
+#include "backend_impl.cuh"
+#include "projection.cuh"
+#include "population.cuh"
 
 
 namespace knp::backends::gpu::cuda
@@ -60,9 +63,9 @@ constexpr bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 }
 
 
-__global__ void CUDABackendImpl::_step()
+__device__ void CUDABackendImpl::_step()
 {
-    SPDLOG_DEBUG("Starting step #{}...", get_step());
+//    SPDLOG_DEBUG("Starting step #{}...", get_step());
 /*    message_bus_.route_messages();
     // message_bus_.receive_all_messages();
     // Calculate populations. This is the same as inference.
@@ -212,7 +215,7 @@ void CUDABackendImpl::_init()
 
 __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl::calculate_population(
     CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-//    thrust::device_vector<cuda::SynapticImpactMessage> &messages,
+    knp::backends::gpu::cuda::device_lib::CudaVector<cuda::SynapticImpactMessage> &messages,
     std::uint64_t step_n)
 {
     // TODO rework
@@ -249,8 +252,10 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
     // process_inputs(population, messages);
     for (const cuda::SynapticImpactMessage &message : messages)
     {
-        for (const cuda::SynapticImpact &impact : message.impacts_)
+        for (size_t i = 0; i < message.impacts_.size(); ++i)
         {
+            const auto &impact = message.impacts_[i];
+
             neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron> neuron =
                 population.neurons_[impact.postsynaptic_neuron_index_];
 

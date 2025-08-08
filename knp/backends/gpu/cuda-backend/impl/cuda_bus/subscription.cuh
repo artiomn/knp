@@ -33,19 +33,21 @@
 #include <algorithm>
 
 #include "../cuda_lib/vector.cuh"
-#include "cuda_common.cuh"
+#include "../uid.cuh"
 #include "messaging.cuh"
 
 
 namespace knp::backends::gpu::cuda
 {
 
-__global__ void has_sender_core(const UID &uid, device_lib::CudaVector<UID> senders, thrust::device_vector<bool> &results) 
+__global__ void has_sender_core(const UID &uid, device_lib::CudaVector<UID> senders,
+                                thrust::device_vector<bool> &results)
 {
     uint64_t index = threadIdx.x + blockIdx.x + blockDim.x;
     if (index >= senders.size()) return;
     results[index] = (senders[index] == uid);
 }
+
 
 /**
  * @brief The Subscription class is used for message exchange between the network entities.
@@ -80,8 +82,8 @@ public:
      * @param senders list of sender UIDs.
      */
     __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
-        receiver_(receiver) 
-    { 
+        receiver_(receiver)
+    {
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
         #else
@@ -160,14 +162,19 @@ public:
     {
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < senders_.size(); ++i)
+        {
             if (senders_[i] == uid) return true;
+        }
+
         return false;
         #else
         thrust::device_vector<bool> results(senders_.size(), false);
         constexpr uint32_t threads_per_block = 256;
         size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
         size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
-        has_sender_core<<<num_blocks, num_threads>>>(uid, senders_,results);
+
+        has_sender_core<<<num_blocks, num_threads>>>(uid, senders_, results);
+
         return thrust::any_of(results.begin(), results.end(), ::cuda::std::identity{});
         #endif
 
@@ -207,7 +214,7 @@ private:
     /**
      * @brief Receiver UID.
      */
-    UID receiver_;
+    cuda::UID receiver_;
 
     /**
      * @brief Set of sender UIDs.

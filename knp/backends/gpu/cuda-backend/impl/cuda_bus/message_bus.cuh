@@ -33,7 +33,7 @@
 #include <memory>
 
 #include "subscription.cuh"
-#include "cuda_common.cuh"
+#include "../uid.cuh"
 #include "messaging.cuh"
 #include "../cuda_lib/vector.cuh"
 
@@ -53,7 +53,8 @@ public:
      * @brief Construct GPU message bus.
      * @param external_endpoint message endpoint used for message exchange with host.
      */
-    // explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) : cpu_endpoint_{std::move(external_endpoint)} 
+    // explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) :
+    //    cpu_endpoint_{std::move(external_endpoint)}
     // {}
 
 public:
@@ -161,7 +162,7 @@ private:
 
 
     /**
-     * 
+     *
      */
     template<class MessageType>
     __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> index_messages();
@@ -174,12 +175,14 @@ private:
     MessageBuffer messages_to_route_;
 
     knp::core::MessageEndpoint cpu_endpoint_;
-
 };
+
 
 template<>
 __host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const device_lib::CudaVector<UID>&);
 
+
 template<>
 __host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const device_lib::CudaVector<UID>&);
+
 }  // namespace knp::backends::gpu::cuda

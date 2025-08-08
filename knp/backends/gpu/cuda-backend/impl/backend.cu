@@ -44,11 +44,9 @@ CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>())
 }
 
 
-
 CUDABackend::~CUDABackend()
 {
 }
-
 
 
 std::shared_ptr<CUDABackend> CUDABackend::create()
