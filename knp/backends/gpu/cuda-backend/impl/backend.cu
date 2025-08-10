@@ -38,6 +38,60 @@
 namespace knp::backends::gpu
 {
 
+__global__ void calculate_populations(CUDABackend::PopulationContainer populations)
+{
+    // Calculate populations. This is the same as inference.
+/*
+    for (auto &population : populations)
+    {
+        std::visit(
+            //[this](auto &arg)
+            [](auto &arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (
+                    boost::mp11::mp_find<CUDABackend::SupportedPopulations, T>{} ==
+                    boost::mp11::mp_size<CUDABackend::SupportedPopulations>{})
+                {
+                    static_assert(
+                        knp::meta::always_false_v<T>,
+                        "Population is not supported by the CUDA backend.");
+                }
+                auto message_opt = calculate_population(arg);
+            },
+            population);
+    }
+*/
+}
+
+
+__global__ void calculate_projections(CUDABackend::ProjectionContainer projections)
+{
+    // Calculate projections.
+/*
+    for (auto &projection : projections)
+    {
+        std::visit(
+            // [this, &projection](auto &arg)
+            [&projection](auto &arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (
+                    boost::mp11::mp_find<CUDABackend::SupportedProjections, T>{} ==
+                    boost::mp11::mp_size<CUDABackend::SupportedProjections>{})
+                {
+                    static_assert(
+                        knp::meta::always_false_v<T>,
+                        "Projection is not supported by the CUDA backend.");
+                }
+                calculate_projection(arg, projection.messages_);
+            },
+            projection);
+    }
+*/
+}
+
+
 CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>())
 {
     SPDLOG_INFO("CUDA backend instance created.");
@@ -110,45 +164,13 @@ void CUDABackend::_step()
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
     // Calculate populations. This is the same as inference.
-    for (auto &population : populations_)
-    {
-        std::visit(
-            [this](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<SupportedPopulations, T>{} == boost::mp11::mp_size<SupportedPopulations>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Population is not supported by the CUDA backend.");
-                }
-                auto message_opt = calculate_population(arg);
-            },
-            population);
-    }
+    // calculate_populations(populations_);
 
     // Continue inference.
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
     // Calculate projections.
-    for (auto &projection : projections_)
-    {
-        std::visit(
-            [this, &projection](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<SupportedProjections, T>{} == boost::mp11::mp_size<SupportedProjections>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Projection is not supported by the CUDA backend.");
-                }
-//                calculate_projection(arg, projection.messages_);
-            },
-            projection);
-    }
+    // calculate_projections(projections_);
 
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
