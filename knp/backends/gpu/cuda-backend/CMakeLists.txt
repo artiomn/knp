@@ -53,7 +53,6 @@ find_package(Boost ${KNP_BOOST_MIN_VERSION} COMPONENTS system filesystem REQUIRE
 
 file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
 source_group(source REGULAR_EXPRESSION "impl/.*")
-source_group(source REGULAR_EXPRESSION "impl/cuda_lib/.*")
 knp_add_library("${PROJECT_NAME}"
     STATIC
         impl/backend.cu
