@@ -46,7 +46,7 @@ namespace knp::backends::gpu::cuda::device_lib
 constexpr size_t threads_per_block = 256;
 
 
-auto get_blocks_config(size_t num_total)
+std::pair<size_t, size_t> get_blocks_config(size_t num_total)
 {
     size_t num_threads = std::min(num_total, threads_per_block);
     size_t num_blocks = (num_total + threads_per_block - 1) / threads_per_block;
@@ -407,4 +407,22 @@ private:
     size_t size_ = 0;
 };
 
+
+template<class T>
+std::ostream &operator<<(std::ostream &stream, const CudaVector<T> &vec)
+{
+    if (vec.size() == 0)
+    {
+        stream << "{}";
+        return stream;
+    }
+
+    stream << "{";
+    for (size_t i = 0; i < vec.size() - 1; ++i)
+    {
+        stream << vec[i] << ", ";
+    }
+    stream << vec[vec.size() - 1] << "}";
+    return stream;
+}
 } // namespace knp::backends::gpu::cuda::device_lib

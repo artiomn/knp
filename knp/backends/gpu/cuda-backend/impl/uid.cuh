@@ -32,51 +32,20 @@ namespace knp::backends::gpu::cuda
 constexpr int tag_size = 16;
 using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 
-// bool __host__ is_equal(const UID &first, const UID &second)
-// {
-//     auto compare = [&first, &second] __global__ (bool &result)
-//     {
-//         result = (first == second);
-//     };
-//     bool result;
-//     compare<<<1, 1>>>(result);
-//     return result;
-// }
 
-inline cuda::UID uid_to_cuda(const knp::core::UID &source)
-{
-    cuda::UID result;
+inline cuda::UID uid_to_cuda(const knp::core::UID &source);
 
-    for (size_t i = 0; i < source.tag.size(); ++i)
-    {
-        result[i] = *(source.tag.begin() + i);
-    }
-
-    return result;
-}
+/**
+ * @brief Convert from knp::core::UID to cuda UID.
+ * @param uid core UID.
+ */
+cuda::UID to_gpu_uid(const knp::core::UID &uid);
 
 
-cuda::UID to_gpu_uid(const knp::core::UID &uid)
-{
-    UID result;
-    for (size_t i = 0; i < tag_size; ++i)
-    {
-        result[i] = uid.tag.data[i];
-    }
-    // cudaMemcpy(result.data(), uid.tag.data, sizeof(uint8_t) * tag_size, cudaMemcpyHostToHost);
-    return result;
-}
-
-
-knp::core::UID to_cpu_uid(const cuda::UID &uid)
-{
-    knp::core::UID result;
-    for (size_t i = 0; i < tag_size; ++i)
-    {
-        result.tag.data[i] = uid[i];
-    }
-    // cudaMemcpy(result.tag.data, uid.data(), sizeof(uint8_t) * tag_size, cudaMemcpyHostToHost);
-    return result;
-}
+/**
+ * @brief Convert from CUDA UID to knp::core::UID.
+ * @param uid CUDA UID.
+ */
+knp::core::UID to_cpu_uid(const cuda::UID &uid);
 
 } // namespace knp::backends::gpu::cuda

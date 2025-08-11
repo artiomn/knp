@@ -1,8 +1,8 @@
 /**
- * @file vector_ops.cuh
- * @brief CUDA STL-like vector operators.
+ * @file vector_kernels.cuh
+ * @brief CUDA STL-like vector implemented to work on GPU.
  * @kaspersky_support A. Vartenkov.
- * @date 08.08.2025
+ * @date 06.07.2025
  * @license Apache 2.0
  * @copyright © 2025 AO Kaspersky Lab
  *
@@ -19,9 +19,17 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <cuda_runtime.h>
+#include <thrust/equal.h>
+#include <thrust/execution_policy.h>
+
+#include <utility>
 
 #include "vector.cuh"
+#include "safe_call.cuh"
+#include "cu_alloc.cuh"
+#include "../uid.cuh"
+
 
 
 /**
@@ -30,5 +38,13 @@
 namespace knp::backends::gpu::cuda::device_lib
 {
 
+__global__ void has_sender_kernel(const UID &uid, device_lib::CudaVector<UID> senders,
+                                int *result)
+{
+    uint64_t index = threadIdx.x + blockIdx.x + blockDim.x;
+    if (index >= senders.size()) return;
+    if (senders[index] != uid) return;
+    atomicOr(result, 1);
+}
 
-} // namespace knp::backends::gpu::cuda::device_lib
+}

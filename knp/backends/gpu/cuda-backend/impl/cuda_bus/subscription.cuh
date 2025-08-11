@@ -33,20 +33,14 @@
 #include <algorithm>
 
 #include "../cuda_lib/vector.cuh"
+#include "../cuda_lib/safe_call.cuh"
+#include "../cuda_lib/kernels.cuh"
 #include "../uid.cuh"
 #include "messaging.cuh"
 
 
 namespace knp::backends::gpu::cuda
 {
-
-__global__ void has_sender_core(const UID &uid, device_lib::CudaVector<UID> senders,
-                                thrust::device_vector<bool> &results)
-{
-    uint64_t index = threadIdx.x + blockIdx.x + blockDim.x;
-    if (index >= senders.size()) return;
-    results[index] = (senders[index] == uid);
-}
 
 
 /**
@@ -71,9 +65,6 @@ public:
      */
     using UidSet = device_lib::CudaVector<UID>;
     // __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
-    __host__ __device__ Subscription() = default;
-    __host__ __device__ Subscription(const Subscription &) = default;
-    __host__ __device__ ~Subscription() = default;
 
 public:
     /**
@@ -168,14 +159,16 @@ public:
 
         return false;
         #else
-        thrust::device_vector<bool> results(senders_.size(), false);
+        int *d_result = nullptr;
+        cudaMalloc(&d_result, sizeof(int));
         constexpr uint32_t threads_per_block = 256;
         size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
         size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
-
-        has_sender_core<<<num_blocks, num_threads>>>(uid, senders_, results);
-
-        return thrust::any_of(results.begin(), results.end(), ::cuda::std::identity{});
+        has_sender_kernel<<<num_blocks, num_threads>>>(uid, senders_, d_result);
+        int result;
+        cudaMemcpy(&result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaFree(d_result);
+        return result;
         #endif
 
     //     // return std::find(senders_.begin(), senders_.end(), uid) != senders_.end();

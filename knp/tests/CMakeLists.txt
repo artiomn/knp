@@ -71,9 +71,9 @@ target_include_directories("${PROJECT_NAME}"
 target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::BaseFramework::CoreStatic KNP::Backends::CPUSingleThreaded KNP::Backends::CPUMultiThreaded
                                                 KNP::Backends::CPU::ThreadPool)
 
-if (KNP_BUILD_CUDA)
-    target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::Backends::CUDA CUDA::cudart)
-endif()
+# if (KNP_BUILD_CUDA)
+#     target_link_libraries("${PROJECT_NAME}" PRIVATE KNP::Backends::CUDA CUDA::cudart)
+# endif()
 
 target_link_libraries("${PROJECT_NAME}" PRIVATE gtest gtest_main spdlog::spdlog_header_only) #  HighFive
 
