@@ -35,6 +35,7 @@
 
 #include "../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
+#include "../../backends/gpu/cuda-backend/impl/cuda_bus/messaging.cuh"
 
 
 // using Population = knp::backends::gpu::CUDABackend::PopulationVariants;
@@ -231,10 +232,9 @@ TEST(CudaContainerSuite, VectorPushBack)
 
 TEST(CudaBaseSuite, CudaVectorConstruct)
 {
-    namespace knp::backends::gpu::cuda;
-
-    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec_1;
-    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec_2(10);
+    using namespace knp::backends::gpu::cuda;
+    device_lib::CudaVector<uint64_t> cuda_vec_1;
+    device_lib::CudaVector<uint64_t> cuda_vec_2(10);
     ASSERT_EQ(cuda_vec_1.size(), 0);
     ASSERT_EQ(cuda_vec_2.size(), 10);
 }
@@ -251,7 +251,7 @@ TEST(CudaBackendSuite, CudaUidConversionTest)
 
 TEST(CudaBackendSuite, MessagesTest)
 {
-    namespace knp::backends::gpu::cuda;
+    using namespace knp::backends::gpu::cuda;
     SpikeMessage message_1;
     SynapticImpactMessage message_2;
     ASSERT_EQ(message_1.neuron_indexes_.size(), 0);
@@ -261,7 +261,7 @@ TEST(CudaBackendSuite, MessagesTest)
 
 TEST(CudaBackendSuite, CudaHostSubscription)
 {
-    namespace knp::backends::gpu::cuda;
+    using namespace knp::backends::gpu::cuda;
     UID receiver_uid = to_gpu_uid(knp::core::UID{});
     UID sender_1 = to_gpu_uid(knp::core::UID{}), sender_2 = to_gpu_uid(knp::core::UID{});
     ASSERT_NE(sender_1, sender_2);
