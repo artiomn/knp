@@ -65,61 +65,6 @@ constexpr bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 }
 
 
-__device__ void CUDABackendImpl::_step()
-{
-//    SPDLOG_DEBUG("Starting step #{}...", get_step());
-/*    message_bus_.route_messages();
-    // message_bus_.receive_all_messages();
-    // Calculate populations. This is the same as inference.
-    for (auto &population : populations_)
-    {
-        std::visit(
-            [this](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<SupportedPopulations, T>{} == boost::mp11::mp_size<SupportedPopulations>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Population is not supported by the CUDA backend.");
-                }
-//                auto message_opt = calculate_population(arg, get_step());
-            },
-            population);
-    }
-
-    // Continue inference.
-    message_bus_.route_messages();
-    // message_bus_.receive_all_messages();
-    // Calculate projections.
-    for (auto &projection : projections_)
-    {
-        std::visit(
-            [this, &projection](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<SupportedProjections, T>{} == boost::mp11::mp_size<SupportedProjections>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Projection is not supported by the CUDA backend.");
-                }
-//                calculate_projection(arg, projection.messages_);
-            },
-            projection);
-    }
-
-    message_bus_.route_messages();
-    // message_bus_.receive_all_messages();
-        auto step = gad_step();
-        // Need to suppress "Unused variable" warning.
-    (void)step;
-*/
-}
-
-
 void CUDABackendImpl::load_populations(const std::vector<PopulationVariants> &populations)
 {
 //    SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
@@ -417,6 +362,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                     static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
                     static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
 
+                auto &future_messages = message_queue;
                 auto iter = future_messages.find(future_step);
                 if (iter != future_messages.end())
                 {

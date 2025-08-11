@@ -241,11 +241,6 @@ public:
 
 public:
     /**
-     * @copydoc knp::core::Backend::_step()
-     */
-    __device__ void _step();
-
-    /**
      * @brief Stop training by locking all projections.
      */
     void stop_learning()
