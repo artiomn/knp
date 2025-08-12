@@ -46,7 +46,7 @@ namespace knp::backends::gpu::cuda::device_lib
 constexpr size_t threads_per_block = 256;
 
 
-std::pair<size_t, size_t> get_blocks_config(size_t num_total)
+inline std::pair<size_t, size_t> get_blocks_config(size_t num_total)
 {
     size_t num_threads = std::min(num_total, threads_per_block);
     size_t num_blocks = (num_total + threads_per_block - 1) / threads_per_block;

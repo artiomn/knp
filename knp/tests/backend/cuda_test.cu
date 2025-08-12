@@ -36,6 +36,7 @@
 #include "../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 #include "../../backends/gpu/cuda-backend/impl/cuda_bus/messaging.cuh"
+#include "../../backends/gpu/cuda-backend/impl/uid.cuh"
 
 
 // using Population = knp::backends::gpu::CUDABackend::PopulationVariants;
@@ -232,9 +233,11 @@ TEST(CudaContainerSuite, VectorPushBack)
 
 TEST(CudaBaseSuite, CudaVectorConstruct)
 {
-    using namespace knp::backends::gpu::cuda;
-    device_lib::CudaVector<uint64_t> cuda_vec_1;
-    device_lib::CudaVector<uint64_t> cuda_vec_2(10);
+    namespace knp_cuda = knp::backends::gpu::cuda;
+
+    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec_1;
+    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec_2(10);
+
     ASSERT_EQ(cuda_vec_1.size(), 0);
     ASSERT_EQ(cuda_vec_2.size(), 10);
 }
@@ -251,9 +254,10 @@ TEST(CudaBackendSuite, CudaUidConversionTest)
 
 TEST(CudaBackendSuite, MessagesTest)
 {
-    using namespace knp::backends::gpu::cuda;
-    SpikeMessage message_1;
-    SynapticImpactMessage message_2;
+    namespace knp_cuda = knp::backends::gpu::cuda;
+
+    knp_cuda::SpikeMessage message_1;
+    knp_cuda::SynapticImpactMessage message_2;
     ASSERT_EQ(message_1.neuron_indexes_.size(), 0);
     ASSERT_EQ(message_2.impacts_.size(), 0);
 }
@@ -261,11 +265,13 @@ TEST(CudaBackendSuite, MessagesTest)
 
 TEST(CudaBackendSuite, CudaHostSubscription)
 {
-    using namespace knp::backends::gpu::cuda;
-    UID receiver_uid = to_gpu_uid(knp::core::UID{});
-    UID sender_1 = to_gpu_uid(knp::core::UID{}), sender_2 = to_gpu_uid(knp::core::UID{});
+    namespace knp_cuda = knp::backends::gpu::cuda;
+
+    knp_cuda::UID receiver_uid = knp_cuda::to_gpu_uid(knp::core::UID{});
+    knp_cuda::UID sender_1 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_2 = knp_cuda::to_gpu_uid(knp::core::UID{});
     ASSERT_NE(sender_1, sender_2);
-    Subscription<SpikeMessage> subscription(receiver_uid, {sender_1});
+    knp_cuda::Subscription<knp_cuda::SpikeMessage> subscription(receiver_uid, {sender_1});
+
     ASSERT_EQ(subscription.get_senders().size(), 1);
     ASSERT_TRUE(subscription.has_sender(sender_1));
     ASSERT_FALSE(subscription.has_sender(sender_2));

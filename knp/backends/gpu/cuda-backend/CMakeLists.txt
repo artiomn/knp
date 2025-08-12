@@ -52,18 +52,19 @@ find_package(CUDAToolkit REQUIRED)
 find_package(Boost ${KNP_BOOST_MIN_VERSION} COMPONENTS system filesystem REQUIRED)
 
 file(GLOB_RECURSE ${PROJECT_NAME}_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.h)
-source_group(source REGULAR_EXPRESSION "impl/.*")
+file(GLOB_RECURSE ${PROJECT_NAME}_cuda_headers include/${${PROJECT_NAME}_PUBLIC_INCLUDE_DIR}/*.cuh)
+
 knp_add_library("${PROJECT_NAME}"
-    STATIC
+    BOTH
         impl/backend.cu
         impl/backend_impl.cu
         impl/uid.cu
         impl/gpu_cuda_device.cu
-        impl/cuda_bus/message_bus.cuh
         impl/cuda_bus/message_bus.cu
         impl/cuda_lib/kernels.cu
         # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}
+        ${${PROJECT_NAME}_cuda_headers}
     ALIAS KNP::Backends::CUDA
     LINK_PRIVATE
         Boost::headers ${Boost_LIBRARIES} spdlog::spdlog_header_only CUDA::cudart CUDA::cuda_driver CUDA::nvml
@@ -79,7 +80,8 @@ set_target_properties(
         CUDA_SEPARABLE_COMPILATION ON
         CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
-target_compile_options("${PROJECT_NAME}" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --expt-relaxed-constexpr>)
+target_compile_options("${PROJECT_NAME}" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --expt-relaxed-constexpr -rdc=true>)
+target_compile_options("${PROJECT_NAME}_static" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --expt-relaxed-constexpr -rdc=true>)
 
 if (KNP_INSTALL)
     knp_get_component_name("${PROJECT_NAME}" COMPONENT_NAME)

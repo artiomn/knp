@@ -25,6 +25,7 @@
 #include <cuda/std/array>
 #include <cuda.h>
 #include <knp/core/uid.h>
+#include <knp/core/impexp.h>
 
 
 namespace knp::backends::gpu::cuda
