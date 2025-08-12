@@ -103,52 +103,62 @@ public:
 
     /**
      * @brief Get warp size from GPU.
+     * @return Device warp size.
      */
     [[nodiscard]] unsigned int get_warp_size() const;
 
     /**
      * @brief Get multiprocessors count.
+     * @return Count of multiprocessors.
      */
     [[nodiscard]] unsigned int get_mp_count() const;
 
     /**
      * @brief Get threads per multiprocessor.
+     * @return Threads per multiprocessor.
      */
     [[nodiscard]] unsigned int get_threads_per_mp() const;
 
     /**
      * @brief Get threads per block from GPU.
+     * @return Maximum threads count.
      */
     [[nodiscard]] unsigned int get_max_threads_count() const;
 
     /**
      * @brief Get kernels count that GPU can possibly execute concurrently.
+     * @return Count of the concurrent kernels.
      */
     [[nodiscard]] unsigned int get_concurrent_kernels() const;
 
     /**
      * @brief Get maximum size of each dimension of a block from GPU.
+     * @return Dimensions sizes.
      */
     [[nodiscard]] const std::array<int, 3> get_max_threads_dim() const;
 
     /**
      * @brief Get maximum size of each dimension of a grid from GPU.
+     * @return Grid dimensions.
      */
     [[nodiscard]] const std::array<int, 3> get_max_grid_size() const;
 
     /**
      * @brief Get global memory available on device in bytes.
+     * @return Count of bytes of the global memory.
      */
     [[nodiscard]] unsigned int get_global_memory_bytes() const;
 
     /**
      * @brief Get constant memory available on device in bytes.
+     * @return Count of bytes of the constant memory.
      */
     [[nodiscard]] unsigned int get_constant_memory_bytes() const;
 
 public:
     /**
      * @brief Get description sGPU.
+     * @return Device properties structure.
      */
     [[nodiscard]] [[deprecated("Use methods")]] cudaDeviceProp get_device_prop() const;
 
