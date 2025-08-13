@@ -79,4 +79,4 @@ KNP_DECLSPEC float get_accuracy(
  */
 KNP_DECLSPEC float get_f_measure(float precision, float recall);
 
-}  //namespace knp::framework::inference_evaluation
+}  // namespace knp::framework::inference_evaluation
