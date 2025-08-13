@@ -79,7 +79,6 @@ public:
          * @brief Process inference results. Suited for classification models.
          * @param spikes All spikes from inference.
          * @param dataset Dataset.
-         * @returnurn processed inference results for each class.
          */
         void process_inference_results(
             const std::vector<knp::core::messaging::SpikeMessage> &spikes,

@@ -31,7 +31,7 @@ namespace knp::framework::inference_evaluation
  * @brief Calculate precision.
  * @param true_positives Amount of times model, that is supposed to predict dog, predicted dog when it is a dog.
  * @param false_positives Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
- * @ret Precision.
+ * @return Precision.
  */
 KNP_DECLSPEC float get_precision(size_t true_positives, size_t false_positives);
 
@@ -40,6 +40,7 @@ KNP_DECLSPEC float get_precision(size_t true_positives, size_t false_positives);
  * @brief Calculate recall.
  * @param true_positives Amount of times model, that is supposed to predict dog, predicted dog when it is a dog.
  * @param false_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
+ * @return Recall.
  */
 KNP_DECLSPEC float get_recall(size_t true_positives, size_t false_negatives);
 
@@ -51,7 +52,7 @@ KNP_DECLSPEC float get_recall(size_t true_positives, size_t false_negatives);
  * @param false_positives Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
  * @param true_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a
  * dog.
- * @ret Prevalence.
+ * @return Prevalence.
  */
 KNP_DECLSPEC float get_prevalence(
     size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives);
@@ -64,7 +65,7 @@ KNP_DECLSPEC float get_prevalence(
  * @param false_positives Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
  * @param true_negatives Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a
  * dog.
- * @ret Accuracy.
+ * @return Accuracy.
  */
 KNP_DECLSPEC float get_accuracy(
     size_t true_positives, size_t false_negatives, size_t false_positives, size_t true_negatives);
@@ -74,7 +75,7 @@ KNP_DECLSPEC float get_accuracy(
  * @brief Calculate f measure.
  * @param precision Precision.
  * @param recall Recall.
- * @ret FMeasure.
+ * @return FMeasure.
  */
 KNP_DECLSPEC float get_f_measure(float precision, float recall);
 
