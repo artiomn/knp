@@ -67,6 +67,8 @@ public:
     // __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
 
 public:
+    __host__ __device__ Subscription() = default;
+
     /**
      * @brief Subscription constructor.
      * @param receiver receiver UID.

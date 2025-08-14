@@ -59,12 +59,22 @@ class CudaVector
 {
 public:
     using value_type = T;
+    using allocator_type = Allocator;
+    using size_type = size_t;
+    using difference_type = ptrdiff_t;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = typename allocator_type::pointer;
+    using const_pointer = const typename allocator_type::pointer;
+    using iterator = pointer;
+    using const_iterator = const iterator;
+
 public:
-    __host__ __device__ explicit CudaVector(size_t size = 0) : capacity_(size), size_(size), data_(nullptr)
+    __host__ __device__ explicit CudaVector(size_type size = 0) : capacity_(size), size_(size), data_(nullptr)
     {
         #ifdef __CUDA_ARCH__
         data_ = allocator_.allocate(size_);
-        for (size_t i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);
+        for (size_type i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);
         #else
         if (size_)
         {
@@ -76,12 +86,12 @@ public:
         #endif
     }
 
-    __host__ __device__ CudaVector(const T *vec, size_t size)
+    __host__ __device__ CudaVector(const T *vec, size_type size)
     {
         reserve(size);
         #ifdef __CUDA_ARCH__
         size_ = size;
-        for (size_t i = 0; i < size_; ++i) allocator_.construct(data_ + i, *(vec + i));
+        for (size_type i = 0; i < size_; ++i) allocator_.construct(data_ + i, *(vec + i));
         #else
         static_assert(std::is_trivially_copyable_v<T>);
         call_and_check(cudaMemcpy(data_, vec, size * sizeof(T), cudaMemcpyHostToDevice));
@@ -92,7 +102,7 @@ public:
     __host__ __device__ ~CudaVector()
     {
         #ifdef __CUDA_ARCH__
-        for (size_t i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
+        for (size_type i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
         allocator_.deallocate(data_, size_);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
@@ -109,7 +119,7 @@ public:
         #ifdef __CUDA_ARCH__
         data_ = allocator_.allocate(capacity_);
 
-        for (size_t i = 0; i < other.size_; ++i)
+        for (size_type i = 0; i < other.size_; ++i)
         {
             data_[i] = other.data_[i];
         }
@@ -140,13 +150,13 @@ public:
     {
         if (this != &other)
         {
-            for (size_t i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
+            for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
             allocator_.deallocate(data_);
             capacity_ = other.capacity_;
             size_ = other.size_;
             data_ = allocator_.allocate(capacity_);
 
-            for (size_t i = 0; i < other.size_; ++i)
+            for (size_type i = 0; i < other.size_; ++i)
             {
                 allocator_.construct(data_ + i);
                 data_[i] = other.data_[i];
@@ -190,7 +200,7 @@ public:
         if (size_ != other.size_) return false;
 
         #ifdef __CUDA_ARCH__
-        for (size_t i = 0; i < size_; ++i) if (*(data_ + i) != *(other.data_ + i)) return false;
+        for (size_type i = 0; i < size_; ++i) if (*(data_ + i) != *(other.data_ + i)) return false;
         return true;
         #else
         bool equal;
@@ -209,7 +219,7 @@ public:
     __host__ __device__ void clear()
     {
         #ifdef __CUDA_ARCH__
-        for (size_t i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
+        for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
@@ -235,7 +245,7 @@ public:
         return true;
     }
 
-    __host__ __device__ T operator[](size_t index) const
+    __host__ __device__ T operator[](size_type index) const
     {
         #ifdef __CUDA_ARCH__
         return data_[index];
@@ -247,12 +257,12 @@ public:
         #endif
     }
 
-    __host__ __device__ size_t capacity() const
+    __host__ __device__ size_type capacity() const
     {
         return capacity_;
     }
 
-    __host__ __device__ size_t size() const
+    __host__ __device__ size_type size() const
     {
         return size_;
     }
@@ -300,7 +310,7 @@ public:
         return data_[--size_];
     }
 
-    __host__ __device__ void reserve(size_t new_capacity)
+    __host__ __device__ void reserve(size_type new_capacity)
     {
         if (new_capacity <= capacity_) return;
         #ifdef __CUDA_ARCH__
@@ -319,7 +329,7 @@ public:
         #endif
     }
 
-    __host__ __device__ void resize(size_t new_size)
+    __host__ __device__ void resize(size_type new_size)
     {
         if (new_size == size_) return;
         #ifdef __CUDA_ARCH__
@@ -341,20 +351,22 @@ public:
         #endif
     }
 
-    __host__ __device__ void erase(size_t index)
+    __host__ __device__ void erase(size_type index)
     {
         if (index >= size_) return;
-        for (size_t i = index; i < size_ - 1; ++i)
+        for (size_type i = index; i < size_ - 1; ++i)
             data_[i] = ::cuda::std::move(data_[i + 1]);
         --size_;
     }
 
-    __host__ __device__ T* begin() { return data_; }
+    __host__ __device__ iterator begin() { return data_; }
+    __host__ __device__ const_iterator cbegin() const { return data_; }
 
-    __host__ __device__ T* end() { return data_ + size_; }
+    __host__ __device__ iterator end() { return data_ + size_; }
+    __host__ __device__ const_iterator cend() const { return data_ + size_; }
 
 private:
-    __device__ void dev_reserve(size_t new_capacity)
+    __device__ void dev_reserve(size_type new_capacity)
     {
         if (new_capacity <= capacity_) return;
         T* new_data = nullptr;
@@ -362,7 +374,7 @@ private:
         // Capacity.
         new_data = allocator_.allocate(new_capacity * sizeof(T));
 
-        for (size_t i = 0; i < size_; ++i)
+        for (size_type i = 0; i < size_; ++i)
         {
             new_data[i] = data_[i];
             allocator_.destroy(data_ + i);
@@ -374,11 +386,11 @@ private:
         capacity_ = new_capacity;
     }
 
-    __device__ void dev_resize(size_t new_size)
+    __device__ void dev_resize(size_type new_size)
     {
         if (new_size < size_)
         {
-            for (size_t i = new_size; i < size_ - new_size; ++i)
+            for (size_type i = new_size; i < size_ - new_size; ++i)
             {
                 decltype(allocator_)::destroy(data_ + i);
             }
@@ -389,7 +401,7 @@ private:
         {
             dev_reserve(new_size);
 
-            for (size_t i = size_ - 1; i < new_size - size_; ++i)
+            for (size_type i = size_ - 1; i < new_size - size_; ++i)
             {
                 decltype(allocator_)::construct(data_ + i);
             }
@@ -402,9 +414,9 @@ private:
     Allocator allocator_;
     T* data_ = nullptr;
     // Maximum elements count.
-    size_t capacity_ = 0;
+    size_type capacity_ = 0;
     // Current element.
-    size_t size_ = 0;
+    size_type size_ = 0;
 };
 
 

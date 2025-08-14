@@ -137,7 +137,7 @@ void CUDABackendImpl::load_projections(const std::vector<ProjectionVariants> &pr
 void CUDABackendImpl::load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections)
 {
 //    SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
-    knp::meta::load_from_container<SupportedProjections>(projections, projections_);
+//    knp::meta::load_from_container<SupportedProjections>(projections, device_projections_);
 //    SPDLOG_DEBUG("All projections loaded.");
 }
 
@@ -145,7 +145,7 @@ void CUDABackendImpl::load_all_projections(const std::vector<knp::core::AllProje
 void CUDABackendImpl::load_all_populations(const std::vector<knp::core::AllPopulationsVariant> &populations)
 {
 //    SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
-    knp::meta::load_from_container<SupportedPopulations>(populations, populations_);
+//    knp::meta::load_from_container<SupportedPopulations>(populations, device_populations_);
 //    SPDLOG_DEBUG("All populations loaded.");
 }
 
@@ -416,49 +416,49 @@ __device__ void CUDABackendImpl::calculate_projection(
 
 CUDABackendImpl::PopulationIterator CUDABackendImpl::begin_populations()
 {
-    return PopulationIterator{populations_.begin()};
+    return PopulationIterator{device_populations_.begin()};
 }
 
 
 CUDABackendImpl::PopulationConstIterator CUDABackendImpl::begin_populations() const
 {
-    return {populations_.cbegin()};
+    return {device_populations_.cbegin()};
 }
 
 
 CUDABackendImpl::PopulationIterator CUDABackendImpl::end_populations()
 {
-    return PopulationIterator{populations_.end()};
+    return PopulationIterator{device_populations_.end()};
 }
 
 
 CUDABackendImpl::PopulationConstIterator CUDABackendImpl::end_populations() const
 {
-    return populations_.cend();
+    return device_populations_.cend();
 }
 
 
 CUDABackendImpl::ProjectionIterator CUDABackendImpl::begin_projections()
 {
-    return ProjectionIterator{projections_.begin()};
+    return ProjectionIterator{device_projections_.begin()};
 }
 
 
 CUDABackendImpl::ProjectionConstIterator CUDABackendImpl::begin_projections() const
 {
-    return projections_.cbegin();
+    return device_projections_.cbegin();
 }
 
 
 CUDABackendImpl::ProjectionIterator CUDABackendImpl::end_projections()
 {
-    return ProjectionIterator{projections_.end()};
+    return ProjectionIterator{device_projections_.end()};
 }
 
 
 CUDABackendImpl::ProjectionConstIterator CUDABackendImpl::end_projections() const
 {
-    return projections_.cend();
+    return device_projections_.cend();
 }
 
 }  // namespace knp::backends::gpu::cuda

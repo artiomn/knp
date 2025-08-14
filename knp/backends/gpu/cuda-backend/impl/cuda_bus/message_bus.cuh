@@ -31,6 +31,7 @@
 
 #include <functional>
 #include <memory>
+#include <utility>
 
 #include "subscription.cuh"
 #include "../uid.cuh"
@@ -53,9 +54,9 @@ public:
      * @brief Construct GPU message bus.
      * @param external_endpoint message endpoint used for message exchange with host.
      */
-    // explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) :
-    //    cpu_endpoint_{std::move(external_endpoint)}
-    // {}
+    explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) :
+        cpu_endpoint_{std::move(external_endpoint)}
+    {}
 
 public:
     /**
@@ -135,7 +136,7 @@ public:
      */
     template <class MessageType>
     __device__ void receive_messages(const cuda::UID &receiver_uid,
-                                    device_lib::CudaVector<MessageType> &result_messages);
+                                     device_lib::CudaVector<MessageType> &result_messages);
 
 
     __device__ cuda::MessageVariant& get_message(uint64_t message_index);

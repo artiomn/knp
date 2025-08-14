@@ -52,6 +52,8 @@ struct CUDAPopulation
      */
     using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
 
+    CUDAPopulation() = default;
+
     /**
      * @brief Constructor.
      * @param population source population.

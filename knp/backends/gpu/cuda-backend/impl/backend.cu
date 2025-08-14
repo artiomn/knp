@@ -38,7 +38,7 @@
 namespace knp::backends::gpu
 {
 
-__global__ void calculate_populations(CUDABackend::PopulationContainer populations)
+__global__ void calculate_populations(typename cuda::CUDABackendImpl::PopulationContainer &populations)
 {
     // Calculate populations. This is the same as inference.
 /*
@@ -65,7 +65,7 @@ __global__ void calculate_populations(CUDABackend::PopulationContainer populatio
 }
 
 
-__global__ void calculate_projections(CUDABackend::ProjectionContainer projections)
+__global__ void calculate_projections(typename cuda::CUDABackendImpl::ProjectionContainer &projections)
 {
     // Calculate projections.
 /*
@@ -92,7 +92,7 @@ __global__ void calculate_projections(CUDABackend::ProjectionContainer projectio
 }
 
 
-CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>())
+CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>(get_message_bus()))
 {
     SPDLOG_INFO("CUDA backend instance created.");
 }

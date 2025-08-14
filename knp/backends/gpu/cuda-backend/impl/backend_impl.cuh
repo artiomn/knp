@@ -44,9 +44,12 @@
 #include <boost/mp11.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
+#include <cuda/std/variant>
+
 #include "projection.cuh"
 #include "population.cuh"
 #include "cuda_bus/message_bus.cuh"
+#include "cuda_lib/vector.cuh"
 
 
 /**
@@ -74,12 +77,12 @@ public:
     /**
      * @brief List of supported population types based on neuron types specified in `SupportedNeurons`.
      */
-    using SupportedPopulations = boost::mp11::mp_transform<knp::core::Population, SupportedNeurons>;
+    using SupportedPopulations = boost::mp11::mp_transform<CUDAPopulation, SupportedNeurons>;
 
     /**
      * @brief List of supported projection types based on synapse types specified in `SupportedSynapses`.
      */
-    using SupportedProjections = boost::mp11::mp_transform<knp::core::Projection, SupportedSynapses>;
+    using SupportedProjections = boost::mp11::mp_transform<CUDAProjection, SupportedSynapses>;
 
     /**
      * @brief Population variant that contains any population type specified in `SupportedPopulations`.
@@ -90,7 +93,7 @@ public:
      * `PopulationVariants` retains the same order of message types as defined in `SupportedPopulations`.
      * @see ALL_NEURONS.
      */
-    using PopulationVariants = boost::mp11::mp_rename<SupportedPopulations, std::variant>;
+    using PopulationVariants = boost::mp11::mp_rename<SupportedPopulations, ::cuda::std::variant>;
 
     /**
      * @brief Projection variant that contains any projection type specified in `SupportedProjections`.
@@ -101,24 +104,22 @@ public:
      * `ProjectionVariants` retains the same order of message types as defined in `SupportedProjections`.
      * @see ALL_SYNAPSES.
      */
-    using ProjectionVariants = boost::mp11::mp_rename<SupportedProjections, std::variant>;
+    using ProjectionVariants = boost::mp11::mp_rename<SupportedProjections, ::cuda::std::variant>;
 
-private:
-    using SupportedCUDAPopulations = boost::mp11::mp_transform<CUDAPopulation, SupportedNeurons>;
-    using CUDAPopulationVariants = boost::mp11::mp_rename<SupportedCUDAPopulations, std::variant>;
-
-    using SupportedCUDAProjections = boost::mp11::mp_transform<CUDAProjection, SupportedSynapses>;
-    using CUDAProjectionVariants = boost::mp11::mp_rename<SupportedCUDAProjections, std::variant>;
+    /**
+     * @brief Map used for message construction. It maps a message to its future output step.
+     */
+    using SynapticMessageQueue = std::unordered_map<uint64_t, core::messaging::SynapticImpactMessage>;
 
 public:
     /**
      * @brief Type of population container.
      */
-    using PopulationContainer = thrust::host_vector<PopulationVariants>;
+    using PopulationContainer = device_lib::CudaVector<PopulationVariants>;
     /**
      * @brief Type of projection container.
      */
-    using ProjectionContainer = thrust::host_vector<ProjectionVariants>;
+    using ProjectionContainer = device_lib::CudaVector<ProjectionVariants>;
 
     /**
      * @brief Types of non-constant population iterators.
@@ -142,10 +143,9 @@ public:
 public:
     /**
      * @brief Constructor.
-     * @paaram cpu_bus Bus to exchange backend with external world.
+     * @param cpu_bus Bus to exchange backend with external world.
      */
-    CUDABackendImpl() {}
-    // CUDABackendImpl(knp::core::MessageBus &cpu_bus) : cpu_message_bus_{cpu_bus} {}
+    explicit CUDABackendImpl(knp::core::MessageBus &cpu_bus) : device_message_bus_{cpu_bus.create_endpoint()} {}
 
     /**
      * @brief Destructor for CUDA backend.
@@ -245,7 +245,7 @@ public:
      */
     void stop_learning()
     {
-        for (auto &proj : projections_) std::visit([](auto &entity) { entity.lock_weights(); }, proj);
+        for (auto &proj : device_projections_) ::cuda::std::visit([](auto &entity) { entity.lock_weights(); }, proj);
     }
 
     /**
@@ -257,22 +257,12 @@ public:
          * @todo Probably only need to use `start_learning` for some of projections: the ones that were locked with
          * `lock()`.
          */
-        for (auto &proj : projections_) std::visit([](auto &entity) { entity.unlock_weights(); }, proj);
+        for (auto &proj : device_projections_) ::cuda::std::visit([](auto &entity) { entity.unlock_weights(); }, proj);
     }
 
     // [[nodiscard]] DataRanges get_network_data() const { return {}; }
 
-protected:
-    /**
-     * @brief Map used for message construction. It maps a message to its future output step.
-     */
-    using SynapticMessageQueue = std::unordered_map<uint64_t, core::messaging::SynapticImpactMessage>;
-
-    /**
-     * @copydoc knp::core::Backend::_init()
-     */
-    void _init();
-
+public:
     /**
      * @brief Calculate population of BLIFAT neurons.
      * @note Population will be changed during calculation.
@@ -296,21 +286,20 @@ protected:
         SynapticMessageQueue &message_queue,
         std::uint64_t step_n);
 
+protected:
+    /**
+     * @copydoc knp::core::Backend::_init()
+     */
+    void _init();
+
 private:
     // cppcheck-suppress unusedStructMember
-    PopulationContainer populations_;
-    ProjectionContainer projections_;
+    PopulationContainer device_populations_;
+    ProjectionContainer device_projections_;
 
-    // cppcheck-suppress unusedStructMember
-//    std::vector<CUDAPopulationVariants> device_populations_;
-    // cppcheck-suppress unusedStructMember
-//    std::vector<CUDAProjectionVariants> device_projections_;
+    knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
 
-//    knp::core::MessageBus &cpu_message_bus_;
-
-//    knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
-
-    cuda::SpikeData neuron_indexes;
+    cuda::SpikeData neuron_indexes_;
 };
 
 }  // namespace knp::backends::gpu::cuda

@@ -59,6 +59,8 @@ struct CUDAProjection
      */
     using Synapse = thrust::tuple<SynapseParameters, uint32_t, uint32_t>;
 
+    CUDAProjection() = default;
+
     /**
      * @brief Constructor.
      * @param projection source projection.
@@ -75,6 +77,9 @@ struct CUDAProjection
      * @brief Destructor.
      */
     ~CUDAProjection() { thrust::device_free(is_locked_); }
+
+    void lock_weights() { *is_locked_ = true; }
+    void unlock_weights() { *is_locked_ = false; }
 
     /**
      * @brief UID.
