@@ -121,7 +121,6 @@ public:
      */
     __host__ void clear() { messages_to_route_.clear(); }
 
-
     /**
      * @brief Reserve bus buffer for messages.
      * @param num_messages number of messages.
@@ -137,7 +136,6 @@ public:
     template <class MessageType>
     __device__ void receive_messages(const cuda::UID &receiver_uid,
                                      device_lib::CudaVector<MessageType> &result_messages);
-
 
     __device__ cuda::MessageVariant& get_message(uint64_t message_index);
 
@@ -160,7 +158,6 @@ private:
      * @brief Send messages to CPU endpoint.
      */
     __host__ int synchronize();
-
 
     /**
      *

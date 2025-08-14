@@ -15,6 +15,7 @@ limitations under the License.
 ]]
 
 cmake_minimum_required(VERSION 3.25)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHED)
 
 include_guard(GLOBAL)
 
@@ -342,6 +343,16 @@ add_third_party("gh:Tencent/rapidjson#ebd87cb"
                     "RAPIDJSON_HAS_STDSTRING ON")
 
 include_directories("${CPM_PACKAGE_rapidjson_SOURCE_DIR}/include")
+
+if (KNP_BUILD_CUDA)
+    add_third_party(NAME "cuco"
+                    GITHUB_REPOSITORY "NVIDIA/cuCollections"
+                    GIT_TAG dev
+                    OPTIONS
+                        "BUILD_TESTS OFF"
+                        "BUILD_BENCHMARKS OFF"
+                        "BUILD_EXAMPLES OFF")
+endif()
 
 if (KNP_BUILD_TESTS)
     add_compile_definitions(SPDLOG_ACTIVE_LEVEL=0)
