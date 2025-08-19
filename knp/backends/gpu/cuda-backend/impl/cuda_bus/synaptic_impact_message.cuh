@@ -107,7 +107,7 @@ struct SynapticImpactMessage
     /**
      * @brief Impact values.
      */
-    knp::backends::gpu::cuda::device_lib::CudaVector<SynapticImpact> impacts_;
+    knp::backends::gpu::cuda::device_lib::CUDAVector<SynapticImpact> impacts_;
 };
 
 

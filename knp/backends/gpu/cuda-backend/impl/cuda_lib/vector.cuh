@@ -55,7 +55,7 @@ inline std::pair<size_t, size_t> get_blocks_config(size_t num_total)
 
 
 template <typename T, typename Allocator = CuMallocAllocator<T>>
-class CudaVector
+class CUDAVector
 {
 public:
     using value_type = T;
@@ -70,7 +70,7 @@ public:
     using const_iterator = const iterator;
 
 public:
-    __host__ __device__ explicit CudaVector(size_type size = 0) : capacity_(size), size_(size), data_(nullptr)
+    __host__ __device__ explicit CUDAVector(size_type size = 0) : capacity_(size), size_(size), data_(nullptr)
     {
         #ifdef __CUDA_ARCH__
         data_ = allocator_.allocate(size_);
@@ -86,7 +86,7 @@ public:
         #endif
     }
 
-    __host__ __device__ CudaVector(const T *vec, size_type size)
+    __host__ __device__ CUDAVector(const T *vec, size_type size)
     {
         reserve(size);
         #ifdef __CUDA_ARCH__
@@ -99,7 +99,7 @@ public:
         #endif
     }
 
-    __host__ __device__ ~CudaVector()
+    __host__ __device__ ~CUDAVector()
     {
         #ifdef __CUDA_ARCH__
         for (size_type i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
@@ -113,7 +113,7 @@ public:
     }
 
     // Copy constructor.
-    __host__ __device__ CudaVector(const CudaVector& other) : capacity_(other.capacity_), size_(other.size_)
+    __host__ __device__ CUDAVector(const CUDAVector& other) : capacity_(other.capacity_), size_(other.size_)
     {
         // Capacity.
         #ifdef __CUDA_ARCH__
@@ -132,7 +132,7 @@ public:
     }
 
     // Move constructor.
-    __host__ __device__ CudaVector(CudaVector&& other) noexcept :
+    __host__ __device__ CUDAVector(CUDAVector&& other) noexcept :
         capacity_(other.capacity_), size_(other.size_), data_(other.data_)
     {
         capacity_ = other.capacity_;
@@ -146,7 +146,7 @@ public:
     }
 
     // Copy assignment operator.
-    __device__ CudaVector& operator=(const CudaVector& other)
+    __device__ CUDAVector& operator=(const CUDAVector& other)
     {
         if (this != &other)
         {
@@ -166,7 +166,7 @@ public:
     }
 
     // Move assignment operator.
-    __device__ CudaVector& operator=(CudaVector&& other) noexcept
+    __device__ CUDAVector& operator=(CUDAVector&& other) noexcept
     {
         if (this == &other) return *this;
         capacity_ = other.capacity_;
@@ -182,11 +182,11 @@ public:
     }
 
     // template<class Other>
-    // __host__ CudaVector& operator=(const std::vector<Other> &vec)
+    // __host__ CUDAVector& operator=(const std::vector<Other> &vec)
     // {
     // }
 
-    __host__ CudaVector& operator=(const std::vector<T> &vec)
+    __host__ CUDAVector& operator=(const std::vector<T> &vec)
     {
         static_assert(std::is_trivially_copyable_v<T>);
         clear();
@@ -195,7 +195,7 @@ public:
         return *this;
     }
 
-    __host__ __device__ bool operator==(const CudaVector &other) const
+    __host__ __device__ bool operator==(const CUDAVector &other) const
     {
         if (size_ != other.size_) return false;
 
@@ -421,7 +421,7 @@ private:
 
 
 template<class T>
-std::ostream &operator<<(std::ostream &stream, const CudaVector<T> &vec)
+std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
 {
     if (vec.size() == 0)
     {

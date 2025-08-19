@@ -24,6 +24,7 @@
 #include <knp/core/population.h>
 #include <knp/neuron-traits/all_traits.h>
 
+#include "cuda_lib/vector.cuh"
 #include "uid.cuh"
 
 
@@ -52,17 +53,19 @@ struct CUDAPopulation
      */
     using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
 
-    CUDAPopulation() = default;
+    __host__ __device__ CUDAPopulation() = default;
 
     /**
      * @brief Constructor.
      * @param population source population.
      */
-    explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
+    __host__ __device__ explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
         : uid_{uid_to_cuda(population.get_uid())},
           neurons_{population.get_neurons_parameters()}
     {
     }
+
+    __host__ __device__ ~CUDAPopulation() = default;
 
     /**
      * @brief UID.
@@ -71,7 +74,7 @@ struct CUDAPopulation
     /**
      * @brief Neurons.
      */
-    thrust::device_vector<NeuronParameters> neurons_;
+    cuda::device_lib::CUDAVector<NeuronParameters> neurons_;
 };
 
 } // namespace knp::backends::gpu::cuda

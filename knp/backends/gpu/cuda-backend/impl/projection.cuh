@@ -26,6 +26,7 @@
 #include <knp/core/projection.h>
 #include <knp/synapse-traits/all_traits.h>
 
+#include "cuda_lib/vector.cuh"
 #include "uid.cuh"
 
 
@@ -59,13 +60,13 @@ struct CUDAProjection
      */
     using Synapse = thrust::tuple<SynapseParameters, uint32_t, uint32_t>;
 
-    CUDAProjection() = default;
+    __host__ __device__ CUDAProjection() = default;
 
     /**
      * @brief Constructor.
      * @param projection source projection.
      */
-    explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
+    __host__ __device__ explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
         : uid_(uid_to_cuda(projection.get_uid())),
           presynaptic_uid_(uid_to_cuda(projection.get_presynaptic())),
           postsynaptic_uid_(uid_to_cuda(projection.get_postsynaptic())),
@@ -76,10 +77,15 @@ struct CUDAProjection
     /**
      * @brief Destructor.
      */
-    ~CUDAProjection() { thrust::device_free(is_locked_); }
+    __host__ __device__ ~CUDAProjection()
+    {
+        #if !defined(__CUDA_ARCH__)
+        thrust::device_free(is_locked_);
+        #endif
+    }
 
-    void lock_weights() { *is_locked_ = true; }
-    void unlock_weights() { *is_locked_ = false; }
+    __host__ __device__ void lock_weights() { *is_locked_ = true; }
+    __host__ __device__ void unlock_weights() { *is_locked_ = false; }
 
     /**
      * @brief UID.
@@ -104,13 +110,13 @@ struct CUDAProjection
     /**
      * @brief Container of synapse parameters.
      */
-    thrust::device_vector<Synapse> synapses_;
+    cuda::device_lib::CUDAVector<Synapse> synapses_;
 
     /**
      * @brief Messages container.
      */
     // cppcheck-suppress unusedStructMember
-    std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
+//    std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
 };
 
 } // namespace knp::backends::gpu::cuda

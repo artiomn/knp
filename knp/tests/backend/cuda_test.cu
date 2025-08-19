@@ -83,7 +83,7 @@ __device__ void prn()
 {
     printf("Hello from GPU! Thread ID: %d\n", threadIdx.x);
 
-    knp::backends::gpu::cuda::device_lib::CudaVector<int> cv;
+    knp::backends::gpu::cuda::device_lib::CUDAVector<int> cv;
 
     cv.reserve(2);
 
@@ -208,7 +208,7 @@ TEST(CudaContainerSuite, EqualKernel)
 TEST(CudaContainerSuite, VectorPushBack)
 {
     namespace knp_cuda = knp::backends::gpu::cuda;
-    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec;
+    knp_cuda::device_lib::CUDAVector<uint64_t> cuda_vec;
 
     ASSERT_EQ(cuda_vec.size(), 0);
     std::cout << cuda_vec << std::endl;
@@ -222,7 +222,7 @@ TEST(CudaContainerSuite, VectorPushBack)
     ASSERT_EQ(cuda_vec.size(), 3);
     ASSERT_GE(cuda_vec.capacity(), 3);
     std::vector<uint64_t> exp_results{1, 2, 3};
-    knp_cuda::device_lib::CudaVector res(exp_results.data(), exp_results.size());
+    knp_cuda::device_lib::CUDAVector res(exp_results.data(), exp_results.size());
     // ASSERT_EQ(cuda_vec, exp_results);
     ASSERT_EQ(cuda_vec[0], 1);
     ASSERT_EQ(cuda_vec[1], 2);
@@ -231,12 +231,12 @@ TEST(CudaContainerSuite, VectorPushBack)
 }
 
 
-TEST(CudaBaseSuite, CudaVectorConstruct)
+TEST(CudaBaseSuite, CUDAVectorConstruct)
 {
     namespace knp_cuda = knp::backends::gpu::cuda;
 
-    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec_1;
-    knp_cuda::device_lib::CudaVector<uint64_t> cuda_vec_2(10);
+    knp_cuda::device_lib::CUDAVector<uint64_t> cuda_vec_1;
+    knp_cuda::device_lib::CUDAVector<uint64_t> cuda_vec_2(10);
 
     ASSERT_EQ(cuda_vec_1.size(), 0);
     ASSERT_EQ(cuda_vec_2.size(), 10);
@@ -281,11 +281,11 @@ TEST(CudaBackendSuite, CudaHostSubscription)
 TEST(CudaBackendSuite, CudaBusSubscription)
 {
     // using knp::backends::gpu::cuda::to_gpu_uid;
-    // using knp::backends::gpu::cuda::device_lib::CudaVector;
+    // using knp::backends::gpu::cuda::device_lib::CUDAVector;
     // using knp::backends::gpu::cuda::UID;
     // MessageBusTandem bus_pair;
     // knp::core::UID sender_1, sender_2, receiver_1, receiver_2;
-    // CudaVector<UID> senders_1, senders_2;
+    // CUDAVector<UID> senders_1, senders_2;
     // senders_1.push_back(to_gpu_uid(sender_1));
     // senders_1.push_back(to_gpu_uid(sender_2));
     // bus_pair.gpu_.subscribe<knp::backends::gpu::cuda::SpikeMessage>(

@@ -115,11 +115,11 @@ public:
     /**
      * @brief Type of population container.
      */
-    using PopulationContainer = device_lib::CudaVector<PopulationVariants>;
+    using PopulationContainer = device_lib::CUDAVector<PopulationVariants>;
     /**
      * @brief Type of projection container.
      */
-    using ProjectionContainer = device_lib::CudaVector<ProjectionVariants>;
+    using ProjectionContainer = device_lib::CUDAVector<ProjectionVariants>;
 
     /**
      * @brief Types of non-constant population iterators.
@@ -145,62 +145,51 @@ public:
      * @brief Constructor.
      * @param cpu_bus Bus to exchange backend with external world.
      */
-    explicit CUDABackendImpl(knp::core::MessageBus &cpu_bus) : device_message_bus_{cpu_bus.create_endpoint()} {}
+    __host__ explicit CUDABackendImpl(knp::core::MessageBus &cpu_bus) :
+        device_message_bus_{cpu_bus.create_endpoint()} {}
 
     /**
-     * @brief Destructor for CUDA backend.
+     * @brief Destructor for  backend.
      */
     ~CUDABackendImpl() = default;
 
 public:
     /**
-     * @brief Load populations to the backend.
-     * @param populations vector of populations to load.
-     */
-    void load_populations(const std::vector<PopulationVariants> &populations);
-
-    /**
-     * @brief Load projections to the backend.
-     * @param projections vector of projections to load.
-     */
-    void load_projections(const std::vector<ProjectionVariants> &projections);
-
-    /**
      * @brief Add projections to backend.
      * @throw exception if the `projections` parameter contains unsupported projection types.
      * @param projections projections to add.
      */
-    void load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections);
+    void load_projections(const std::vector<knp::core::AllProjectionsVariant> &projections);
 
     /**
      * @brief Add populations to backend.
      * @throw exception if the `populations` parameter contains unsupported population types.
      * @param populations populations to add.
      */
-    void load_all_populations(const std::vector<knp::core::AllPopulationsVariant> &populations);
+    __host__ void load_populations(const std::vector<knp::core::AllPopulationsVariant> &populations);
 
 public:
     /**
      * @brief Get an iterator pointing to the first element of the population loaded to backend.
      * @return population iterator.
      */
-    PopulationIterator begin_populations();
+    __host__ __device__ PopulationIterator begin_populations();
 
     /**
      * @brief Get an iterator pointing to the first element of the population loaded to backend.
      * @return constant population iterator.
      */
-    PopulationConstIterator begin_populations() const;
+    __host__ __device__ PopulationConstIterator begin_populations() const;
     /**
      * @brief Get an iterator pointing to the last element of the population.
      * @return iterator.
      */
-    PopulationIterator end_populations();
+    __host__ __device__ PopulationIterator end_populations();
     /**
      * @brief Get a constant iterator pointing to the last element of the population.
      * @return iterator.
      */
-    PopulationConstIterator end_populations() const;
+    __host__ __device__ PopulationConstIterator end_populations() const;
 
     /**
      * @todo Make iterator which returns projections, but not a wrapper.
@@ -209,41 +198,41 @@ public:
      * @brief Get an iterator pointing to the first element of the projection loaded to backend.
      * @return projection iterator.
      */
-    ProjectionIterator begin_projections();
+    __host__ __device__ ProjectionIterator begin_projections();
     /**
      * @brief Get an iterator pointing to the first element of the projection loaded to backend.
      * @return constant projection iterator.
      */
-    ProjectionConstIterator begin_projections() const;
+    __host__ __device__ ProjectionConstIterator begin_projections() const;
     /**
      * @brief Get an iterator pointing to the last element of the projection.
      * @return iterator.
      */
-    ProjectionIterator end_projections();
+    __host__ __device__ ProjectionIterator end_projections();
     /**
      * @brief Get a constant iterator pointing to the last element of the projection.
      * @return iterator.
      */
-    ProjectionConstIterator end_projections() const;
+    __host__ __device__ ProjectionConstIterator end_projections() const;
 
 public:
     /**
      * @brief Remove projections with given UIDs from the backend.
      * @param uids UIDs of projections to remove.
      */
-    void remove_projections(const std::vector<knp::core::UID> &uids) {}
+    __host__ __device__ void remove_projections(const std::vector<knp::core::UID> &uids) {}
 
     /**
      * @brief Remove populations with given UIDs from the backend.
      * @param uids UIDs of populations to remove.
      */
-    void remove_populations(const std::vector<knp::core::UID> &uids) {}
+    __host__ __device__ void remove_populations(const std::vector<knp::core::UID> &uids) {}
 
 public:
     /**
      * @brief Stop training by locking all projections.
      */
-    void stop_learning()
+    __host__ __device__ void stop_learning()
     {
         for (auto &proj : device_projections_) ::cuda::std::visit([](auto &entity) { entity.lock_weights(); }, proj);
     }
@@ -251,7 +240,7 @@ public:
     /**
      * @brief Resume training by unlocking all projections.
      */
-    void start_learning()
+    __host__ __device__ void start_learning()
     {
         /**
          * @todo Probably only need to use `start_learning` for some of projections: the ones that were locked with
@@ -271,7 +260,12 @@ public:
      */
     __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-        knp::backends::gpu::cuda::device_lib::CudaVector<cuda::SynapticImpactMessage> &messages,
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
+        std::uint64_t step_n);
+
+    __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
+        CUDAPopulation<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);
 
     /**
@@ -282,8 +276,17 @@ public:
      */
     __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-        knp::backends::gpu::cuda::device_lib::CudaVector<cuda::SpikeMessage> &messages,
-        SynapticMessageQueue &message_queue,
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+        std::uint64_t step_n);
+
+    __device__ void calculate_projection(
+        CUDAProjection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+        std::uint64_t step_n);
+
+    __device__ void calculate_projection(
+        CUDAProjection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
         std::uint64_t step_n);
 
 protected:
@@ -298,8 +301,6 @@ private:
     ProjectionContainer device_projections_;
 
     knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
-
-    cuda::SpikeData neuron_indexes_;
 };
 
 }  // namespace knp::backends::gpu::cuda

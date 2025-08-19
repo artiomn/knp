@@ -42,7 +42,7 @@ using SpikeIndex = uint32_t;
 /**
  * @brief List of spike indexes.
  */
-using SpikeData = knp::backends::gpu::cuda::device_lib::CudaVector<SpikeIndex>;
+using SpikeData = knp::backends::gpu::cuda::device_lib::CUDAVector<SpikeIndex>;
 
 
 /**

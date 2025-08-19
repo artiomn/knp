@@ -69,7 +69,7 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    __host__ bool subscribe(const UID &receiver, const device_lib::CudaVector<UID> &senders)
+    __host__ bool subscribe(const UID &receiver, const device_lib::CUDAVector<UID> &senders)
     {
         for (size_t index = 0; index < subscriptions_.size(); ++index)
         {
@@ -135,7 +135,7 @@ public:
      */
     template <class MessageType>
     __device__ void receive_messages(const cuda::UID &receiver_uid,
-                                     device_lib::CudaVector<MessageType> &result_messages);
+                                     device_lib::CUDAVector<MessageType> &result_messages);
 
     __device__ cuda::MessageVariant& get_message(uint64_t message_index);
 
@@ -143,9 +143,9 @@ public:
     /**
      * @brief Type of subscription container.
      */
-    using SubscriptionContainer = device_lib::CudaVector<SubscriptionVariant>;
+    using SubscriptionContainer = device_lib::CUDAVector<SubscriptionVariant>;
 
-    using MessageBuffer = device_lib::CudaVector<cuda::MessageVariant>;
+    using MessageBuffer = device_lib::CUDAVector<cuda::MessageVariant>;
 
     /**
      * @brief Get access to subscription container of the endpoint.
@@ -177,10 +177,10 @@ private:
 
 
 template<>
-__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const device_lib::CudaVector<UID>&);
+__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const device_lib::CUDAVector<UID>&);
 
 
 template<>
-__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const device_lib::CudaVector<UID>&);
+__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const device_lib::CUDAVector<UID>&);
 
 }  // namespace knp::backends::gpu::cuda

@@ -1,6 +1,6 @@
 /**
- * @file vector_kernels.cuh
- * @brief CUDA STL-like vector implemented to work on GPU.
+ * @file kernels.cu
+ * @brief CUDA STL-like vector implementation to work on GPU.
  * @kaspersky_support A. Vartenkov.
  * @date 06.07.2025
  * @license Apache 2.0
@@ -18,6 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "kernels.cuh"
 
 #include <cuda_runtime.h>
 #include <thrust/equal.h>
@@ -38,7 +40,7 @@
 namespace knp::backends::gpu::cuda::device_lib
 {
 
-__global__ void has_sender_kernel(const UID &uid, device_lib::CudaVector<UID> senders,
+__global__ void has_sender_kernel(const UID &uid, device_lib::CUDAVector<UID> senders,
                                 int *result)
 {
     uint64_t index = threadIdx.x + blockIdx.x + blockDim.x;
@@ -47,4 +49,4 @@ __global__ void has_sender_kernel(const UID &uid, device_lib::CudaVector<UID> se
     atomicOr(result, 1);
 }
 
-}
+}  // namespace knp::backends::gpu::cuda::device_lib

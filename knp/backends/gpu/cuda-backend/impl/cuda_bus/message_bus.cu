@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <boost/mp11/algorithm.hpp>
 #include <cuda/std/detail/libcxx/include/algorithm>
 #include <thrust/host_vector.h>
@@ -104,9 +105,11 @@ __host__ thrust::device_vector<uint64_t> get_senders_numbers(const CUDAMessageBu
 }
 
 
-// фигачим вектор, его задача в том чтобы для каждой подписки и каждого отправителя был свой вектор, зарезервированный под размер
+// фигачим вектор, его задача в том чтобы для каждой подписки и каждого отправителя был свой вектор,
+// зарезервированный под размер
 // всех сообщений. На самом деле бы лучше сделать это для каждой подписки нужного типа, но логика будет сложнее.
-__host__ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::SubscriptionContainer &subscriptions, uint64_t size_z)
+__host__ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::SubscriptionContainer &subscriptions,
+    uint64_t size_z)
 {
     DevVec<DevVec<DevVec<uint64_t>>> res;
     uint64_t size_x = subscriptions.size();
@@ -148,13 +151,13 @@ __global__ void find_by_sender(
         cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) {return msg.header_.sender_uid_; }, msg);
         // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid);
 //        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i);
-
     }
 }
 
 
 // Так, надо найти вектор сообщений с известным получателем и известного типа. Это несложно.
-// Что нам надо: для каждого получателя получить отправителей. Запустить поиск по отправителю. Собрать результаты в вектор.
+// Что нам надо: для каждого получателя получить отправителей.
+// Запустить поиск по отправителю. Собрать результаты в вектор.
 // Что нам надо для верхней функции: набор подписок и индекс типа, вектор сообщений, размеры для набора и вектора.
 // Ещё нужен вектор для результата:
 __global__ void find_messages_by_receiver(
@@ -191,7 +194,9 @@ __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint6
     // Find number of threads and blocks and run the core.
     const int num_threads = std::min<int>(threads_per_block, subscriptions_.size());
     const int num_blocks = subscriptions_.size() / threads_per_block + 1;
-    find_messages_by_receiver<<<num_blocks, num_threads>>>(subscriptions_, messages_to_route_, found_messages_indices, type_index);
+    find_messages_by_receiver<<<num_blocks, num_threads>>>(subscriptions_, messages_to_route_,
+                                                           found_messages_indices, type_index);
+
     return found_messages_indices;
 }
 
@@ -224,7 +229,6 @@ __host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
     {
         // TODO: Finish
     }
-
 }
 
 
@@ -238,10 +242,9 @@ __device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message
 
 template <class MessageType>
 __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
-        device_lib::CudaVector<MessageType> &result_messages)
+        device_lib::CUDAVector<MessageType> &result_messages)
 {
     // locate messages
-
 }
 
 

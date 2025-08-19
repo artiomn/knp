@@ -63,7 +63,7 @@ public:
     /**
      * @brief Internal container for UIDs.
      */
-    using UidSet = device_lib::CudaVector<UID>;
+    using UidSet = device_lib::CUDAVector<UID>;
     // __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
 
 public:
