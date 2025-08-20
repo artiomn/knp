@@ -34,8 +34,6 @@ constexpr int tag_size = 16;
 using UID = ::cuda::std::array<std::uint8_t, tag_size>;
 
 
-inline cuda::UID uid_to_cuda(const knp::core::UID &source);
-
 /**
  * @brief Convert from knp::core::UID to cuda UID.
  * @param uid core UID.

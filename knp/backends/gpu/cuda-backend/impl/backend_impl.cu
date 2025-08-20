@@ -65,73 +65,51 @@ bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 }
 
 
-__host__ void CUDABackendImpl::load_populations(const std::vector<knp::core::AllPopulationsVariant> &populations)
+__host__ void CUDABackendImpl::load_populations(const std::vector<CPUPopulationVariants> &populations)
 {
-//    SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
+    SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
     device_populations_.clear();
     device_populations_.reserve(populations.size());
-/*
+
     for (const auto &population : populations)
     {
-        std::visit(
+        ::cuda::std::visit(
             [this](auto &arg)
             {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<SupportedPopulations, T>{} == boost::mp11::mp_size<SupportedPopulations>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Population is not supported by the CUDA backend.");
-                }
+                using CPUPopulationType = std::decay_t<decltype(arg)>;
 
-                device_populations_.push_back(CUDAPopulation<typename T::PopulationNeuronType>(arg));
+                auto pop = CUDAPopulation<typename CPUPopulationType::PopulationNeuronType>(arg);
+                device_populations_.push_back(pop);
             },
             population);
     }
-*/
-//    SPDLOG_DEBUG("All populations loaded.");
+    SPDLOG_DEBUG("All populations loaded.");
 }
 
 
-/*
-void CUDABackendImpl::load_projections(const std::vector<knp::core::AllProjectionsVariant> &projections)
+void CUDABackendImpl::load_projections(const std::vector<CPUProjectionVariants> &projections)
 {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
-
-    projections_.clear();
-    projections_.reserve(projections.size());
-
-    for (const auto &projection : projections)
-    {
-        projections_.push_back(projection);
-    }
 
     device_projections_.clear();
     device_projections_.reserve(projections.size());
 
     for (const auto &projection : projections)
     {
-        std::visit(
+        ::cuda::std::visit(
             [this](auto &arg)
             {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<SupportedProjections, T>{} == boost::mp11::mp_size<SupportedProjections>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Projection is not supported by the CUDA backend.");
-                }
+                using CPUProjectionType = std::decay_t<decltype(arg)>;
+                auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>(arg);
 
-                device_projections_.push_back(CUDAProjection<typename T::ProjectionSynapseType>(arg));
-//                    .neurons_ = arg.get_neurons_parameters()
+                device_projections_.push_back(proj);
             },
             projection);
     }
-//    SPDLOG_DEBUG("All projections loaded.");
-}*/
+
+    SPDLOG_DEBUG("All projections loaded.");
+}
 
 
 void CUDABackendImpl::_init()
@@ -139,7 +117,6 @@ void CUDABackendImpl::_init()
 //    SPDLOG_DEBUG("Initializing CUDABackendImpl backend...");
 
     // knp::backends::cpu::init(projections_, get_message_endpoint());
-
 //    SPDLOG_DEBUG("Initialization finished.");
 }
 

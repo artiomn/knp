@@ -55,15 +55,17 @@ struct CUDAPopulation
 
     __host__ __device__ CUDAPopulation() = default;
 
+//#if !defined(__CUDA_ARCH__)
     /**
      * @brief Constructor.
      * @param population source population.
      */
-    __host__ __device__ explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
-        : uid_{uid_to_cuda(population.get_uid())},
-          neurons_{population.get_neurons_parameters()}
+    __host__ explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
+        : uid_{to_gpu_uid(population.get_uid())}
+//          neurons_{population.get_neurons_parameters()}
     {
     }
+//#endif
 
     __host__ __device__ ~CUDAPopulation() = default;
 

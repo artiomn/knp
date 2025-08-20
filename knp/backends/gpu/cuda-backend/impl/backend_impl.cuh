@@ -111,6 +111,11 @@ public:
      */
     using SynapticMessageQueue = std::unordered_map<uint64_t, core::messaging::SynapticImpactMessage>;
 
+    using SupportedCPUPopulations = boost::mp11::mp_transform<knp::core::Population, SupportedNeurons>;
+    using CPUPopulationVariants = boost::mp11::mp_rename<SupportedCPUPopulations, ::cuda::std::variant>;
+    using SupportedCPUProjections = boost::mp11::mp_transform<knp::core::Projection, SupportedSynapses>;
+    using CPUProjectionVariants = boost::mp11::mp_rename<SupportedCPUProjections, ::cuda::std::variant>;
+
 public:
     /**
      * @brief Type of population container.
@@ -159,14 +164,14 @@ public:
      * @throw exception if the `projections` parameter contains unsupported projection types.
      * @param projections projections to add.
      */
-    void load_projections(const std::vector<knp::core::AllProjectionsVariant> &projections);
+    void load_projections(const std::vector<CPUProjectionVariants> &projections);
 
     /**
      * @brief Add populations to backend.
      * @throw exception if the `populations` parameter contains unsupported population types.
      * @param populations populations to add.
      */
-    __host__ void load_populations(const std::vector<knp::core::AllPopulationsVariant> &populations);
+    __host__ void load_populations(const std::vector<CPUPopulationVariants> &populations);
 
 public:
     /**

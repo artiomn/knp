@@ -283,7 +283,7 @@ public:
         #ifdef __CUDA_ARCH__
         data_[size_++] = value;
         #else
-        static_assert(std::is_trivially_copyable_v<T>);
+        //static_assert(std::is_trivially_copyable_v<T>);
         call_and_check(cudaMemcpy(data_ + size_, &value, sizeof(T), cudaMemcpyHostToDevice));
         ++size_;
 

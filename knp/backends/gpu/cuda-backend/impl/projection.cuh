@@ -66,10 +66,10 @@ struct CUDAProjection
      * @brief Constructor.
      * @param projection source projection.
      */
-    __host__ __device__ explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
-        : uid_(uid_to_cuda(projection.get_uid())),
-          presynaptic_uid_(uid_to_cuda(projection.get_presynaptic())),
-          postsynaptic_uid_(uid_to_cuda(projection.get_postsynaptic())),
+    __host__ explicit CUDAProjection(const knp::core::Projection<SynapseType> &projection)
+        : uid_(to_gpu_uid(projection.get_uid())),
+          presynaptic_uid_(to_gpu_uid(projection.get_presynaptic())),
+          postsynaptic_uid_(to_gpu_uid(projection.get_postsynaptic())),
           is_locked_(thrust::device_malloc<bool>(1))
     {
         *is_locked_ = projection.is_locked();
