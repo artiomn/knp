@@ -38,60 +38,6 @@
 namespace knp::backends::gpu
 {
 
-__global__ void calculate_populations(typename cuda::CUDABackendImpl::PopulationContainer &populations)
-{
-    // Calculate populations. This is the same as inference.
-/*
-    for (auto &population : populations)
-    {
-        std::visit(
-            //[this](auto &arg)
-            [](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<CUDABackend::SupportedPopulations, T>{} ==
-                    boost::mp11::mp_size<CUDABackend::SupportedPopulations>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Population is not supported by the CUDA backend.");
-                }
-                auto message_opt = calculate_population(arg);
-            },
-            population);
-    }
-*/
-}
-
-
-__global__ void calculate_projections(typename cuda::CUDABackendImpl::ProjectionContainer &projections)
-{
-    // Calculate projections.
-/*
-    for (auto &projection : projections)
-    {
-        std::visit(
-            // [this, &projection](auto &arg)
-            [&projection](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (
-                    boost::mp11::mp_find<CUDABackend::SupportedProjections, T>{} ==
-                    boost::mp11::mp_size<CUDABackend::SupportedProjections>{})
-                {
-                    static_assert(
-                        knp::meta::always_false_v<T>,
-                        "Projection is not supported by the CUDA backend.");
-                }
-                calculate_projection(arg, projection.messages_);
-            },
-            projection);
-    }
-*/
-}
-
-
 CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>(get_message_bus()))
 {
     SPDLOG_INFO("CUDA backend instance created.");
@@ -197,6 +143,8 @@ void CUDABackend::load_populations(const std::vector<PopulationVariants> &popula
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
+//    populations_ = populations;
+    impl_->load_populations(populations_);
 
     SPDLOG_DEBUG("All populations loaded.");
 }
@@ -205,6 +153,10 @@ void CUDABackend::load_populations(const std::vector<PopulationVariants> &popula
 void CUDABackend::load_projections(const std::vector<ProjectionVariants> &projections)
 {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
+
+//    projections_ = projections;
+    impl_->load_projections(projections);
+
     SPDLOG_DEBUG("All projections loaded.");
 }
 

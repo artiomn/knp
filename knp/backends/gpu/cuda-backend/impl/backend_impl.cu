@@ -36,6 +36,7 @@
 #include "projection.cuh"
 #include "population.cuh"
 
+#include "cuda_lib/get_blocks_config.cuh"
 #include "cuda_lib/vector.cuh"
 
 
@@ -65,7 +66,67 @@ bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 }
 
 
-__host__ void CUDABackendImpl::load_populations(const std::vector<CPUPopulationVariants> &populations)
+__global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
+                                             typename cuda::CUDABackendImpl::PopulationContainer &populations)
+{
+    // Calculate populations. This is the same as inference.
+
+    for (auto &population : populations)
+    {
+/*        ::cuda::std::visit(
+            //[this](auto &arg)
+            [backend](auto &arg)
+            {
+//                using T = std::decay_t<decltype(arg)>;
+//                auto message_opt = backend->calculate_population(arg);
+            },
+            population);
+*/
+    }
+}
+
+
+__global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
+                                             typename cuda::CUDABackendImpl::ProjectionContainer &projections)
+{
+    // Calculate projections.
+    for (auto &projection : projections)
+    {
+/*
+        std::visit(
+            // [this, &projection](auto &arg)
+            [backend](auto &arg)
+            {
+//                using T = std::decay_t<decltype(arg)>;
+//                backend->calculate_projection(arg, projection.messages_);
+            },
+            projection);
+*/
+    }
+}
+
+void CUDABackendImpl::calculate_populations()
+{
+    // Calculate populations. This is the same as inference.
+    // Calculate projections.
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
+
+    calculate_populations_kernel<<<num_blocks, num_threads>>>(this, device_populations_);
+    cudaDeviceSynchronize();
+}
+
+
+void CUDABackendImpl::calculate_projections()
+{
+    // Calculate projections.
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
+
+    calculate_projections_kernel<<<num_blocks, num_threads>>>(this, device_projections_);
+    cudaDeviceSynchronize();
+}
+
+
+void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::PopulationContainer &populations)
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
@@ -74,7 +135,7 @@ __host__ void CUDABackendImpl::load_populations(const std::vector<CPUPopulationV
 
     for (const auto &population : populations)
     {
-        ::cuda::std::visit(
+        ::std::visit(
             [this](auto &arg)
             {
                 using CPUPopulationType = std::decay_t<decltype(arg)>;
@@ -88,7 +149,7 @@ __host__ void CUDABackendImpl::load_populations(const std::vector<CPUPopulationV
 }
 
 
-void CUDABackendImpl::load_projections(const std::vector<CPUProjectionVariants> &projections)
+void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::ProjectionContainer &projections)
 {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
 
@@ -97,7 +158,7 @@ void CUDABackendImpl::load_projections(const std::vector<CPUProjectionVariants> 
 
     for (const auto &projection : projections)
     {
-        ::cuda::std::visit(
+        ::std::visit(
             [this](auto &arg)
             {
                 using CPUProjectionType = std::decay_t<decltype(arg)>;

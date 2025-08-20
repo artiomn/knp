@@ -31,6 +31,7 @@
 #include <thrust/execution_policy.h>
 #include <spdlog/spdlog.h>
 
+#include "get_blocks_config.cuh"
 #include "safe_call.cuh"
 #include "cu_alloc.cuh"
 
@@ -42,17 +43,6 @@
  */
 namespace knp::backends::gpu::cuda::device_lib
 {
-
-constexpr size_t threads_per_block = 256;
-
-
-inline std::pair<size_t, size_t> get_blocks_config(size_t num_total)
-{
-    size_t num_threads = std::min(num_total, threads_per_block);
-    size_t num_blocks = (num_total + threads_per_block - 1) / threads_per_block;
-    return std::make_pair(num_blocks, num_threads);
-}
-
 
 template <typename T, typename Allocator = CuMallocAllocator<T>>
 class CUDAVector

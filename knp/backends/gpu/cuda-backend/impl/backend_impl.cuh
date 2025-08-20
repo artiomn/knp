@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <knp/backends/gpu-cuda/backend.h>
 #include <knp/core/messaging/messaging.h>
 #include <knp/core/message_bus.h>
 #include <knp/devices/gpu_cuda.h>
@@ -111,11 +112,6 @@ public:
      */
     using SynapticMessageQueue = std::unordered_map<uint64_t, core::messaging::SynapticImpactMessage>;
 
-    using SupportedCPUPopulations = boost::mp11::mp_transform<knp::core::Population, SupportedNeurons>;
-    using CPUPopulationVariants = boost::mp11::mp_rename<SupportedCPUPopulations, ::cuda::std::variant>;
-    using SupportedCPUProjections = boost::mp11::mp_transform<knp::core::Projection, SupportedSynapses>;
-    using CPUProjectionVariants = boost::mp11::mp_rename<SupportedCPUProjections, ::cuda::std::variant>;
-
 public:
     /**
      * @brief Type of population container.
@@ -164,14 +160,14 @@ public:
      * @throw exception if the `projections` parameter contains unsupported projection types.
      * @param projections projections to add.
      */
-    void load_projections(const std::vector<CPUProjectionVariants> &projections);
+    __host__ void load_projections(const knp::backends::gpu::CUDABackend::ProjectionContainer &projections);
 
     /**
      * @brief Add populations to backend.
      * @throw exception if the `populations` parameter contains unsupported population types.
      * @param populations populations to add.
      */
-    __host__ void load_populations(const std::vector<CPUPopulationVariants> &populations);
+    __host__ void load_populations(const knp::backends::gpu::CUDABackend::PopulationContainer &populations);
 
 public:
     /**
@@ -255,6 +251,12 @@ public:
     }
 
     // [[nodiscard]] DataRanges get_network_data() const { return {}; }
+
+public:
+    __host__ void calculate_populations();
+    __host__ void calculate_projections();
+
+    __host__ __device__ knp::backends::gpu::cuda::CUDAMessageBus &get_message_bus() { return device_message_bus_; }
 
 public:
     /**
