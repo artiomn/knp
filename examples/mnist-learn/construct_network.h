@@ -31,27 +31,30 @@
 #include <vector>
 
 
-/// How many steps to use for learning. 20 steps are used for a single image.
-constexpr int learning_period = 200000;
-/// Classes in MNIST.
-constexpr int classes_in_mnist = 10;
-
-
 struct AnnotatedNetwork
 {
     knp::framework::Network network_;
     struct Annotation
     {
+        // cppcheck-suppress unusedStructMember
         std::vector<knp::core::UID> output_uids_;
+        // cppcheck-suppress unusedStructMember
         std::vector<knp::core::UID> projections_from_raster_;
+        // cppcheck-suppress unusedStructMember
         std::vector<knp::core::UID> projections_from_classes_;
+        // cppcheck-suppress unusedStructMember
         std::set<knp::core::UID> inference_population_uids_;
+        // cppcheck-suppress unusedStructMember
         std::set<knp::core::UID> inference_internal_projection_;
 
         // For each compound network: a vector of senders and a vector of receivers.
+        // cppcheck-suppress unusedStructMember
         std::vector<std::pair<std::vector<knp::core::UID>, std::vector<knp::core::UID>>> wta_data_;
+        // cppcheck-suppress unusedStructMember
         std::map<knp::core::UID, std::string> population_names_;
-    } data_;
+    }
+    // cppcheck-suppress unusedStructMember
+    data_;
 };
 
 

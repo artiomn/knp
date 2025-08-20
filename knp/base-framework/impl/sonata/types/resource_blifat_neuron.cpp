@@ -106,7 +106,6 @@ void add_population_to_h5<core::Population<knp::neuron_traits::SynapticResourceS
     PUT_NEURON_TO_DATASET(population, first_isi_spike_, group0);
     PUT_NEURON_TO_DATASET(population, is_being_forced_, group0);
     PUT_NEURON_TO_DATASET(population, dopamine_plasticity_time_, group0);
-    PUT_NEURON_TO_DATASET(population, additional_threshold_, group0);
     {
         std::vector<int> data;
         data.reserve(population.size());
@@ -125,6 +124,7 @@ void add_population_to_h5<core::Population<knp::neuron_traits::SynapticResourceS
     PUT_NEURON_TO_DATASET(population, bursting_phase_, dynamic_group0);
     PUT_NEURON_TO_DATASET(population, total_blocking_period_, dynamic_group0);
     PUT_NEURON_TO_DATASET(population, dopamine_value_, dynamic_group0);
+    PUT_NEURON_TO_DATASET(population, additional_threshold_, dynamic_group0);
 }
 
 
