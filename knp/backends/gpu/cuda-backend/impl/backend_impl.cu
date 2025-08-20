@@ -67,7 +67,8 @@ bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 
 
 __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
-                                             typename cuda::CUDABackendImpl::PopulationContainer &populations)
+                                             typename cuda::CUDABackendImpl::PopulationContainer &populations,
+                                             std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
 
@@ -87,7 +88,8 @@ __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
 
 
 __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
-                                             typename cuda::CUDABackendImpl::ProjectionContainer &projections)
+                                             typename cuda::CUDABackendImpl::ProjectionContainer &projections,
+                                             std::uint64_t step)
 {
     // Calculate projections.
     for (auto &projection : projections)
@@ -105,23 +107,24 @@ __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
     }
 }
 
-void CUDABackendImpl::calculate_populations()
+
+void CUDABackendImpl::calculate_populations(std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
     // Calculate projections.
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
 
-    calculate_populations_kernel<<<num_blocks, num_threads>>>(this, device_populations_);
+    calculate_populations_kernel<<<num_blocks, num_threads>>>(this, device_populations_, step);
     cudaDeviceSynchronize();
 }
 
 
-void CUDABackendImpl::calculate_projections()
+void CUDABackendImpl::calculate_projections(std::uint64_t step)
 {
     // Calculate projections.
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
 
-    calculate_projections_kernel<<<num_blocks, num_threads>>>(this, device_projections_);
+    calculate_projections_kernel<<<num_blocks, num_threads>>>(this, device_projections_, step);
     cudaDeviceSynchronize();
 }
 

@@ -107,20 +107,24 @@ constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 void CUDABackend::_step()
 {
     SPDLOG_DEBUG("Starting step #{}...", get_step());
+
+    auto step = get_step();
+
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
     // Calculate populations. This is the same as inference.
-    // calculate_populations(populations_);
+    impl_->calculate_populations(step);
 
     // Continue inference.
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
     // Calculate projections.
-    // calculate_projections(projections_);
+    impl_->calculate_projections(step);
 
     get_message_bus().route_messages();
     get_message_endpoint().receive_all_messages();
-    auto step = gad_step();
+
+    step = gad_step();
     // Need to suppress "Unused variable" warning.
     (void)step;
     SPDLOG_DEBUG("Step finished #{}.", step);
@@ -226,43 +230,6 @@ void CUDABackend::_init()
 
     SPDLOG_DEBUG("Initialization finished.");
 }
-
-
-std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
-    core::Population<knp::neuron_traits::BLIFATNeuron> &population)
-{
-    return {};
-}
-
-
-// std::optional<core::messaging::SpikeMessage> CUDABackend::calculate_population(
-//     knp::core::Population<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population)
-//{
-//    SPDLOG_TRACE("Calculate resource-based STDP-compatible BLIFAT population {}.", std::string(population.get_uid()));
-//    return std::nullopt;
-//}
-
-
-void CUDABackend::calculate_projection(
-    knp::core::Projection<knp::synapse_traits::DeltaSynapse> &projection, SynapticMessageQueue &message_queue)
-{
-}
-
-
-//void CUDABackend::calculate_projection(
-//    knp::core::Projection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
-//    SynapticMessageQueue &message_queue)
-//{
-//    SPDLOG_TRACE("Calculate AdditiveSTDPDelta synapse projection {}.", std::string(projection.get_uid()));
-//}
-
-
-//void CUDABackend::calculate_projection(
-//    knp::core::Projection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
-//    SynapticMessageQueue &message_queue)
-//{
-//    SPDLOG_TRACE("Calculate STDPSynapticResource synapse projection {}.", std::string(projection.get_uid()));
-//}
 
 
 CUDABackend::PopulationIterator CUDABackend::begin_populations()

@@ -253,8 +253,8 @@ public:
     // [[nodiscard]] DataRanges get_network_data() const { return {}; }
 
 public:
-    __host__ void calculate_populations();
-    __host__ void calculate_projections();
+    __host__ void calculate_populations(std::uint64_t step);
+    __host__ void calculate_projections(std::uint64_t step);
 
     __host__ __device__ knp::backends::gpu::cuda::CUDAMessageBus &get_message_bus() { return device_message_bus_; }
 
