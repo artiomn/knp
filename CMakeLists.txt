@@ -344,16 +344,6 @@ add_third_party("gh:Tencent/rapidjson#ebd87cb"
 
 include_directories("${CPM_PACKAGE_rapidjson_SOURCE_DIR}/include")
 
-if (KNP_BUILD_CUDA)
-    add_third_party(NAME "cuco"
-                    GITHUB_REPOSITORY "NVIDIA/cuCollections"
-                    GIT_TAG dev
-                    OPTIONS
-                        "BUILD_TESTS OFF"
-                        "BUILD_BENCHMARKS OFF"
-                        "BUILD_EXAMPLES OFF")
-endif()
-
 if (KNP_BUILD_TESTS)
     add_compile_definitions(SPDLOG_ACTIVE_LEVEL=0)
     add_third_party("gh:google/googletest@1.14.0"

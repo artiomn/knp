@@ -378,8 +378,9 @@ __device__ void CUDABackendImpl::calculate_projection(
                 CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse synapse =
                     projection.synapses_[synapse_index];
                 if (thrust::get<core::source_neuron_id>(synapse) != spiked_neuron_index) continue;
+/*
                 // WeightUpdateSTDP<SynapseType>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
-/*                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
+                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
 
                 // The message is sent on step N - 1, received on step N.
                 size_t future_step = synapse_params.delay_ + step_n - 1;
@@ -387,8 +388,9 @@ __device__ void CUDABackendImpl::calculate_projection(
                     synapse_index, synapse_params.weight_, synapse_params.output_type_,
                     static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
                     static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
+// TODO: use projection attribute.
+                cuco::dynamic_map<std::uint64_t, cuda::SynapticImpactMessage> future_messages({}, {}, {});
 
-                auto &future_messages = message_queue;
                 auto iter = future_messages.find(future_step);
                 if (iter != future_messages.end())
                 {
