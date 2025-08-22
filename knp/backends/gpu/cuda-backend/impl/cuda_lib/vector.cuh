@@ -70,21 +70,21 @@ public:
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             data_ = allocator_.allocate(capacity_);
-            construct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+            construct_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
             cudaDeviceSynchronize();
         }
         #endif
     }
 
-    __host__ __device__ CUDAVector(const T *vec, size_type size)
+    __host__ __device__ CUDAVector(const value_type *vec, size_type size)
     {
         reserve(size);
         #ifdef __CUDA_ARCH__
         size_ = size;
         for (size_type i = 0; i < size_; ++i) allocator_.construct(data_ + i, *(vec + i));
         #else
-        static_assert(std::is_trivially_copyable_v<T>);
-        call_and_check(cudaMemcpy(data_, vec, size * sizeof(T), cudaMemcpyHostToDevice));
+        static_assert(std::is_trivially_copyable_v<value_type>);
+        call_and_check(cudaMemcpy(data_, vec, size * sizeof(value_type), cudaMemcpyHostToDevice));
         size_ = size;
         #endif
     }
@@ -116,7 +116,7 @@ public:
         #else
         data_ = allocator_.allocate(capacity_);
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        copy_kernel<<<num_blocks, num_threads>>>(0, size_, data_, other.data_);
+        copy_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, data_, other.data_);
         cudaDeviceSynchronize();
         #endif
     }
@@ -176,12 +176,12 @@ public:
     // {
     // }
 
-    __host__ CUDAVector& operator=(const std::vector<T> &vec)
+    __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
-        static_assert(std::is_trivially_copyable_v<T>);
+        static_assert(std::is_trivially_copyable_v<value_type>);
         clear();
         reserve(vec.size());
-        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(T), cudaMemcpyHostToDevice));
+        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
         return *this;
     }
 
@@ -196,7 +196,7 @@ public:
         bool equal;
         bool *d_equal;
         cudaMalloc(&d_equal, sizeof(bool));
-        equal_kernel<<<1, 1>>>(data_, other.data_, size_, d_equal);
+        equal_kernel<value_type><<<1, 1>>>(data_, other.data_, size_, d_equal);
         cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice);
         cudaFree(d_equal);
         return equal;
@@ -218,31 +218,39 @@ public:
         size_ = 0;
     }
 
-    // __device__ T& operator[](size_t index)
-    // {
-    //     return data_[index];
-    // }
-
-    __host__ __device__ bool set(uint64_t index, const T &value)
+    __host__ __device__ bool set(uint64_t index, const value_type &value)
     {
         if (index >= size_) return false;
         #ifdef __CUDA_ARCH__
         data_[index] = value;
         #else
-        static_assert(std::is_trivially_copyable_v<T>);
-        cudaMemcpy(data_ + index, &value, sizeof(T), cudaMemcpyHostToDevice);
+        static_assert(std::is_trivially_copyable_v<value_type>);
+        cudaMemcpy(data_ + index, &value, sizeof(value_type), cudaMemcpyHostToDevice);
         #endif
         return true;
     }
 
-    __host__ __device__ T operator[](size_type index) const
+    __host__ __device__ value_type operator[](size_type index) const
     {
         #ifdef __CUDA_ARCH__
         return data_[index];
         #else
-        static_assert(std::is_trivially_copyable_v<T>);
+        static_assert(std::is_trivially_copyable_v<value_type>);
         T result;
-        call_and_check(cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost));
+        call_and_check(cudaMemcpy(&result, data_ + index, sizeof(value_type), cudaMemcpyDeviceToHost));
+        return result;
+        #endif
+    }
+
+    __host__ __device__ T& operator[](size_t index)
+    {
+        #ifdef __CUDA_ARCH__
+        return data_[index];
+        #else
+        // TODO: return thrust::reference (or smth. like this).
+        static_assert(std::is_trivially_copyable_v<value_type>);
+        T result;
+        call_and_check(cudaMemcpy(&result, data_ + index, sizeof(value_type), cudaMemcpyDeviceToHost));
         return result;
         #endif
     }
@@ -262,26 +270,26 @@ public:
         return 0 == size_;
     }
 
-    __host__ __device__ T* data()
+    __host__ __device__ value_type* data()
     {
         return data_;
     }
 
-    __host__ __device__ void push_back(const T& value)
+    __host__ __device__ void push_back(const value_type& value)
     {
         if (size_ == capacity_) reserve((size_ + 1) * 2);
         #ifdef __CUDA_ARCH__
         data_[size_++] = value;
         #else
         //static_assert(std::is_trivially_copyable_v<T>);
-        call_and_check(cudaMemcpy(data_ + size_, &value, sizeof(T), cudaMemcpyHostToDevice));
+        call_and_check(cudaMemcpy(data_ + size_, &value, sizeof(value_type), cudaMemcpyHostToDevice));
         ++size_;
 
         // #ifdef DEBUG
-        if constexpr (std::is_same_v<uint64_t, T>)
+        if constexpr (std::is_same_v<uint64_t, value_type>)
         {
-            T val;
-            cudaMemcpy(&val, data_ + size_ - 1, sizeof(T), cudaMemcpyDeviceToHost);
+            value_type val;
+            cudaMemcpy(&val, data_ + size_ - 1, sizeof(value_type), cudaMemcpyDeviceToHost);
             std::cout << "Pushed back " << val << std::endl;
         }
         // #endif
@@ -295,7 +303,7 @@ public:
     //     data_[size_++] = std::move(value);
     // }
 
-    __device__ T pop_back()
+    __device__ value_type pop_back()
     {
         return data_[--size_];
     }
@@ -309,9 +317,9 @@ public:
         T* new_data = allocator_.allocate(new_capacity);
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         // Inefficient, better to use move.
-        copy_kernel<<<num_blocks, num_threads>>>(0, size_, new_data, data_);
+        copy_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, new_data, data_);
         cudaDeviceSynchronize();
-        destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+        destruct_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
         cudaDeviceSynchronize();
         allocator_.deallocate(data_);
         data_ = new_data;
@@ -329,12 +337,12 @@ public:
         {
             reserve(new_size);
             auto [num_blocks, num_threads] = get_blocks_config(new_size - size_);
-            construct_kernel<<<num_blocks, num_threads>>>(data_, size_, new_size, allocator_);
+            construct_kernel<value_type><<<num_blocks, num_threads>>>(data_, size_, new_size, allocator_);
         }
         else if (new_size < size_)
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_ - new_size);
-            destruct_kernel<<<num_blocks, num_threads>>>(data_, new_size, size_, allocator_);
+            destruct_kernel<value_type><<<num_blocks, num_threads>>>(data_, new_size, size_, allocator_);
         }
         cudaDeviceSynchronize();
         size_ = new_size;
