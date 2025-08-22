@@ -160,6 +160,8 @@ TEST(CudaBackendSuite, CudaHostSubscription)
 
 TEST(CudaBackendSuite, CudaBusSubscription)
 {
+    run_bus<<<1, 2>>>();
+    cudaDeviceSynchronize();
     // using knp::backends::gpu::cuda::to_gpu_uid;
     // using knp::backends::gpu::cuda::device_lib::CUDAVector;
     // using knp::backends::gpu::cuda::UID;
