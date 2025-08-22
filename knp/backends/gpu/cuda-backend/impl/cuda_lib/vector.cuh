@@ -242,7 +242,7 @@ public:
         #endif
     }
 
-    __host__ __device__ T& operator[](size_t index)
+/*    __host__ __device__ T& operator[](size_t index)
     {
         #ifdef __CUDA_ARCH__
         return data_[index];
@@ -254,7 +254,7 @@ public:
         return result;
         #endif
     }
-
+*/
     __host__ __device__ size_type capacity() const
     {
         return capacity_;
