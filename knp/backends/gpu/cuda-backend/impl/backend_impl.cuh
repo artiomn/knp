@@ -265,12 +265,12 @@ public:
      * @param population population to calculate.
      * @return copy of a spike message if population is emitting one.
      */
-    __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
+    __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);
 
-    __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
+    __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);

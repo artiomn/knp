@@ -44,14 +44,6 @@ namespace knp::backends::gpu::cuda
 {
 
 
-/*template <typename AllVariants, typename SupportedVariants>
-SupportedVariants convert_variant(const AllVariants &input)
-{
-    SupportedVariants result = std::visit([](auto &&arg) { return arg; }, input);
-    return result;
-}*/
-
-
 template <class ProjectionType>
 bool is_forcing()
 {
@@ -71,18 +63,17 @@ __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
                                              std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
-
     for (auto &population : populations)
     {
-/*        ::cuda::std::visit(
-            //[this](auto &arg)
-            [backend](auto &arg)
+        ::cuda::std::visit(
+            [backend, step](auto &arg)
             {
-//                using T = std::decay_t<decltype(arg)>;
-//                auto message_opt = backend->calculate_population(arg);
+                using T = std::decay_t<decltype(arg)>;
+
+                knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
+                auto message_opt = backend->calculate_population(arg, messages, step);
             },
             population);
-*/
     }
 }
 
@@ -94,16 +85,16 @@ __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
     // Calculate projections.
     for (auto &projection : projections)
     {
-/*
-        std::visit(
-            // [this, &projection](auto &arg)
-            [backend](auto &arg)
+        ::cuda::std::visit(
+            [backend, step](auto &arg)
             {
-//                using T = std::decay_t<decltype(arg)>;
-//                backend->calculate_projection(arg, projection.messages_);
+                using T = std::decay_t<decltype(arg)>;
+
+                knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
+                // arg.messages_ .
+                backend->calculate_projection(arg, messages, step);
             },
             projection);
-*/
     }
 }
 
@@ -185,7 +176,7 @@ void CUDABackendImpl::_init()
 }
 
 
-__device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl::calculate_population(
+__device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl::calculate_population(
     CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
     knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
     std::uint64_t step_n)
@@ -339,7 +330,7 @@ __device__ std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl
 }
 
 
-/*__device__ std::optional<core::messaging::SpikeMessage> CUDABackendImpl::calculate_population(
+/*__device__ ::cuda::std::optional<core::messaging::SpikeMessage> CUDABackendImpl::calculate_population(
     CUDAPopulation<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
     knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
     std::uint64_t step_n)

@@ -33,6 +33,7 @@
 #include <vector>
 
 
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/safe_call.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/messaging.cuh"
@@ -161,7 +162,7 @@ TEST(CudaBackendSuite, CudaHostSubscription)
 TEST(CudaBackendSuite, CudaBusSubscription)
 {
     run_bus<<<1, 2>>>();
-    cudaDeviceSynchronize();
+    call_and_check(cudaDeviceSynchronize());
     // using knp::backends::gpu::cuda::to_gpu_uid;
     // using knp::backends::gpu::cuda::device_lib::CUDAVector;
     // using knp::backends::gpu::cuda::UID;
