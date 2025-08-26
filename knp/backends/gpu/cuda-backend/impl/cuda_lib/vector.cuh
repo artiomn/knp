@@ -358,9 +358,11 @@ public:
     }
 
     __host__ __device__ iterator begin() { return data_; }
+    __host__ __device__ const iterator begin() const { return data_; }
     __host__ __device__ const_iterator cbegin() const { return data_; }
 
     __host__ __device__ iterator end() { return data_ + size_; }
+    __host__ __device__ const iterator end() const { return data_ + size_; }
     __host__ __device__ const_iterator cend() const { return data_ + size_; }
 
 private:
@@ -410,7 +412,7 @@ private:
 
 
     Allocator allocator_;
-    T* data_ = nullptr;
+    pointer data_ = nullptr;
     // Maximum elements count.
     size_type capacity_ = 0;
     // Current element.
