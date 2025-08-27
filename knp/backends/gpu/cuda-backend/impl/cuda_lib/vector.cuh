@@ -89,6 +89,14 @@ public:
         #endif
     }
 
+    __host__ CUDAVector(const std::vector<value_type> &vec)
+    {
+        static_assert(std::is_trivially_copyable_v<value_type>);
+        clear();
+        reserve(vec.size());
+        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
+    }
+
     __host__ __device__ ~CUDAVector()
     {
         #ifdef __CUDA_ARCH__
