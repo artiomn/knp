@@ -33,6 +33,8 @@
 #include <memory>
 #include <utility>
 
+#include <thrust/device_vector.h>
+
 #include "subscription.cuh"
 #include "../uid.cuh"
 #include "messaging.cuh"
