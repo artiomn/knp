@@ -34,12 +34,12 @@ namespace knp::backends::cpu
 {
 
 /**
- * @brief Calculate LIF population step.
+ * @brief Calculate LIF population.
  * @tparam LifNeuron LIF neuron type.
- * @param population population to be calculated.
- * @param endpoint endpoint for message exchange.
+ * @param population population to calculate.
+ * @param endpoint endpoint to use for message exchange.
  * @param step_n current step.
- * @return message if a message was sent by function.
+ * @return spike message with indexes of spiked neurons if population is emitting one.
  */
 template <class LifNeuron>
 std::optional<knp::core::messaging::SpikeMessage> calculate_lif_population(

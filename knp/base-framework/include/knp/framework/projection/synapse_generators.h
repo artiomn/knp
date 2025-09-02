@@ -180,7 +180,7 @@ template <typename SynapseType, template <typename...> class Container>
 
 
 /**
- * @brief The FromMap class is a defintion of a generator of synapses from `std::map` or `std::unordered_map` object.
+ * @brief The FromMap class is a definition of a generator of synapses from `std::map` or `std::unordered_map` object.
  * @details 'std::map' object must contain synapse parameters as values and `(from_index, to_index)` tuples as keys.
  * @tparam SynapseType projection synapse type.
  * @tparam Map map class.

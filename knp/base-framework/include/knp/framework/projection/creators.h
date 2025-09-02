@@ -35,7 +35,7 @@
 
 /**
  * @brief Namespace for framework projection creators.
- * @details Creators make generators
+ * @detail Creators make generators
  */
 namespace knp::framework::projection::creators
 {
