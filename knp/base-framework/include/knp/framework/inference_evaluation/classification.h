@@ -41,31 +41,31 @@ class KNP_DECLSPEC InferenceResultForClass
 public:
     /**
      * @brief Get true positives.
-     * @ret Amount of times model, that is supposed  to predict dog, predicted dog when it is a dog.
+     * @return Amount of times model, that is supposed  to predict dog, predicted dog when it is a dog.
      */
     [[nodiscard]] size_t get_true_positives() const { return true_positives_; }
 
     /**
      * @brief Get false negatives.
-     * @ret Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
+     * @return Amount of times model, that is supposed to predict dog, predicted not a dog when it is a dog.
      */
     [[nodiscard]] size_t get_false_negatives() const { return false_negatives_; }
 
     /**
      * @brief Get false positives.
-     * @ret Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
+     * @return Amount of times model, that is supposed to predict dog, predicted dog when it is not a dog.
      */
     [[nodiscard]] size_t get_false_positives() const { return false_positives_; }
 
     /**
      * @brief Get true negatives.
-     * @ret Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a dog.
+     * @return Amount of times model, that is supposed to predict dog, predicted not a dog when it is a not a dog.
      */
     [[nodiscard]] size_t get_true_negatives() const { return true_negatives_; }
 
     /**
      * @brief Shortcut for getting total votes.
-     * @ret Total votes.
+     * @return Total votes.
      */
     [[nodiscard]] size_t get_total_votes() const { return true_positives_ + false_negatives_ + false_positives_; }
 
@@ -93,7 +93,7 @@ public:
 
         /**
          * @brief Get inference results.
-         * @ret Inference results.
+         * @return Inference results.
          */
         [[nodiscard]] auto const &get_inference_results() const { return inference_results_; }
 

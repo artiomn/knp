@@ -90,7 +90,7 @@ public:
 
     /**
      * @brief Get image size.
-     * @ret Image size.
+     * @return Image size.
      */
     [[nodiscard]] size_t get_image_size() const { return image_size_; }
 
