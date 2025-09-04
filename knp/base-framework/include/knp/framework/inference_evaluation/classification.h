@@ -70,7 +70,7 @@ public:
     [[nodiscard]] size_t get_total_votes() const { return true_positives_ + false_negatives_ + false_positives_; }
 
     /**
-     * @detail A class to process inference results.
+     * @details A class to process inference results.
      */
     class KNP_DECLSPEC InferenceResultsProcessor
     {
@@ -79,7 +79,6 @@ public:
          * @brief Process inference results. Suited for classification models.
          * @param spikes All spikes from inference.
          * @param dataset Dataset.
-         * @return processed inference results for each class.
          */
         void process_inference_results(
             const std::vector<knp::core::messaging::SpikeMessage> &spikes,
