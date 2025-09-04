@@ -77,7 +77,7 @@ public:
 
     /**
      * @brief Create a incrementing image to spikes converter
-     * @detail Spikes will be sent for active_steps steps, and spikes wont be sent for steps_per_image-active_steps
+     * @details Spikes will be sent for active_steps steps, and spikes wont be sent for steps_per_image-active_steps
      * steps. This converter considered incrementing because it will add state_increment_factor * image_pixel to states,
      * and when value is greater than one, this considered a spike.
      * @param active_steps Amount of active steps, active steps are steps when spikes being sent, must be <
