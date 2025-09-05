@@ -25,6 +25,8 @@
 #include <thrust/logical.h>
 // #include <thrust/find.h>
 #include <thrust/execution_policy.h>
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
 
 #include <boost/mp11.hpp>
 #include <cuda/std/iterator>
@@ -72,7 +74,7 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<cuda::UID> &senders) :
+    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<cuda::UID> &senders) :
         receiver_(receiver)
     {
         #ifdef __CUDA_ARCH__
