@@ -46,6 +46,9 @@ struct CuMallocAllocator
         {
             call_and_check(cudaMalloc(&data, n * sizeof(T)));
         }
+        #ifndef __CUDA_ARCH__
+        std::cout << "Allocated " << n << " objects at " << data << std::endl;
+        #endif
 
         return data;
     }
@@ -58,7 +61,8 @@ struct CuMallocAllocator
     template <class... Args>
     __host__ __device__ static void construct(T* p, Args&&... args)
     {
-        *p = T(std::forward<Args>(args)...);
+        // *p = T(std::forward<Args>(args)...);
+        new (p) T(std::forward<Args>(args)...);
     }
 
     __host__ __device__ static void destroy(T* p)
@@ -68,7 +72,11 @@ struct CuMallocAllocator
 
     __host__ __device__ void deallocate(T* p, size_t n = 0)
     {
+        #ifndef __CUDA_ARCH__
+        std::cout << "Deallocating " << p << std::endl;
+        #endif
         call_and_check(cudaFree(p));
+
     }
 };
 

@@ -30,6 +30,6 @@
 namespace knp::backends::gpu::cuda::device_lib
 {
 
-__global__ void has_sender_kernel(const UID &uid, device_lib::CUDAVector<UID> senders, int *result);
+__global__ void has_sender_kernel(UID uid, const UID *senders, size_t num_senders, int *result);
 
 } // namespace knp::backends::gpu::cuda::device_lib

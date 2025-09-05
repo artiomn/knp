@@ -80,8 +80,11 @@ public:
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
         #else
+        std::cout << "Initializing with " << senders.size() << " senders" << std::endl;
         thrust::host_vector<UID> host_vec = senders;
+        std::cout << "Host vector has " << host_vec.size() << " senders" << std::endl;
         for (size_t i = 0; i < host_vec.size(); ++i) add_sender(host_vec[i]);
+        std::cout << "Created a subscription with " <<  senders_.size() << " senders" << std::endl;
         #endif
     }
 
@@ -126,9 +129,14 @@ public:
      */
     __host__ __device__ bool add_sender(const UID &uid)
     {
+#ifndef __CUDA_ARCH__
+        std::cout << "Adding sender" << std::endl;
+#endif
         if (has_sender(uid)) return false;
-
         senders_.push_back(uid);
+#ifndef __CUDA_ARCH__
+        std::cout << "Added sender" << std::endl;
+#endif
 
         return true;
     }
@@ -154,19 +162,25 @@ public:
     [[nodiscard]] __host__ __device__ bool has_sender(const UID &uid) const
     {
         #ifdef __CUDA_ARCH__
+        printf("Using has_sender on device");
         for (size_t i = 0; i < senders_.size(); ++i)
         {
             if (senders_[i] == uid) return true;
         }
-
+        printf("No sender found");
         return false;
         #else
         int *d_result = nullptr;
         cudaMalloc(&d_result, sizeof(int));
+        cudaMemset(d_result, 0, sizeof(int));
         constexpr uint32_t threads_per_block = 256;
         size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
+        std::cout << "Num senders " << senders_.size() << std::endl;
         size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
-        has_sender_kernel<<<num_blocks, num_threads>>>(uid, senders_, d_result);
+        std::cout << "Running has_sender kernel: " << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
+        const UID *senders_data = senders_.data();
+        device_lib::has_sender_kernel<<<num_blocks, num_threads>>>(uid, senders_data, senders_.size(), d_result);
+        cudaDeviceSynchronize();
         int result;
         cudaMemcpy(&result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
         cudaFree(d_result);

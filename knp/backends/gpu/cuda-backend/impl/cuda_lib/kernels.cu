@@ -40,13 +40,27 @@
 namespace knp::backends::gpu::cuda::device_lib
 {
 
-__global__ void has_sender_kernel(const UID &uid, device_lib::CUDAVector<UID> senders,
-                                int *result)
+__global__ void has_sender_kernel(UID uid, const UID *senders, size_t num_senders, int *result)
 {
-    uint64_t index = threadIdx.x + blockIdx.x + blockDim.x;
-    if (index >= senders.size()) return;
+    uint64_t index = threadIdx.x + blockIdx.x * blockDim.x;
+    printf("Thread %lu\n", index);
+    if (index >= num_senders) return;
+    printf("Index in senders\n");
+    for (size_t i = 0; i < 16; ++i)
+    {
+        printf("%d:%lu ", senders[index][i], index);
+    }
+    printf("\n------");
+    for (size_t i = 0; i < 16; ++i)
+    {
+        printf("%d:z ", uid[i]);
+    }
+    printf("\n");
     if (senders[index] != uid) return;
+    printf("Uids are equal\n");
+    int result_before = *result;
     atomicOr(result, 1);
+    printf("%d, %d\n", result_before, *result);
 }
 
 }  // namespace knp::backends::gpu::cuda::device_lib

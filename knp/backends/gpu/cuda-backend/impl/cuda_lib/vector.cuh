@@ -70,7 +70,7 @@ public:
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             data_ = allocator_.allocate(capacity_);
-            construct_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+            construct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
             cudaDeviceSynchronize();
         }
         #endif
@@ -98,6 +98,7 @@ public:
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
         cudaDeviceSynchronize();
+        std::cout << "vector destructor" << std::endl;
         if (capacity_) allocator_.deallocate(data_, capacity_);
         #endif
     }
@@ -116,8 +117,11 @@ public:
         #else
         data_ = allocator_.allocate(capacity_);
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        copy_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, data_, other.data_);
-        cudaDeviceSynchronize();
+        if (num_threads > 0)
+        {
+            copy_kernel<<<num_blocks, num_threads>>>(0, size_, data_, other.data_);
+            cudaDeviceSynchronize();
+        }
         #endif
     }
 
@@ -196,7 +200,7 @@ public:
         bool equal;
         bool *d_equal;
         cudaMalloc(&d_equal, sizeof(bool));
-        equal_kernel<value_type><<<1, 1>>>(data_, other.data_, size_, d_equal);
+        equal_kernel<<<1, 1>>>(data_, other.data_, size_, d_equal);
         cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice);
         cudaFree(d_equal);
         return equal;
@@ -275,6 +279,11 @@ public:
         return data_;
     }
 
+    __host__ __device__ const value_type* data() const
+    {
+        return data_;
+    }
+
     __host__ __device__ void push_back(const value_type& value)
     {
         if (size_ == capacity_) reserve((size_ + 1) * 2);
@@ -317,10 +326,18 @@ public:
         T* new_data = allocator_.allocate(new_capacity);
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         // Inefficient, better to use move.
-        copy_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, new_data, data_);
-        cudaDeviceSynchronize();
-        destruct_kernel<value_type><<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
-        cudaDeviceSynchronize();
+        std::cout << "Running copy kernel: " << num_blocks << " blocks, " << num_threads << " threads" << std::endl;
+        if (num_threads > 0)
+        {
+            copy_kernel<<<num_blocks, num_threads>>>(0, size_, new_data, data_);
+            cudaDeviceSynchronize();
+            auto result = cudaGetLastError();
+            if (result != cudaSuccess)
+                std::cout << cudaGetErrorString(result) << std::endl;
+            destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+            cudaDeviceSynchronize();
+        }
+        std::cout << "Vector reserve" << std::endl;
         allocator_.deallocate(data_);
         data_ = new_data;
         capacity_ = new_capacity;
@@ -337,12 +354,12 @@ public:
         {
             reserve(new_size);
             auto [num_blocks, num_threads] = get_blocks_config(new_size - size_);
-            construct_kernel<value_type><<<num_blocks, num_threads>>>(data_, size_, new_size, allocator_);
+            construct_kernel<<<num_blocks, num_threads>>>(data_, size_, new_size, allocator_);
         }
         else if (new_size < size_)
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_ - new_size);
-            destruct_kernel<value_type><<<num_blocks, num_threads>>>(data_, new_size, size_, allocator_);
+            destruct_kernel<<<num_blocks, num_threads>>>(data_, new_size, size_, allocator_);
         }
         cudaDeviceSynchronize();
         size_ = new_size;

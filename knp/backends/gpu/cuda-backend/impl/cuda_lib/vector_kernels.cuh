@@ -29,6 +29,7 @@
 
 #include "safe_call.cuh"
 #include "cu_alloc.cuh"
+#include "../uid.cuh"
 
 
 /**
@@ -47,6 +48,9 @@ __global__ void construct_kernel(size_t begin, size_t end, T* data, Allocator al
     allocator.construct(data + begin + i);
 }
 
+template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(size_t begin, size_t end, UID *data,
+        CuMallocAllocator<UID>);
+
 
 template<typename T, class Allocator>
 __global__ void copy_construct_kernel(T* dest, const T src, Allocator allocator)
@@ -58,11 +62,17 @@ __global__ void copy_construct_kernel(T* dest, const T src, Allocator allocator)
 template <class T>
 __global__ void copy_kernel(size_t begin, size_t end, T* data_to, const T* data_from)
 {
+    printf("Copy kernel, begin: %lu, end: %lu, sizeof data %lu\n", begin, end, sizeof(T));
     if (end <= begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    printf("Copy kernel: index %lu, from %p to %p\n", i, data_from + begin + i, data_to + begin + i);
     if (i >= end - begin) return;
-    *(data_to + begin + i) = *(data_from + begin + i);
+    new (data_to + begin + i) T(*(data_from + begin + i));
+    // *(data_to + begin + i) = *(data_from + begin + i);
 }
+
+
+template __global__ void copy_kernel<UID>(size_t, size_t, UID*, const UID*);
 
 
 template <class T>
