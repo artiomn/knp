@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <utility>
 
 #include <knp/core/projection.h>
 #include <knp/synapse-traits/all_traits.h>
@@ -116,7 +116,7 @@ struct CUDAProjection
      * @brief Messages container.
      */
     // cppcheck-suppress unusedStructMember
-//    std::unordered_map<uint64_t, knp::core::messaging::SynapticImpactMessage> messages_;
+    device_lib::CUDAVector<::cuda::std::pair<uint64_t, knp::core::messaging::SynapticImpactMessage>> messages_;
 };
 
 } // namespace knp::backends::gpu::cuda

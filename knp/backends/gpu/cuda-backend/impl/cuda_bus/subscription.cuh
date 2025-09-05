@@ -22,8 +22,6 @@
 #pragma once
 
 // #include <thrust/copy.h>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
 #include <thrust/logical.h>
 // #include <thrust/find.h>
 #include <thrust/execution_policy.h>
@@ -58,7 +56,7 @@ public:
     /**
      * @brief Internal container for messages of the specified message type.
      */
-    using MessageContainerType = thrust::device_vector<MessageType>;
+    using MessageContainerType = device_lib::CUDAVector<MessageType>;
 
     /**
      * @brief Internal container for UIDs.
@@ -74,7 +72,7 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<UID> &senders) :
+    __host__ __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<cuda::UID> &senders) :
         receiver_(receiver)
     {
         #ifdef __CUDA_ARCH__
@@ -94,11 +92,11 @@ public:
      */
     [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
 
-    // /**
-    //  * @brief Get UID of the entity that receives messages via the subscription.
-    //  * @return UID.
-    //  */
-    // [[nodiscard]] __device__ __host__ UID get_receiver_uid() const { return receiver_; }
+    /**
+      * @brief Get UID of the entity that receives messages via the subscription.
+      * @return UID.
+      */
+    [[nodiscard]] __device__ __host__ cuda::UID get_receiver_uid() const { return receiver_; }
 
     /**
      * @brief Unsubscribe from a sender.
@@ -127,7 +125,7 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __host__ __device__ bool add_sender(const UID &uid)
+    __host__ __device__ bool add_sender(const UID uid)
     {
 #ifndef __CUDA_ARCH__
         std::cout << "Adding sender" << std::endl;
@@ -146,11 +144,14 @@ public:
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    __host__ __device__ size_t add_senders(const thrust::device_vector<UID> &senders)
+    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders)
     {
         size_t result = 0;
         for (size_t i = 0; i < senders.size(); ++i)
+        {
             result += add_sender(senders[i]);
+        }
+
         return result;
     }
 
@@ -159,7 +160,7 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __host__ __device__ bool has_sender(const UID &uid) const
+    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
     {
         #ifdef __CUDA_ARCH__
         printf("Using has_sender on device");
@@ -186,7 +187,6 @@ public:
         cudaFree(d_result);
         return result;
         #endif
-
     //     // return std::find(senders_.begin(), senders_.end(), uid) != senders_.end();
     //     // return thrust::find(thrust::host, senders_.begin(), senders_.end(), uid) != senders_.end();
     }
@@ -196,28 +196,28 @@ public:
      * @brief Add a message to the subscription.
      * @param message message to add.
      */
-    // __device__ __host__ void add_message(MessageType &&message) { messages_.push_back(message); }
+    __device__ __host__ void add_message(MessageType &&message) { messages_.push_back(message); }
     /**
      * @brief Add a message to the subscription.
      * @param message constant message to add.
      */
-    // __device__ void add_message(const MessageType &message) { messages_.push_back(message); }
+    __device__ void add_message(const MessageType &message) { messages_.push_back(message); }
 
     /**
      * @brief Get all messages.
      * @return reference to message container.
      */
-    // __device__ MessageContainerType &get_messages() { return messages_; }
+    __device__ MessageContainerType &get_messages() { return messages_; }
     /**
      * @brief Get all messages.
      * @return constant reference to message container.
      */
-    // __device__ const MessageContainerType &get_messages() const { return messages_; }
+    __device__ const MessageContainerType &get_messages() const { return messages_; }
 
     /**
      * @brief Remove all stored messages.
      */
-    // __device__ void clear_messages() { messages_.clear(); }
+    __device__ void clear_messages() { messages_.clear(); }
 
 private:
     /**
@@ -229,10 +229,11 @@ private:
      * @brief Set of sender UIDs.
      */
     UidSet senders_;
+
     /**
      * @brief Message storage.
      */
-    // MessageContainerType messages_;
+    MessageContainerType messages_;
 };
 
 
@@ -240,6 +241,7 @@ private:
  * @brief List of subscription types based on message types specified in `messaging::AllMessages`.
  */
 using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllMessages>;
+
 
 /**
  * @brief Subscription variant that contains any subscription type specified in `AllSubscriptions`.

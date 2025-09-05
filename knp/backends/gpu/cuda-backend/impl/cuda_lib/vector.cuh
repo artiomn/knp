@@ -89,6 +89,14 @@ public:
         #endif
     }
 
+    __host__ CUDAVector(const std::vector<value_type> &vec)
+    {
+        static_assert(std::is_trivially_copyable_v<value_type>);
+        clear();
+        reserve(vec.size());
+        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
+    }
+
     __host__ __device__ ~CUDAVector()
     {
         #ifdef __CUDA_ARCH__
@@ -375,9 +383,11 @@ public:
     }
 
     __host__ __device__ iterator begin() { return data_; }
+    __host__ __device__ const iterator begin() const { return data_; }
     __host__ __device__ const_iterator cbegin() const { return data_; }
 
     __host__ __device__ iterator end() { return data_ + size_; }
+    __host__ __device__ const iterator end() const { return data_ + size_; }
     __host__ __device__ const_iterator cend() const { return data_ + size_; }
 
 private:
@@ -427,7 +437,7 @@ private:
 
 
     Allocator allocator_;
-    T* data_ = nullptr;
+    pointer data_ = nullptr;
     // Maximum elements count.
     size_type capacity_ = 0;
     // Current element.

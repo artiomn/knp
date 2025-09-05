@@ -33,6 +33,7 @@
 #include <vector>
 
 
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/safe_call.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/messaging.cuh"
@@ -146,8 +147,7 @@ TEST(CudaBackendSuite, MessagesTest)
 TEST(CudaBackendSuite, CudaHostSubscription)
 {
     namespace knp_cuda = knp::backends::gpu::cuda;
-    cudaDeviceReset();
-
+    call_and_check(cudaDeviceReset());
     knp_cuda::UID receiver_uid = knp_cuda::to_gpu_uid(knp::core::UID{});
     knp_cuda::UID sender_1 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_2 = knp_cuda::to_gpu_uid(knp::core::UID{});
     knp_cuda::UID sender_3 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_4 = knp_cuda::to_gpu_uid(knp::core::UID{});
@@ -164,7 +164,7 @@ TEST(CudaBackendSuite, CudaBusSubscription)
     auto error = cudaGetLastError();
     cudaDeviceReset();
     run_bus<<<1, 2>>>();
-    cudaDeviceSynchronize();
+    call_and_check(cudaDeviceSynchronize());
     error = cudaGetLastError();
     ASSERT_EQ(error, cudaSuccess);
     // using knp::backends::gpu::cuda::to_gpu_uid;

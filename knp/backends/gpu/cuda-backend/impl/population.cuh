@@ -51,7 +51,7 @@ struct CUDAPopulation
     /**
      * @brief Neuron parameters and their values for the specified neuron type.
      */
-    using NeuronParameters = neuron_traits::neuron_parameters<NeuronType>;
+    using NeuronParameters = ::knp::neuron_traits::neuron_parameters<NeuronType>;
 
     __host__ __device__ CUDAPopulation() = default;
 
@@ -61,8 +61,8 @@ struct CUDAPopulation
      * @param population source population.
      */
     __host__ explicit CUDAPopulation(const knp::core::Population<NeuronType> &population)
-        : uid_{to_gpu_uid(population.get_uid())}
-//          neurons_{population.get_neurons_parameters()}
+        : uid_{to_gpu_uid(population.get_uid())},
+          neurons_{population.get_neurons_parameters()}
     {
     }
 //#endif
