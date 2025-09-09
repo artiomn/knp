@@ -72,11 +72,12 @@ KNP_DECLSPEC float get_accuracy(
 
 
 /**
- * @brief Calculate f measure.
+ * @brief Calculate F-score
+ * @details F-score is a measure of predictive perfomance. Calculated as 2 * precision * recall / (precision + recall).
  * @param precision Precision.
  * @param recall Recall.
- * @return FMeasure. 2 * precision * recall / (precision + recall).
+ * @return F-score.
  */
-KNP_DECLSPEC float get_f_measure(float precision, float recall);
+KNP_DECLSPEC float get_f_score(float precision, float recall);
 
 }  // namespace knp::framework::inference_evaluation
