@@ -48,6 +48,7 @@
 #    include <spdlog/spdlog.h>
 #endif
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>

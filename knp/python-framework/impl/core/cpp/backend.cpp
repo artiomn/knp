@@ -109,7 +109,7 @@ struct BackendWrapper : core::Backend, py::wrapper<core::Backend>
     }
 
     void select_devices(const std::set<core::UID> &uids) override { this->get_override("select_devices")(uids); }
-    void select_device(std::unique_ptr<core::Device>&& device) override { this->get_override("select_device")(device); }
+    void select_device(std::unique_ptr<core::Device> &&device) override { this->get_override("select_device")(device); }
 
     const core::MessageEndpoint &get_message_endpoint() const override
     {

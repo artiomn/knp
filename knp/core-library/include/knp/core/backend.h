@@ -149,7 +149,7 @@ public:
      * @see Device.
      */
     [[nodiscard]] virtual std::vector<std::unique_ptr<Device>> get_devices() const = 0;
-    
+
     /**
      * @brief Get a list of devices on which the backend runs a network.
      * @return list of devices.
