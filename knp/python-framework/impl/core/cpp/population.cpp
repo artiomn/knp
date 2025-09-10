@@ -79,11 +79,7 @@ namespace nt = knp::neuron_traits;
                     "Remove a specific neuron from the population.")                                                   \
                 .def(                                                                                                  \
                     "__iter__",                                                                                        \
-                    py::range(                                                                                         \
-                        static_cast<std::vector<core::Population<nt::neuron_type>::NeuronParameters>::iterator (       \
-                            core::Population<nt::neuron_type>::*)()>(&core::Population<nt::neuron_type>::begin),       \
-                        static_cast<std::vector<core::Population<nt::neuron_type>::NeuronParameters>::iterator (       \
-                            core::Population<nt::neuron_type>::*)()>(&core::Population<nt::neuron_type>::end)),        \
+                    py::iterator<core::Population<nt::neuron_type>>(),                                                 \
                     "Get an iterator of the population.")                                                              \
                 .def(                                                                                                  \
                     "__len__", &core::Population<nt::neuron_type>::size, "Count number of neurons in the population.") \
