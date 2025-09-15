@@ -368,15 +368,14 @@ protected:
 
     /**
      * @brief Backend constructor with custom message bus implementation.
-     * @param message_bus message bus shared pointer.
+     * @param message_bus message bus.
      */
     explicit Backend(MessageBus &&message_bus);
 
     /**
      * @brief Backend constructor with custom message bus implementation.
-     * @param message_bus message bus.
+     * @param message_bus message bus shared pointer.
      */
-
     explicit Backend(std::shared_ptr<MessageBus> message_bus);
     /**
      * @brief Get the current step and increase the step number.
