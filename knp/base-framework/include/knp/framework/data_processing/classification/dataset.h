@@ -33,11 +33,12 @@
  * @brief Namespace for data processing.
  */
 namespace knp::framework::data_processing
+{
 
 /**
  * @brief Namespace for classification data processing.
  */
-namespace knp::framework::data_processing::classification
+namespace classification
 {
 
 /**
@@ -51,7 +52,7 @@ class KNP_DECLSPEC Dataset
 {
 protected:
     /**
-     * @brief Destroy the `Dataset` object, releasing any allocated resources.
+     * @brief Destructor.
      */
     virtual ~Dataset() = default;
 
@@ -202,4 +203,6 @@ protected:
     size_t classes_amount_ = 0;
 };
 
-}  // namespace knp::framework::data_processing::classification
+}  // namespace classification
+
+}  // knp::framework::data_processing

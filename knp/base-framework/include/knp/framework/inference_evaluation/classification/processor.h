@@ -33,11 +33,12 @@
  * @brief Namespace for inference evaluation.
  */
 namespace knp::framework::inference_evaluation
+{
 
 /**
  * @brief Namespace for classification model inference evaluation.
  */
-namespace knp::framework::inference_evaluation::classification
+namespace classification
 {
 
 /**
@@ -80,4 +81,6 @@ private:
     std::vector<InferenceResult> inference_results_;
 };
 
-}  // namespace knp::framework::inference_evaluation::classification
+}  // namespace classification
+
+}  // namespace knp::framework::inference_evaluation
