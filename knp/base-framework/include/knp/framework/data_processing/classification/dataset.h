@@ -147,9 +147,9 @@ public:
 
     /**
      * @brief The structure represents a class instance in the form of spikes, distributed over multiple steps.
-     * @details This struct encapsulates the spike data for a class instance, which is transmitted over a series of steps.
+     * @details This structure encapsulates the spike data for a class instance, which is transmitted over a series of steps.
      * For example, an image might be sent over 20 steps, with each step representing a subset of the image data.
-     * The struct stores a vector of boolean values, where each value indicates whether a spike should be sent at a particular step.
+     * The structure stores a vector of boolean values, where each value indicates whether a spike should be sent at a particular step.
      * The length of this vector is determined by the product of the steps per frame and the size of the class instance data.
      */
     struct Frame
