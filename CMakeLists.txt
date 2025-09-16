@@ -24,6 +24,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+    # cmake > 4.0 does not support projects with minimal versions < 3.5
+    message(STATUS "Changing cmake minimum version to 3.5 globally")
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE INTERNAL "")
+endif()
+
 include(CMakeDependentOption)
 include(third-party)
 include(version)
