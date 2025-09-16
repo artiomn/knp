@@ -43,8 +43,8 @@ namespace knp::framework::normalization
  * @tparam DataSetter type of the class containing method to set parameter value.
  * @tparam ValueCorrector type of the normalization function for neuron parameters.
  * @param population population whose neuron parameters you want to normalize.
- * @param getter method used to get neuron parameter value.
- * @param setter method used to set neuron parameter value.
+ * @param getter class used to get neuron parameter value.
+ * @param setter class used to set neuron parameter value.
  * @param corrector function used to normalize neuron parameter.
  */
 template <

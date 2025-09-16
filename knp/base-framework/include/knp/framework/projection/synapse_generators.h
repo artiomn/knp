@@ -71,14 +71,14 @@ template <typename SynapseType>
 /**
  * @brief Create a synapse generator that distributes connections evenly between neurons of presynaptic and 
  * postsynaptic populations.
- * @details This function generates a synapse generator that creates connections between neurons of two populations, 
+ * @details Synapse generator creates connections between neurons of two populations, 
  * where the population with the smaller size has consecutive connections with neurons from the other population.
  * The number of connections for each neuron in the smaller population is determined by its size.
  * For example, if the presynaptic population has 2 neurons and the postsynaptic population has 4 neurons, 
  * the generator will create synapses as follows: 0-0, 0-1, 1-2, 1-3.
  * @tparam SynapseType projection synapse type.
- * @param presynaptic_pop_size size of presynaptic population.
- * @param postsynaptic_pop_size size of postsynaptic population.
+ * @param presynaptic_pop_size presynaptic population neuron count.
+ * @param postsynaptic_pop_size postsynaptic population neuron count.
  * @param syn_gen generator of synapse parameters.
  * @return synapse generator.
  */
@@ -119,7 +119,7 @@ template <typename SynapseType>
  * 1-2, 2-0, 2-1.
  * @pre Population sizes must be equal.
  * @tparam SynapseType projection synapse type.
- * @param populations_size size of populations.
+ * @param populations_size neuron count in populations.
  * @param syn_gen generator of synapse parameters.
  * @return synapse generator.
  */
@@ -147,7 +147,7 @@ template <typename SynapseType>
  * For the populations of size `N x N` generates connections such as: `0 -> 0`, `1 -> 1`, `2 -> 2`, ..., `N -> N`.
  * @pre Population sizes must be equal.
  * @tparam SynapseType projection synapse type.
- * @param population_size size of populations.
+ * @param population_size neuron count in populations.
  * @param syn_gen generator of synapse parameters.
  * @return synapse generator.
  */
@@ -233,8 +233,8 @@ class FixedProbability
 public:
     /**
      * @brief Constructor.
-     * @param presynaptic_pop_size presynaptic population size.
-     * @param postsynaptic_pop_size postsynaptic population sizet.
+     * @param presynaptic_pop_size presynaptic population neuron count.
+     * @param postsynaptic_pop_size postsynaptic population neuron count.
      * @param connection_probability connection probability.
      * @param syn_gen generator of synapse parameters.
      */
@@ -281,8 +281,8 @@ private:
  * @brief Make connections between neurons of presynaptic and postsynaptic populations
  * based on the synapse generation function result.
  * @tparam SynapseType projection synapse type.
- * @param presynaptic_pop_size presynaptic population size.
- * @param postsynaptic_pop_size postsynaptic population size.
+ * @param presynaptic_pop_size presynaptic population neuron count.
+ * @param postsynaptic_pop_size postsynaptic population neuron count.
  * @param syn_gen generator of synapse parameters.
  * @return synapse generator.
  */
@@ -317,8 +317,8 @@ class FixedNumberPost
 public:
     /**
      * @brief Constructor.
-     * @param presynaptic_pop_size presynaptic population size.
-     * @param postsynaptic_pop_size postsynaptic population size.
+     * @param presynaptic_pop_size presynaptic population neuron count.
+     * @param postsynaptic_pop_size postsynaptic population neuron count.
      * @param syn_gen generator of synapse parameters.
      */
     FixedNumberPost(
@@ -368,8 +368,8 @@ class FixedNumberPre
 public:
     /**
      * @brief Constructor.
-     * @param presynaptic_pop_size presynaptic population size.
-     * @param postsynaptic_pop_size postsynaptic population size.
+     * @param presynaptic_pop_size presynaptic population neuron count.
+     * @param postsynaptic_pop_size postsynaptic population neuron count.
      * @param syn_gen generator of synapse parameters.
      */
     FixedNumberPre(

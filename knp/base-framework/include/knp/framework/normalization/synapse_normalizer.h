@@ -45,8 +45,8 @@ namespace knp::framework::normalization
  * @tparam DataSetter type of the class containing method to set parameter value.
  * @tparam ValueCorrector type of the normalization function for synapse parameters.
  * @param projection projection whose synapse parameters you want to normalize.
- * @param getter method used to get synapse parameter value.
- * @param setter method used to set synapse parameter value.
+ * @param getter class used to get synapse parameter value.
+ * @param setter class used to set synapse parameter value.
  * @param corrector function used to normalize synapse parameter.
  */
 template <

@@ -374,7 +374,7 @@ protected:
 
     /**
      * @brief Backend constructor with custom message bus implementation.
-     * @param message_bus message bus shared pointer.
+     * @param message_bus shared pointer to message bus.
      */
     explicit Backend(std::shared_ptr<MessageBus> message_bus);
     /**

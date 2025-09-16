@@ -89,14 +89,15 @@ protected:
 
 public:
     /**
-     * @brief Split the dataset into training and inference sets based on a given percentage.
+     * @brief Split the dataset into training and inference sets based on a given ratio.
      * @pre The @p split_percent must be within the range [0, 1].
-     * @param split_percent The percentage of the dataset to be used for training, between 0 and 1.
+     * @param split_percent The proportion of the dataset to be used for training, between 0 and 1.
      * @details The dataset is split such that @p split_percent of the data is allocated for training and the remaining
-     * (1 - @p split_percent) is allocated for inference. The function also calculates the number of steps required for 
-     * training and inference. If the dataset is too large and only a subset of it is required for training (as specified 
+     * is allocated for inference. The function also calculates the number of steps required for training and inference. 
+     * If the dataset is too large and only a subset of it is required for training (as specified 
      * by @ref required_training_amount_), the function adjusts the inference set size accordingly to maintain the specified
-     * split ratio. For example, if @p split_percent is 0.8 and @ref required_training_amount_ is 100, the training set
+     * split ratio. 
+     * For example, if @p split_percent is 0.8 and @ref required_training_amount_ is 100, the training set
      * will contain 100 records and the inference set will contain 25 records (100 / 0.8 - 100), regardless of the actual
      * size of the dataset.
      */
