@@ -60,7 +60,7 @@ public:
         const knp::framework::data_processing::classification::Dataset &dataset);
 
     /**
-     * @brief Write inference results to a stream in CSv format.
+     * @brief Write inference results to a stream in CSV format.
      * @param results_stream stream to write the results to.
      * @details The method writes processed inference results to the specified stream in CSV format.
      * The results include true positives, false negatives, false positives, and true negatives for each class,
