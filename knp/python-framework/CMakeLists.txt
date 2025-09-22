@@ -52,7 +52,7 @@ else()
     find_package(Boost ${KNP_BOOST_MIN_VERSION} COMPONENTS python CONFIG)
 endif()
 
-if (NOT BOOST_PYTHON_FOUND)
+if (NOT Boost_PYTHON_FOUND)
     message(WARNING "Correct Boost::Python was not found, trying heuristic search...")
     file(GLOB _KNP_PY_VER "${BOOST_LIBRARYDIR}/*boost_python*.*")
 

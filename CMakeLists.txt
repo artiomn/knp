@@ -290,10 +290,11 @@ endmacro()
 # LibHDF5 and its dependencies.
 #
 
-add_third_party("https://gitlab.dkrz.de/k202009/libaec.git@1.1.3")
+#add_third_party("https://gitlab.dkrz.de/k202009/libaec.git@1.1.3")
 #add_third_party("gh:erdc/szip")
 
-add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.4"
+add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
+			    NO_USE_LOCAL_PACKAGES
                 GIT_SHALLOW ON
                 FIND_PACKAGE_ARGUMENTS "NAMES hdf5 libhdf5 hdf5-static"
                 OPTIONS
@@ -305,7 +306,7 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.4"
                     "HDF5_BUILD_UTILS OFF"
                     "HDF5_VOL_ALLOW_EXTERNAL YES")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
 
-add_third_party("gh:BlueBrain/HighFive@2.9.0"
+add_third_party("gh:BlueBrain/HighFive@2.10.1"
                 GIT_SHALLOW ON
                 OPTIONS
                     "HIGHFIVE_FIND_HDF5 OFF"
@@ -332,7 +333,7 @@ if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(x86.*)|(X86.*)|(amd64)|(AMD64)" AND NO
     include_directories("${CPM_PACKAGE_pcm_SOURCE_DIR}/src")
 endif()
 
-add_third_party("gh:zeromq/cppzmq@4.10.0"
+add_third_party("gh:zeromq/cppzmq@4.11.0"
                 OPTIONS
                     "CPPZMQ_BUILD_TESTS OFF")
 
