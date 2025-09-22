@@ -127,7 +127,7 @@ jobs:
 
       # Set up a matrix to run:
       matrix:
-        os: [macos-13, windows-latest]
+        os: [macos-13, windows-2022]
         build_type: [Debug]
         c_compiler: [clang, cl]
         include:
