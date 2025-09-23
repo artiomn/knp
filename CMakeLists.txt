@@ -261,6 +261,13 @@ if (MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
+add_third_party("gh:zlib-ng/zlib-ng@2.2.5"
+                OPTIONS
+                    "ZLIB_INSTALL OFF"
+                    "ZLIB_ENABLE_TESTS OFF"
+                    "ZLIBNG_ENABLE_TESTS OFF")
+
+
 add_third_party(NAME "libzmq"
                 GITHUB_REPOSITORY "zeromq/libzmq"
                 VERSION "4.3.5"
@@ -292,7 +299,7 @@ endmacro()
 
 #add_third_party("https://gitlab.dkrz.de/k202009/libaec.git@1.1.3")
 #add_third_party("gh:erdc/szip")
-
+set(ZLIB_LIBRARIES "zlib")
 add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
 			    NO_USE_LOCAL_PACKAGES
                 GIT_SHALLOW ON
@@ -304,9 +311,10 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
                     "HDF5_BUILD_SHARED_LIBS ON"
                     "HDF5_BUILD_TOOLS OFF"
                     "HDF5_BUILD_UTILS OFF"
+                    "HDF5_USE_ZLIB_STATIC ON"
                     "HDF5_VOL_ALLOW_EXTERNAL YES")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
 
-add_third_party("gh:BlueBrain/HighFive@2.10.1"
+add_third_party("gh:highfive-devs/highfive@3.1.0"
                 GIT_SHALLOW ON
                 OPTIONS
                     "HIGHFIVE_FIND_HDF5 OFF"

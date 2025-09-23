@@ -91,29 +91,37 @@ struct BackendWrapper : core::Backend, py::wrapper<core::Backend>
                 // Error.
             }
         }
+
+		return f_result;
     }
 
+/*
     std::vector<std::unique_ptr<core::Device>> get_devices() const override
     {
-        return get_devices_vector("get_devices");
+        // return get_devices_vector("get_devices");
+        return this->get_override("get_devices");
     }
 
     std::vector<std::unique_ptr<knp::core::Device>> &get_current_devices()
     {
-        return get_devices_vector("get_current_devices");
+        // return get_devices_vector("get_current_devices");
+        return this->get_override("get_current_devices");
     }
 
     const std::vector<std::unique_ptr<core::Device>> &get_current_devices() const
     {
-        return get_devices_vector("get_current_devices");
+        // return get_devices_vector("get_current_devices");
+        return this->get_override("get_current_devices");
     }
-
+*/
     void select_devices(const std::set<core::UID> &uids) override { this->get_override("select_devices")(uids); }
     void select_device(std::unique_ptr<core::Device> &&device) override { this->get_override("select_device")(device); }
 
+/*
     const core::MessageEndpoint &get_message_endpoint() const override
     {
         // Warning: possibly error.
+        // return reinterpret_cast<const knp::core::MessageEndpoint &>(this->get_override("get_message_endpoint")());
         return reinterpret_cast<const knp::core::MessageEndpoint &>(this->get_override("get_message_endpoint")());
     }
 
@@ -122,7 +130,7 @@ struct BackendWrapper : core::Backend, py::wrapper<core::Backend>
         // Warning: possibly error.
         return reinterpret_cast<knp::core::MessageEndpoint &>(this->get_override("get_message_endpoint")());
     }
-
+*/
     void stop_learning() override { this->get_override("stop_learning")(); }
     void start_learning() override { this->get_override("start_learning")(); }
     void _step() override { this->get_override("step")(); }
