@@ -111,7 +111,7 @@ knp::framework::Network normalize_synapses(const knp::framework::Network &networ
 
     normalize_synapses<DataGetter, DataSetter>(new_network, corrector);
 
-    return network;
+    return new_network;
 }
 
 }  // namespace knp::framework::normalization

@@ -108,7 +108,7 @@ knp::framework::Network normalize_neurons(const knp::framework::Network &network
 
     normalize_neurons<DataGetter, DataSetter>(new_network, corrector);
 
-    return network;
+    return new_network;
 }
 
 }  // namespace knp::framework::normalization
