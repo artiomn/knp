@@ -64,6 +64,16 @@ public:
      */
     using NeuronGenerator = std::function<std::optional<NeuronParameters>(size_t index)>;
 
+    /**
+     * @brief Real neurons container type.
+     */
+    using NeuronsContainer = std::vector<NeuronParameters>;
+
+    /**
+     * @brief Iterator for neurons.
+     */
+    using iterator = typename NeuronsContainer::iterator;
+
 public:  // NOLINT
     /**
      * @brief Construct a population by running a neuron generator.
@@ -201,13 +211,13 @@ public:  // NOLINT
      * @param index neuron index.
      * @return neuron parameters.
      */
-    const auto &operator[](size_t index) const { return get_neuron_parameters(index); }
+    const NeuronParameters &operator[](size_t index) const { return get_neuron_parameters(index); }
     /**
      * @brief Get parameter values of a neuron with the given index.
      * @param index neuron index.
      * @return neuron parameters.
      */
-    auto &operator[](size_t index) { return neurons_[index]; }
+    NeuronParameters &operator[](size_t index) { return neurons_[index]; }
 
     /**
      * @brief Get an iterator pointing to the first element of the population.
@@ -239,7 +249,7 @@ public:  // NOLINT
 
 private:
     BaseData base_;
-    std::vector<NeuronParameters> neurons_;
+    NeuronsContainer neurons_;
 };
 
 

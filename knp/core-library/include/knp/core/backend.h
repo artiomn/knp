@@ -153,6 +153,7 @@ public:
     /**
      * @brief Get a list of devices on which the backend runs a network.
      * @return list of devices.
+     * @todo remove this non-constant method?
      * @see Device.
      */
     [[nodiscard]] std::vector<std::unique_ptr<Device>> &get_current_devices() { return devices_; }
