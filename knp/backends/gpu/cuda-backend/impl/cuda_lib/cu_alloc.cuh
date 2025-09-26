@@ -39,6 +39,12 @@ struct CuMallocAllocator
     using difference_type = std::ptrdiff_t;
     using pointer = T*;
 
+    /**
+     * @brief Allocate GPU memory.
+     * @param n number of objects.
+     * @param hint hint (currently unused).
+     * @return pointer to allocated memory.
+     */
     __host__ __device__ T* allocate(size_t n, const void* hint)
     {
         T *data = nullptr;

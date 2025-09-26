@@ -47,4 +47,12 @@ cuda::UID to_gpu_uid(const knp::core::UID &uid);
  */
 knp::core::UID to_cpu_uid(const cuda::UID &uid);
 
+
+/**
+ * @brief Create new GPU UID.
+ * @return new gpu UID.
+ */
+inline cuda::UID new_uid() { return to_gpu_uid(knp::core::UID{}); }
+
+
 } // namespace knp::backends::gpu::cuda

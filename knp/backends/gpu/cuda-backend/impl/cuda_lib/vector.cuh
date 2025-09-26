@@ -35,6 +35,7 @@
 #include "safe_call.cuh"
 #include "cu_alloc.cuh"
 
+#include "extraction.cuh"
 #include "vector_kernels.cuh"
 
 
@@ -197,6 +198,23 @@ public:
         return *this;
     }
 
+
+    /**
+     * @brief Set vector to another without freeing its memory, this is a very specific case for when it has been copied
+     * by cudaMemcpy as a part of a larger structure and shouldn't be freed by destructor.
+     * @param other data source.
+     */
+    __host__ __device__ void set_ndest(CUDAVector &&other)
+    {
+        size_ = other.size_;
+        other.size_ = 0;
+        capacity_ = other.capacity_;
+        other.capacity_ = 0;
+        data_ = other.data_;
+        other.data_ = nullptr;
+    }
+
+
     __host__ __device__ bool operator==(const CUDAVector &other) const
     {
         if (size_ != other.size_) return false;
@@ -209,7 +227,7 @@ public:
         bool *d_equal;
         cudaMalloc(&d_equal, sizeof(bool));
         equal_kernel<<<1, 1>>>(data_, other.data_, size_, d_equal);
-        cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice);
+        call_and_check(cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice));
         cudaFree(d_equal);
         return equal;
 
@@ -237,7 +255,7 @@ public:
         data_[index] = value;
         #else
         static_assert(std::is_trivially_copyable_v<value_type>);
-        cudaMemcpy(data_ + index, &value, sizeof(value_type), cudaMemcpyHostToDevice);
+        call_and_check(cudaMemcpy(data_ + index, &value, sizeof(value_type), cudaMemcpyHostToDevice));
         #endif
         return true;
     }
@@ -306,7 +324,7 @@ public:
         if constexpr (std::is_same_v<uint64_t, value_type>)
         {
             value_type val;
-            cudaMemcpy(&val, data_ + size_ - 1, sizeof(value_type), cudaMemcpyDeviceToHost);
+            call_and_check(cudaMemcpy(&val, data_ + size_ - 1, sizeof(value_type), cudaMemcpyDeviceToHost));
             std::cout << "Pushed back " << val << std::endl;
         }
         // #endif
@@ -390,6 +408,30 @@ public:
     __host__ __device__ const iterator end() const { return data_ + size_; }
     __host__ __device__ const_iterator cend() const { return data_ + size_; }
 
+
+    __host__ T copy_at(size_t index)
+    {
+        T result;
+        if constexpr (std::is_trivially_copyable<T>::value)
+        {
+            call_and_check(cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost));
+        }
+        else
+        result = extract(data_ + index);
+        return result;
+    }
+
+    /**
+     * @brief Fix a vector that has been shallow-copied.
+     */
+    __host__ void actualize()
+    {
+        // copy kernel
+        T* source_data = data_;
+        data_ = allocator_.allocate(capacity_);
+        auto [num_blocks, num_threads] = get_blocks_config(size_);
+        copy_kernel<<<num_blocks, num_threads>>>(0, size_, data_, source_data);
+    }
 private:
     __device__ void dev_reserve(size_type new_capacity)
     {
@@ -462,4 +504,21 @@ std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
     stream << vec[vec.size() - 1] << "}";
     return stream;
 }
+
+
 } // namespace knp::backends::gpu::cuda::device_lib
+
+
+namespace knp::backends::gpu::cuda
+{
+template<class T, class Allocator>
+__host__ device_lib::CUDAVector<T, Allocator> extract<device_lib::CUDAVector<T, Allocator>>(
+const device_lib::CUDAVector<T, Allocator> *dev_vector)
+{
+    device_lib::CUDAVector<T, Allocator> result;
+    call_and_check(cudaMemcpy(&result, dev_vector, sizeof(device_lib::CUDAVector<T, Allocator>),
+                              cudaMemcpyDeviceToHost));
+    result.actualize();
+    return result;
+}
+} // namespace knp::backends::gpu::cuda

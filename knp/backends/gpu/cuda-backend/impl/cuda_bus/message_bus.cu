@@ -248,4 +248,37 @@ __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
 }
 
 
+__global__ void get_subscription_kernel(const SubscriptionVariant *var, int *type, const void **sub) {
+    int type_val = var->index();
+    switch (type_val) {
+        // TODO : Add more after adding new messages
+        case 0:
+            *sub = ::cuda::std::get_if<0>(var);
+            break;
+        case 1:
+            *sub = ::cuda::std::get_if<1>(var);
+            break;
+        default:
+            *sub = nullptr;
+    }
+    *type = type_val;
+}
+
+
+__global__ void get_message_kernel(const MessageVariant *var, int *type, const void **msg) {
+    int type_val = var->index();
+    switch (type_val) {
+        // TODO : Add more after adding new messages
+        case 0:
+            *msg = ::cuda::std::get_if<0>(var);
+            break;
+        case 1:
+            *msg = ::cuda::std::get_if<1>(var);
+            break;
+        default:
+            *msg = nullptr;
+    }
+    *type = type_val;
+}
+
 }  // namespace knp::backends::gpu::cuda

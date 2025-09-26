@@ -98,18 +98,30 @@ struct SynapticImpactMessage
     cuda::UID postsynaptic_population_uid_;
 
     /**
+     * @brief Synaptic impacts.
+     */
+    device_lib::CUDAVector<SynapticImpact> impacts_;
+
+    /**
      * @brief Boolean value that defines whether the signal is from a projection without plasticity.
      * @details The parameter is used in training. Use `true` if the signal is from a projection without plasticity.
      * @todo Try to remove this when fixing main; this parameter is too specific to be a part of a general message.
      */
     bool is_forcing_ = false;
-
-    /**
-     * @brief Impact values.
-     */
-    knp::backends::gpu::cuda::device_lib::CUDAVector<SynapticImpact> impacts_;
 };
 
+
+/**
+ * @brief Impact values.
+ */
+template <>
+SynapticImpactMessage extract<SynapticImpactMessage>(const SynapticImpactMessage *gpu_message)
+{
+    SynapticImpactMessage message;
+    call_and_check(cudaMemcpy(&message, gpu_message, sizeof(SynapticImpactMessage), cudaMemcpyDeviceToHost));
+    message.impacts_.actualize();
+    return message;
+}
 
 /**
  * @brief Check if two synaptic impact messages are the same.

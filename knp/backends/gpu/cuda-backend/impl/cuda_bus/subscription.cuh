@@ -21,28 +21,26 @@
 
 #pragma once
 
-// #include <thrust/copy.h>
+#include <boost/mp11.hpp>
+#include <cuda/std/iterator>
+#include <spdlog/spdlog.h>
 #include <thrust/logical.h>
-// #include <thrust/find.h>
 #include <thrust/execution_policy.h>
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 
-#include <boost/mp11.hpp>
-#include <cuda/std/iterator>
 #include <algorithm>
 
 #include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/safe_call.cuh"
 #include "../cuda_lib/kernels.cuh"
+#include "../cuda_lib/extraction.cuh"
 #include "../uid.cuh"
 #include "messaging.cuh"
 
 
 namespace knp::backends::gpu::cuda
 {
-
-
 /**
  * @brief The Subscription class is used for message exchange between the network entities.
  * @tparam MessageT type of messages that are exchanged via the subscription.
@@ -64,7 +62,6 @@ public:
      * @brief Internal container for UIDs.
      */
     using UidSet = device_lib::CUDAVector<UID>;
-    // __host__ __device__ Subscription() : receiver_(to_gpu_uid(knp::core::UID{false})) {}
 
 public:
     __host__ __device__ Subscription() = default;
@@ -80,11 +77,10 @@ public:
         #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
         #else
-        std::cout << "Initializing with " << senders.size() << " senders" << std::endl;
+        SPDLOG_TRACE("Initializing with {} senders.", senders.size());
         thrust::host_vector<UID> host_vec = senders;
-        std::cout << "Host vector has " << host_vec.size() << " senders" << std::endl;
         for (size_t i = 0; i < host_vec.size(); ++i) add_sender(host_vec[i]);
-        std::cout << "Created a subscription with " <<  senders_.size() << " senders" << std::endl;
+        SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
         #endif
     }
 
@@ -189,8 +185,6 @@ public:
         cudaFree(d_result);
         return result;
         #endif
-    //     // return std::find(senders_.begin(), senders_.end(), uid) != senders_.end();
-    //     // return thrust::find(thrust::host, senders_.begin(), senders_.end(), uid) != senders_.end();
     }
 
 public:
@@ -220,6 +214,15 @@ public:
      * @brief Remove all stored messages.
      */
     __device__ void clear_messages() { messages_.clear(); }
+
+    /**
+     * @brief Restore after shallow copying from device.
+     */
+    __host__ void actualize()
+    {
+        senders_.actualize();
+        messages_.actualize();
+    }
 
 private:
     /**
@@ -255,6 +258,85 @@ using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllMessag
  * @see ALL_MESSAGES.
  */
 using SubscriptionVariant = boost::mp11::mp_rename<AllSubscriptions, ::cuda::std::variant>;
+
+
+//template <class Message>
+//Subscription<Message> extract<Subscription<Message>>(const Subscription<Message> *subscription)
+//{
+//    Subscription<Message> result;
+//    cudaMemcpy(&result, subscription, sizeof(Subscription<Message>), cudaMemcpyDeviceToHost);
+//    result.actualize();
+//    return result;
+//}
+
+
+// TODO: Code duplication, consider fixing it, maybe through template recursion. Like this?
+// template<int I, class AllTypes, class TypesVariant = boost::mp11::mp_rename<AllSubscriptions, ::cuda::std::variant>>
+//__host__ MessageVariant extract_variant_recursive(int type, const void* val_ptr) {
+//    if constexpr (I == boost::mp11::mp_size<AllTypes>::value) {
+//        return TypesVariant{}; // Base case
+//    } else {
+//        if (type == I) {
+//            using ValueType = boost::mp11::mp_at_c<AllTypes, I>;
+//            return extract<ValueType>(reinterpret_cast<const ValueType*>(msg_ptr));
+//        }
+//        return extract_variant_recursive<I + 1>(type, val_ptr);
+//    }
+//}
+
+__global__ void get_subscription_kernel(const SubscriptionVariant *var, int *type, const void **sub);
+
+
+/**
+ * @brief Extracts a subscription from GPU to CPU.
+ * @param gpu_subscription a pointer to GPU subscription.
+ * @return host-based subscription.
+ */
+template<class MessageT>
+static __host__ Subscription<MessageT> extract<Subscription<MessageT>>(const Subscription<MessageT> *gpu_subscription)
+{
+    Subscription<MessageT> result;
+    cudaMemcpy(&result, gpu_subscription, sizeof(Subscription<MessageT>), cudaMemcpyDeviceToHost);
+    result.actualize();
+    return result;
+}
+
+
+namespace detail
+{
+    template<size_t index>
+    SubscriptionVariant extract_subscription_by_index(const void *sub_ptr)
+    {
+        return extract<boost::mp11::mp_at_c<AllSubscriptions, index>>(
+                reinterpret_cast<const boost::mp11::mp_at_c<AllSubscriptions, index> *>(sub_ptr));
+    }
+}
+
+template<>
+SubscriptionVariant extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant)
+{
+    int *type_gpu;
+    const void **sub_gpu; // This is a gpu pointer to gpu pointer to gpu subscription.
+    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
+    call_and_check(cudaMalloc(&sub_gpu, sizeof(void *)));
+    get_subscription_kernel<<<1, 1>>>(sub_variant, type_gpu, sub_gpu);
+    int type;
+
+    // This is a gpu pointer to gpu message. &msg_ptr is a cpu pointer to gpu pointer to gpu message.
+    const void *sub_ptr;
+    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
+    call_and_check(cudaMemcpy(&sub_ptr, sub_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
+    call_and_check(cudaFree(type_gpu));
+    call_and_check(cudaFree(sub_gpu));
+    // Here we have a type index and a gpu pointer to message.
+    SubscriptionVariant result;
+    switch(type)
+    {
+        case 0: result = detail::extract_subscription_by_index<0>(sub_ptr);
+        case 1: result = detail::extract_subscription_by_index<1>(sub_ptr);
+    }
+    return result;
+}
 
 
 } // namespace knp::backends::gpu::cuda

@@ -230,7 +230,6 @@ TEST(CudaVectorSuite, CUDAVectorConstruct)
     ASSERT_EQ(cuda_vec_1.size(), 0);
     ASSERT_EQ(cuda_vec_2.size(), 10);
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
-
 }
 
 }  // namespace knp::testing

@@ -27,20 +27,6 @@
 
 namespace knp::backends::gpu::cuda
 {
-
-inline cuda::UID uid_to_cuda(const knp::core::UID &source)
-{
-    cuda::UID result;
-
-    for (size_t i = 0; i < source.tag.size(); ++i)
-    {
-        result[i] = *(source.tag.begin() + i);
-    }
-
-    return result;
-}
-
-
 cuda::UID to_gpu_uid(const knp::core::UID &uid)
 {
     UID result;
