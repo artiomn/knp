@@ -26,16 +26,14 @@ include(CPM)
 
 function(add_third_party module_name)
 #    add_git_submodule("${CMAKE_CURRENT_SOURCE_DIR}/third-party/${module_name}")
-    set(options "NO_USE_LOCAL_PACKAGES")
-    set(one_value_args "")
+    set(options "")
+    set(one_value_args "USE_LOCAL_PACKAGES")
     set(multi_value_args "")
     cmake_parse_arguments(PARSED_ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
-    if (NOT PARSED_ARGS_NO_USE_LOCAL_PACKAGES)
+    if (PARSED_ARGS_USE_LOCAL_PACKAGES)
         set(CPM_USE_LOCAL_PACKAGES ON)
     endif()
-
-    cmake_parse_arguments(PARSED_ARGS "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
     if(NOT KNP_ROOT_DIR)
         set(KNP_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})

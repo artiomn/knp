@@ -262,6 +262,7 @@ if (MSVC)
 endif()
 
 add_third_party("gh:zlib-ng/zlib-ng#2.2.5"
+			    USE_LOCAL_PACKAGES NO
                 OPTIONS
                     "ZLIB_INSTALL OFF"
                     "ZLIB_ENABLE_TESTS OFF"
@@ -299,7 +300,7 @@ endmacro()
 #add_third_party("https://gitlab.dkrz.de/k202009/libaec.git@1.1.3")
 #add_third_party("gh:erdc/szip")
 add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
-			    NO_USE_LOCAL_PACKAGES
+			    USE_LOCAL_PACKAGES NO
                 GIT_SHALLOW ON
                 FIND_PACKAGE_ARGUMENTS "NAMES hdf5 libhdf5 hdf5-static"
                 OPTIONS
@@ -311,8 +312,8 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
                     "HDF5_BUILD_TOOLS OFF"
                     "HDF5_BUILD_UTILS OFF"
                     "HDF5_USE_ZLIB_STATIC ON"
-                    "HDF5_VOL_ALLOW_EXTERNAL YES")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
-
+                    "HDF5_VOL_ALLOW_EXTERNAL YES"
+                    "ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/zlib-ng-build")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
 
 include_directories("${CPM_PACKAGE_hdf5_SOURCE_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}/_deps/hdf5-build/src") # $<BUILD_INTERFACE:${CPM_PACKAGE_hdf5_SOURCE_DIR}>
 
