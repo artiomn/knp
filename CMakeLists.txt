@@ -314,6 +314,8 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
                     "HDF5_USE_ZLIB_STATIC ON"
                     "HDF5_VOL_ALLOW_EXTERNAL YES")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
 
+include_directories("${CPM_PACKAGE_hdf5_SOURCE_DIR}/src")
+
 add_third_party("gh:highfive-devs/highfive@3.1.0"
                 GIT_SHALLOW ON
                 OPTIONS
