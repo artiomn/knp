@@ -77,7 +77,7 @@ knp_add_library("${PROJECT_NAME}-core"
     ${${PROJECT_NAME}_headers}
     ALIAS KNP::BaseFramework::Core
     LINK_PRIVATE
-        spdlog::spdlog_header_only Boost::headers Boost::filesystem hdf5_cpp HighFive csv2
+        spdlog::spdlog_header_only Boost::headers Boost::filesystem hdf5 HighFive csv2
         # Hack to build with CLang.
         ${ADD_LIBS}
     LINK_PUBLIC
