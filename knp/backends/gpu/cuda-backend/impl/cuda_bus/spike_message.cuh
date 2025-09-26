@@ -65,17 +65,10 @@ struct SpikeMessage
      * @todo Maybe add operator `[]` and others to be able to use templates for message processing.
      */
 
-
+    /**
+     * @brief Restore to working order after cudaMemcpy.
+     */
+     __host__ void actualize() { neuron_indexes_.actualize(); }
 };
-
-
-template<>
-SpikeMessage extract<SpikeMessage>(const SpikeMessage *gpu_message)
-{
-    SpikeMessage result;
-    cudaMemcpy(&result, gpu_message, sizeof(SpikeMessage), cudaMemcpyDeviceToHost);
-    result.neuron_indexes_.actualize();
-    return result;
-}
 
 }  // namespace knp::backends::gpu::cuda

@@ -108,20 +108,10 @@ struct SynapticImpactMessage
      * @todo Try to remove this when fixing main; this parameter is too specific to be a part of a general message.
      */
     bool is_forcing_ = false;
+
+    void actualize() { impacts_.actualize(); }
 };
 
-
-/**
- * @brief Impact values.
- */
-template <>
-SynapticImpactMessage extract<SynapticImpactMessage>(const SynapticImpactMessage *gpu_message)
-{
-    SynapticImpactMessage message;
-    call_and_check(cudaMemcpy(&message, gpu_message, sizeof(SynapticImpactMessage), cudaMemcpyDeviceToHost));
-    message.impacts_.actualize();
-    return message;
-}
 
 /**
  * @brief Check if two synaptic impact messages are the same.
