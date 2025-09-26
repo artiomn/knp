@@ -261,7 +261,7 @@ if (MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
-add_third_party("gh:zlib-ng/zlib-ng@2.2.5"
+add_third_party("gh:zlib-ng/zlib-ng#2.2.5"
                 OPTIONS
                     "ZLIB_INSTALL OFF"
                     "ZLIB_ENABLE_TESTS OFF"
