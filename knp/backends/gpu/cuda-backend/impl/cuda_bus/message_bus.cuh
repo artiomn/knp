@@ -40,6 +40,7 @@
 #include "messaging.cuh"
 #include "../cuda_lib/vector.cuh"
 
+
 /**
  * @brief Namespace for CUDA message bus implementations.
  */

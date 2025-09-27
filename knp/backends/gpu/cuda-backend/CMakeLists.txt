@@ -60,7 +60,10 @@ knp_add_library("${PROJECT_NAME}"
         impl/backend_impl.cu
         impl/uid.cu
         impl/gpu_cuda_device.cu
+        impl/cuda_bus/messaging.cu
         impl/cuda_bus/message_bus.cu
+        impl/cuda_bus/subscription.cu
+        impl/cuda_lib/kernels.cu
         impl/cuda_lib/kernels.cu
         # impl/get_network.cpp
         ${${PROJECT_NAME}_headers}

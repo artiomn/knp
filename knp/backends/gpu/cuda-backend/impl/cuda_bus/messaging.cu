@@ -16,8 +16,8 @@ namespace knp::backends::gpu::cuda
 template<size_t index>
 MessageVariant extract_message_by_index(const void *msg_ptr)
 {
-    return extract<boost::mp11::mp_at_c<AllMessages, index>>(
-            reinterpret_cast<const boost::mp11::mp_at_c<AllMessages, index> *>(msg_ptr));
+    return extract<boost::mp11::mp_at_c<AllCudaMessages, index>>(
+            reinterpret_cast<const boost::mp11::mp_at_c<AllCudaMessages, index> *>(msg_ptr));
 }
 
 
@@ -39,6 +39,7 @@ MessageVariant extract<MessageVariant>(const MessageVariant *message)
     call_and_check(cudaFree(msg_gpu));
     // Here we have a type index and a gpu pointer to message.
     MessageVariant result;
+    // TODO: Remove crunchs.
     switch(type)
     {
         case 0: result = extract_message_by_index<0>(msg_ptr);
@@ -103,10 +104,11 @@ SubscriptionVariant extract<SubscriptionVariant>(const SubscriptionVariant *sub_
     call_and_check(cudaFree(sub_gpu));
     // Here we have a type index and a gpu pointer to message.
     SubscriptionVariant result;
+    // TODO: Remove crunchs.
     switch(type)
     {
-        case 0: result = detail::extract_subscription_by_index<0>(sub_ptr);
-        case 1: result = detail::extract_subscription_by_index<1>(sub_ptr);
+        case 0: result = extract_subscription_by_index<0>(sub_ptr);
+        case 1: result = extract_subscription_by_index<1>(sub_ptr);
     }
     return result;
 }

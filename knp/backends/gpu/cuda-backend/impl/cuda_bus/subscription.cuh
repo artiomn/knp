@@ -176,7 +176,9 @@ public:
         size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
         std::cout << "Num senders " << senders_.size() << std::endl;
         size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
-        std::cout << "Running has_sender kernel: " << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
+        std::cout
+            << "Running has_sender kernel: "
+            << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
         const UID *senders_data = senders_.data();
         device_lib::has_sender_kernel<<<num_blocks, num_threads>>>(uid, senders_data, senders_.size(), d_result);
         cudaDeviceSynchronize();
@@ -243,9 +245,9 @@ private:
 
 
 /**
- * @brief List of subscription types based on message types specified in `messaging::AllMessages`.
+ * @brief List of subscription types based on message types specified in `cuda::AllCudaMessages`.
  */
-using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllMessages>;
+using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllCudaMessages>;
 
 
 /**
@@ -255,7 +257,7 @@ using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllMessag
  * `AllSubscriptions` contains SpikeMessage and SynapticImpactMessage types, then `SubscriptionVariant =
  * std::variant<SpikeMessage, SynapticImpactMessage>`. \n `SubscriptionVariant` retains the same order of message
  * types as defined in `AllSubscriptions`.
- * @see ALL_MESSAGES.
+ * @see ALL_CUDA_MESSAGES.
  */
 using SubscriptionVariant = boost::mp11::mp_rename<AllSubscriptions, ::cuda::std::variant>;
 

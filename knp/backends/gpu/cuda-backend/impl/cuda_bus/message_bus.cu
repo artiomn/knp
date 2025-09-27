@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <boost/mp11/algorithm.hpp>
+#include <boost/preprocessor.hpp>
 #include <cuda/std/detail/libcxx/include/algorithm>
 #include <thrust/host_vector.h>
 #include <thrust/device_ptr.h>
@@ -208,7 +209,7 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
     auto sub_iter = std::find_if(subscriptions_.begin(), subscriptions_.end(),
     [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
     {
-        return std::visit([&receiver](const auto &arg)
+        return ::cuda::std::visit([&receiver](const auto &arg)
         {
             using T = std::decay_t<decltype(arg)>;
             return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
@@ -217,7 +218,8 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 
     if (subscriptions_.end() == sub_iter) return false;
 
-    subscriptions_.erase(sub_iter);
+    // TODO: Need to fix erase()!!!
+    // subscriptions_.erase(sub_iter);
 
     return true;
 }
@@ -239,7 +241,6 @@ __device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message
 }
 
 
-
 template <class MessageType>
 __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
         device_lib::CUDAVector<MessageType> &result_messages)
@@ -250,7 +251,8 @@ __device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
 
 __global__ void get_subscription_kernel(const SubscriptionVariant *var, int *type, const void **sub) {
     int type_val = var->index();
-    switch (type_val) {
+    switch (type_val)
+    {
         // TODO : Add more after adding new messages
         case 0:
             *sub = ::cuda::std::get_if<0>(var);
@@ -280,5 +282,16 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
     }
     *type = type_val;
 }
+
+
+namespace cm = knp::backends::gpu::cuda;
+
+#define INSTANCE_MESSAGES_FUNCTIONS(n, template_for_instance, message_type)                \
+    template __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> \
+        CUDAMessageBus::index_messages<cm::message_type>(); \
+    template bool CUDAMessageBus::unsubscribe<cm::message_type>(const UID &receiver);
+
+BOOST_PP_SEQ_FOR_EACH(INSTANCE_MESSAGES_FUNCTIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_CUDA_MESSAGES))
+
 
 }  // namespace knp::backends::gpu::cuda

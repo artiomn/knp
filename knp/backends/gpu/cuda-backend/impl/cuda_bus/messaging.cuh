@@ -34,16 +34,16 @@
 /**
  * @brief CUDA messaging namespace.
  */
-namespace knp::backends::gpu::cuda {
-#define ALL_MESSAGES SpikeMessage, SynapticImpactMessage
+namespace knp::backends::gpu::cuda
+{
+#define ALL_CUDA_MESSAGES SpikeMessage, SynapticImpactMessage
 
-using AllMessages = boost::mp11::mp_list<ALL_MESSAGES>;
+using AllCudaMessages = boost::mp11::mp_list<ALL_CUDA_MESSAGES>;
 
-using MessageVariant = boost::mp11::mp_rename<AllMessages, ::cuda::std::variant>;
+using MessageVariant = boost::mp11::mp_rename<AllCudaMessages, ::cuda::std::variant>;
 
 
 __global__ void get_message_kernel(const MessageVariant *var, int *type, const void **msg);
-
 
 
 template<>
