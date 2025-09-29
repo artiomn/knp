@@ -87,7 +87,7 @@ TEST(CudaVectorSuite, CopyKernel)
     std::vector<uint64_t> vec_from = {3, 2, 4, 5, 1, 0, 4, 0};
     std::vector<uint64_t> vec_out(vec_from.size());
     cudaMemcpy(array_from, vec_from.data(), 8 * sizeof(uint64_t), cudaMemcpyHostToDevice);
-    knp_cuda::device_lib::copy_kernel<<<1, 8>>>(0, 8, array_to, array_from);
+    knp_cuda::device_lib::copy_kernel<<<1, 8>>>(array_from, 0, 8, array_to);
     cudaMemcpy(vec_out.data(), array_to, vec_from.size() * sizeof(uint64_t), cudaMemcpyDeviceToHost);
     cudaFree(array_from);
     cudaFree(array_to);
@@ -135,7 +135,7 @@ TEST(CudaVectoSuite, CopyUidKernel)
         std::cout << "ERROR 1: " << cudaGetErrorString(error) << std::endl;
 
     // copy_uid_kernel<<<1, 4>>>(0, 4, array_to, array_from);
-    knp_cuda::device_lib::copy_kernel<<<1, 4>>>(0, 4, array_to, array_from);
+    knp_cuda::device_lib::copy_kernel<<<1, 4>>>(array_from, 0, 4, array_to);
     error = cudaGetLastError();
     if (error != cudaSuccess)
         std::cout << "ERROR 2: " << cudaGetErrorString(error) << std::endl;

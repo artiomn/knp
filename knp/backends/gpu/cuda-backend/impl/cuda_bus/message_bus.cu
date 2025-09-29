@@ -225,6 +225,47 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 }
 
 
+
+//template<class MessageType>
+//__host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> CUDAMessageBus::index_messages()
+//{
+//    uint64_t buf_size = messages_to_route_.size();
+//    // constexpr int type_index = boost::mp_find<MessageVariant, MessageType>::value;
+//    constexpr int type_index = 0; // TODO fix the code above.
+//    //Reserve memory:
+//    // Triple vector: receiver * senders * all_messages
+//    auto found_messages_indices = reserve_vector(subscriptions_, messages_to_route_.size());
+//    // Find number of threads and blocks and run the core.
+//    const int num_threads = std::min<int>(threads_per_block, subscriptions_.size());
+//    const int num_blocks = subscriptions_.size() / threads_per_block + 1;
+//    find_messages_by_receiver<<<num_blocks, num_threads>>>(subscriptions_, messages_to_route_,
+//                                                           found_messages_indices, type_index);
+//
+//    return found_messages_indices;
+//}
+
+
+//template <typename MessageType>
+//__host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
+//{
+//    auto sub_iter = std::find_if(subscriptions_.begin(), subscriptions_.end(),
+//    [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
+//    {
+//        return ::cuda::std::visit([&receiver](const auto &arg)
+//        {
+//            using T = std::decay_t<decltype(arg)>;
+//            return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
+//        }, subscr);
+//    });
+//
+//    if (subscriptions_.end() == sub_iter) return false;
+//
+//    subscriptions_.erase(sub_iter);
+//
+//    return true;
+//}
+
+
 __host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
 {
     for (auto sub_iter = subscriptions_.begin(); sub_iter != subscriptions_.end(); ++sub_iter)

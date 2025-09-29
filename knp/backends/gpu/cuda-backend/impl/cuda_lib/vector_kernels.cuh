@@ -40,7 +40,7 @@ namespace knp::backends::gpu::cuda::device_lib
 
 // TODO : Move kernels to a different .h file.
 template <class T, class Allocator>
-__global__ void construct_kernel(size_t begin, size_t end, T* data, Allocator allocator)
+__global__ void construct_kernel(T *data, size_t begin, size_t end, Allocator allocator)
 {
     if (end <= begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -48,7 +48,7 @@ __global__ void construct_kernel(size_t begin, size_t end, T* data, Allocator al
     allocator.construct(data + begin + i);
 }
 
-template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(size_t begin, size_t end, UID *data,
+template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t begin, size_t end,
         CuMallocAllocator<UID>);
 
 
@@ -60,7 +60,7 @@ __global__ void copy_construct_kernel(T* dest, const T src, Allocator allocator)
 
 
 template <class T>
-__global__ void copy_kernel(size_t begin, size_t end, T* data_to, const T* data_from)
+__global__ void copy_kernel(const T* data_from, size_t begin, size_t end, T* data_to)
 {
     printf("Copy kernel, begin: %lu, end: %lu, sizeof data %lu\n", begin, end, sizeof(T));
     if (end <= begin) return;
@@ -72,11 +72,11 @@ __global__ void copy_kernel(size_t begin, size_t end, T* data_to, const T* data_
 }
 
 
-template __global__ void copy_kernel<UID>(size_t, size_t, UID*, const UID*);
+template __global__ void copy_kernel<UID>(const UID*, size_t, size_t, UID*);
 
 
 template <class T>
-__global__ void move_kernel(size_t begin, size_t end, T* data_to, T* data_from)
+__global__ void move_kernel(T* data_from, size_t begin, size_t end, T* data_to)
 {
     if (end <= begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -86,7 +86,7 @@ __global__ void move_kernel(size_t begin, size_t end, T* data_to, T* data_from)
 
 
 template<class T, class Allocator>
-__global__ void destruct_kernel(size_t begin, size_t end, T* &data, Allocator allocator)
+__global__ void destruct_kernel(T* data, size_t begin, size_t end, Allocator allocator)
 {
     if (end < begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;

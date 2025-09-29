@@ -71,7 +71,7 @@ public:
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             data_ = allocator_.allocate(capacity_);
-            construct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+            construct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
             cudaDeviceSynchronize();
         }
         #endif
@@ -105,7 +105,7 @@ public:
         allocator_.deallocate(data_, size_);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+        destruct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
         cudaDeviceSynchronize();
         std::cout << "vector destructor" << std::endl;
         if (capacity_) allocator_.deallocate(data_, capacity_);
@@ -128,7 +128,7 @@ public:
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         if (num_threads > 0)
         {
-            copy_kernel<<<num_blocks, num_threads>>>(0, size_, data_, other.data_);
+            copy_kernel<<<num_blocks, num_threads>>>(other.data_, 0, size_, data_);
             cudaDeviceSynchronize();
         }
         #endif
@@ -242,7 +242,7 @@ public:
         for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+        destruct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
         cudaDeviceSynchronize();
         #endif
         size_ = 0;
@@ -265,10 +265,16 @@ public:
         #ifdef __CUDA_ARCH__
         return data_[index];
         #else
-        static_assert(std::is_trivially_copyable_v<value_type>);
-        T result;
-        call_and_check(cudaMemcpy(&result, data_ + index, sizeof(value_type), cudaMemcpyDeviceToHost));
-        return result;
+        if constexpr (std::is_trivially_copyable_v<value_type>)
+        {
+            T result;
+            call_and_check(cudaMemcpy(&result, data_ + index, sizeof(value_type), cudaMemcpyDeviceToHost));
+            return result;
+        }
+        else
+        {
+            return extract(data_ + index);
+        }
         #endif
     }
 
@@ -355,12 +361,12 @@ public:
         std::cout << "Running copy kernel: " << num_blocks << " blocks, " << num_threads << " threads" << std::endl;
         if (num_threads > 0)
         {
-            copy_kernel<<<num_blocks, num_threads>>>(0, size_, new_data, data_);
+            copy_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, new_data);
             cudaDeviceSynchronize();
             auto result = cudaGetLastError();
             if (result != cudaSuccess)
                 std::cout << cudaGetErrorString(result) << std::endl;
-            destruct_kernel<<<num_blocks, num_threads>>>(0, size_, data_, allocator_);
+            destruct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
             cudaDeviceSynchronize();
         }
         std::cout << "Vector reserve" << std::endl;
@@ -430,7 +436,7 @@ public:
         T* source_data = data_;
         data_ = allocator_.allocate(capacity_);
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        copy_kernel<<<num_blocks, num_threads>>>(0, size_, data_, source_data);
+        copy_kernel<<<num_blocks, num_threads>>>(source_data, 0, size_, data_);
     }
 private:
     __device__ void dev_reserve(size_type new_capacity)

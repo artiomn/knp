@@ -104,7 +104,7 @@ public:
      * @return true if a subscription was deleted, false otherwise.
      */
     template <typename MessageType>
-    __host__ bool unsubscribe(const UID &receiver); // Done
+    __host__ bool unsubscribe(const UID &receiver) { return true; } // TODO TEMP
 
     /**
      * @brief Remove all subscriptions for a receiver with given UID.
@@ -181,8 +181,13 @@ private:
 template
 __host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const thrust::device_vector<UID>&);
 
-
 template
 __host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const thrust::device_vector<UID>&);
+
+//template
+//__host__ bool CUDAMessageBus::unsubscribe<SpikeMessage>(const UID &receiver);
+//
+//template
+//__host__ bool CUDAMessageBus::unsubscribe<SynapticImpactMessage>(const UID &receiver);
 
 }  // namespace knp::backends::gpu::cuda
