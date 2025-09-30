@@ -46,8 +46,7 @@ namespace knp::backends::gpu::cuda
  * @tparam MessageT type of messages that are exchanged via the subscription.
  */
 template <class MessageT>
-class Subscription final
-{
+class Subscription final {
 public:
     /**
      * @brief Message type.
@@ -71,17 +70,16 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector<cuda::UID> &senders) :
-        receiver_(receiver)
-    {
-        #ifdef __CUDA_ARCH__
+    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector <cuda::UID> &senders) :
+            receiver_(receiver) {
+#ifdef __CUDA_ARCH__
         for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
-        #else
+#else
         SPDLOG_TRACE("Initializing with {} senders.", senders.size());
-        thrust::host_vector<UID> host_vec = senders;
+        thrust::host_vector <UID> host_vec = senders;
         for (size_t i = 0; i < host_vec.size(); ++i) add_sender(host_vec[i]);
         SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
-        #endif
+#endif
     }
 
     /**
@@ -102,14 +100,11 @@ public:
      * @param uid sender UID.
      * @return true if sender was deleted from subscription.
      */
-    __device__ __host__ bool remove_sender(const UID &uid)
-    {
+    __device__ __host__ bool remove_sender(const UID &uid) {
         // auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
         uint64_t index = 0;
-        for (uint64_t index = 0; index < senders_.size(); ++index)
-        {
-            if (senders_[index] == uid)
-            {
+        for (uint64_t index = 0; index < senders_.size(); ++index) {
+            if (senders_[index] == uid) {
                 senders_.erase(index);
                 return true;
             }
@@ -123,8 +118,7 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __host__ __device__ bool add_sender(const UID uid)
-    {
+    __host__ __device__ bool add_sender(const UID uid) {
 #ifndef __CUDA_ARCH__
         std::cout << "Adding sender" << std::endl;
 #endif
@@ -142,11 +136,9 @@ public:
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders)
-    {
+    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders) {
         size_t result = 0;
-        for (size_t i = 0; i < senders.size(); ++i)
-        {
+        for (size_t i = 0; i < senders.size(); ++i) {
             result += add_sender(senders[i]);
         }
 
@@ -158,9 +150,8 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
-    {
-        #ifdef __CUDA_ARCH__
+    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const {
+#ifdef __CUDA_ARCH__
         printf("Using has_sender on device");
         for (size_t i = 0; i < senders_.size(); ++i)
         {
@@ -168,17 +159,18 @@ public:
         }
         printf("No sender found");
         return false;
-        #else
+#else
         int *d_result = nullptr;
         cudaMalloc(&d_result, sizeof(int));
         cudaMemset(d_result, 0, sizeof(int));
-        constexpr uint32_t threads_per_block = 256;
+        constexpr
+        uint32_t threads_per_block = 256;
         size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
         std::cout << "Num senders " << senders_.size() << std::endl;
         size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
         std::cout
-            << "Running has_sender kernel: "
-            << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
+                << "Running has_sender kernel: "
+                << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
         const UID *senders_data = senders_.data();
         device_lib::has_sender_kernel<<<num_blocks, num_threads>>>(uid, senders_data, senders_.size(), d_result);
         cudaDeviceSynchronize();
@@ -186,8 +178,19 @@ public:
         cudaMemcpy(&result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
         cudaFree(d_result);
         return result;
-        #endif
+#endif
     }
+
+    __host__ __device__ bool operator==(const Subscription<MessageT> &other) const
+    {
+        return receiver_ == other.receiver_ && senders_ == other.senders_ && messages_ == other.messages_;
+    }
+
+    __host__ __device__ bool operator!=(const Subscription<MessageT> &other) const
+    {
+        return !(*this == other);
+    }
+
 
 public:
     /**
@@ -220,7 +223,7 @@ public:
     /**
      * @brief Restore after shallow copying from device.
      */
-    __host__ void actualize()
+    __host__ __device__ void actualize()
     {
         senders_.actualize();
         messages_.actualize();
@@ -266,7 +269,10 @@ __global__ void get_subscription_kernel(const SubscriptionVariant *var, int *typ
 
 
 template<>
-SubscriptionVariant extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant);
+SubscriptionVariant gpu_extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant);
+
+template<>
+void gpu_insert<SubscriptionVariant>(const SubscriptionVariant &source, SubscriptionVariant *target);
 
 
 } // namespace knp::backends::gpu::cuda

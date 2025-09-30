@@ -43,6 +43,11 @@ struct MessageHeader
      * @brief Index of the network execution step.
      */
     std::uint64_t send_time_;
+
+    __host__ __device__ bool operator==(const MessageHeader &other) const
+    {
+        return sender_uid_ == other.sender_uid_ && send_time_ == other.send_time_;
+    }
 };
 
 }  // namespace knp::backends::gpu::cuda

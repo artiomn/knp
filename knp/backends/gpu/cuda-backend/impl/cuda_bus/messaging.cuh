@@ -47,5 +47,5 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
 
 
 template<>
-MessageVariant extract<MessageVariant>(const MessageVariant *message);
+MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message);
 }  // namespace knp::backends::gpu::cuda

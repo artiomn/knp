@@ -77,6 +77,8 @@ public:
         #endif
     }
 
+
+    // Copy constructor from a cpu pointer-based array.
     __host__ __device__ CUDAVector(const value_type *vec, size_type size)
     {
         reserve(size);
@@ -84,18 +86,36 @@ public:
         size_ = size;
         for (size_type i = 0; i < size_; ++i) allocator_.construct(data_ + i, *(vec + i));
         #else
-        static_assert(std::is_trivially_copyable_v<value_type>);
-        call_and_check(cudaMemcpy(data_, vec, size * sizeof(value_type), cudaMemcpyHostToDevice));
+        if constexpr (std::is_trivially_copyable_v<value_type>)
+        {
+            call_and_check(cudaMemcpy(data_, vec, size * sizeof(value_type), cudaMemcpyHostToDevice));
+        }
+        else
+        {
+            for (size_t i = 0; i < size; ++i)
+            {
+                gpu_insert(vec[i], data_ + i); // TODO Parallelize
+            }
+        }
         size_ = size;
         #endif
     }
 
     __host__ CUDAVector(const std::vector<value_type> &vec)
     {
-        static_assert(std::is_trivially_copyable_v<value_type>);
         clear();
         reserve(vec.size());
-        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
+        if constexpr (std::is_trivially_copyable<value_type>::value)
+        {
+            call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
+        }
+        else
+        {
+            for (size_t i = 0; i < vec.size(); ++i)
+            {
+                gpu_insert(vec[i], data_ + i); // TODO Parallelize
+            }
+        }
     }
 
     __host__ __device__ ~CUDAVector()
@@ -191,10 +211,17 @@ public:
 
     __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
-        static_assert(std::is_trivially_copyable_v<value_type>);
         clear();
         reserve(vec.size());
-        call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
+        if constexpr (std::is_trivially_copyable_v<value_type>)
+        {
+            call_and_check(cudaMemcpy(data_, vec.data(), vec.size() * sizeof(value_type), cudaMemcpyHostToDevice));
+        }
+        else
+        {
+            auto [num_blocks, num_threads] = get_blocks_config(size_);
+            copy_kernel<<<num_blocks, num_threads>>>(vec.data(), 0, size_, data_);
+        }
         return *this;
     }
 
@@ -254,8 +281,12 @@ public:
         #ifdef __CUDA_ARCH__
         data_[index] = value;
         #else
-        static_assert(std::is_trivially_copyable_v<value_type>);
+
         call_and_check(cudaMemcpy(data_ + index, &value, sizeof(value_type), cudaMemcpyHostToDevice));
+        if constexpr (!std::is_trivially_copyable_v<value_type>)
+        {
+            gpu_insert<T>(value, data_ + index);
+        }
         #endif
         return true;
     }
@@ -273,7 +304,7 @@ public:
         }
         else
         {
-            return extract(data_ + index);
+            return gpu_extract(data_ + index);
         }
         #endif
     }
@@ -423,20 +454,25 @@ public:
             call_and_check(cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost));
         }
         else
-        result = extract(data_ + index);
+        result = gpu_extract(data_ + index);
         return result;
     }
 
     /**
      * @brief Fix a vector that has been shallow-copied.
      */
-    __host__ void actualize()
+    __host__ __device__ void actualize()
     {
-        // copy kernel
         T* source_data = data_;
         data_ = allocator_.allocate(capacity_);
+    #ifdef __CUDA_ARCH__
+        for (size_t i = 0; i < size_; ++i)
+            new (data_ + i) T(*(source_data + i));
+    #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         copy_kernel<<<num_blocks, num_threads>>>(source_data, 0, size_, data_);
+
+    #endif
     }
 private:
     __device__ void dev_reserve(size_type new_capacity)
@@ -518,7 +554,7 @@ std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
 namespace knp::backends::gpu::cuda
 {
 template<class T, class Allocator>
-__host__ device_lib::CUDAVector<T, Allocator> extract<device_lib::CUDAVector<T, Allocator>>(
+__host__ device_lib::CUDAVector<T, Allocator> gpu_extract<device_lib::CUDAVector<T, Allocator>>(
 const device_lib::CUDAVector<T, Allocator> *dev_vector)
 {
     device_lib::CUDAVector<T, Allocator> result;

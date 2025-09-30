@@ -7,6 +7,8 @@
 #include "subscription.cuh"
 #include "../cuda_lib/extraction.cuh"
 
+#include <type_traits>
+
 
 /**
  * @brief CUDA messaging namespace.
@@ -16,13 +18,13 @@ namespace knp::backends::gpu::cuda
 template<size_t index>
 MessageVariant extract_message_by_index(const void *msg_ptr)
 {
-    return extract<boost::mp11::mp_at_c<AllCudaMessages, index>>(
+    return gpu_extract<boost::mp11::mp_at_c<AllCudaMessages, index>>(
             reinterpret_cast<const boost::mp11::mp_at_c<AllCudaMessages, index> *>(msg_ptr));
 }
 
 
 template<>
-MessageVariant extract<MessageVariant>(const MessageVariant *message)
+MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message)
 {
     int *type_gpu;
     const void **msg_gpu; // This is a gpu pointer to gpu pointer to gpu message.
@@ -48,13 +50,40 @@ MessageVariant extract<MessageVariant>(const MessageVariant *message)
     return result;
 }
 
+
+
+namespace detail
+{
+    template <class Variant, class Instance>
+    __global__ void make_variant_kernel(Variant *result, Instance *source)
+    {
+        new (result) Variant(*source);
+    }
+}
+
+template<>
+void gpu_insert<MessageVariant>(const MessageVariant &cpu_source, MessageVariant *gpu_target)
+{
+    ::cuda::std::visit([gpu_target](const auto &val)
+    {
+        using ValueType = std::decay_t<decltype(val)>;
+        ValueType *buffer;
+        call_and_check(cudaMalloc(&buffer, sizeof(ValueType)));
+        gpu_insert(val, buffer);
+        detail::make_variant_kernel<<<1, 1>>>(gpu_target, buffer);
+        call_and_check(cudaFree(buffer));
+    }, cpu_source);
+}
+
+
+
 /**
  * @brief Extracts a subscription from GPU to CPU.
  * @param gpu_subscription a pointer to GPU subscription.
  * @return host-based subscription.
  */
 template<class MessageT>
-__host__ Subscription<MessageT> extract<Subscription<MessageT>>(const Subscription<MessageT> *gpu_subscription)
+__host__ Subscription<MessageT> gpu_extract<Subscription<MessageT>>(const Subscription<MessageT> *gpu_subscription)
 {
     Subscription<MessageT> result;
     cudaMemcpy(&result, gpu_subscription, sizeof(Subscription<MessageT>), cudaMemcpyDeviceToHost);
@@ -81,13 +110,13 @@ __host__ Subscription<MessageT> extract<Subscription<MessageT>>(const Subscripti
 template<size_t index>
 SubscriptionVariant extract_subscription_by_index(const void *sub_ptr)
 {
-    return extract<boost::mp11::mp_at_c<AllSubscriptions, index>>(
+    return gpu_extract<boost::mp11::mp_at_c<AllSubscriptions, index>>(
             reinterpret_cast<const boost::mp11::mp_at_c<AllSubscriptions, index> *>(sub_ptr));
 }
 
 
 template<>
-SubscriptionVariant extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant)
+SubscriptionVariant gpu_extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant)
 {
     int *type_gpu;
     const void **sub_gpu; // This is a gpu pointer to gpu pointer to gpu subscription.
@@ -111,6 +140,21 @@ SubscriptionVariant extract<SubscriptionVariant>(const SubscriptionVariant *sub_
         case 1: result = extract_subscription_by_index<1>(sub_ptr);
     }
     return result;
+}
+
+
+template<>
+void gpu_insert(const SubscriptionVariant &sub_var, SubscriptionVariant *gpu_target)
+{
+    ::cuda::std::visit([gpu_target](const auto &val)
+                  {
+                      using ValueType = std::decay_t<decltype(val)>;
+                      ValueType *buffer;
+                      call_and_check(cudaMalloc(&buffer, sizeof(ValueType)));
+                      gpu_insert(val, buffer);
+                      detail::make_variant_kernel<<<1, 1>>>(gpu_target, buffer);
+                      call_and_check(cudaFree(buffer));
+                  }, sub_var);
 }
 
 

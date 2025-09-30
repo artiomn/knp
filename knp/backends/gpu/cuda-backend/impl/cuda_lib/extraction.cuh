@@ -11,7 +11,7 @@
 namespace knp::backends::gpu::cuda
 {
 template<class T>
-__host__ T extract(const T* gpu_val)
+__host__ T gpu_extract(const T* gpu_val)
 {
     T result;
     call_and_check(cudaMemcpy(&result, gpu_val, sizeof(T), cudaMemcpyDeviceToHost));
@@ -20,4 +20,23 @@ __host__ T extract(const T* gpu_val)
     return result;
 }
 
+
+namespace detail
+{
+template<class T>
+__global__ void actualize_kernel(T *val)
+{
+    val->actualize();
 }
+} // namespace detail
+
+
+template<class T>
+__host__ void gpu_insert(const T &cpu_val, T *gpu_target)
+{
+    call_and_check(cudaMemcpy(gpu_target, &cpu_val, sizeof(T), cudaMemcpyHostToDevice));
+    if constexpr (!std::is_trivially_copyable<T>::value)
+        detail::actualize_kernel<<<1, 1>>>(gpu_target);
+}
+
+} // namespace knp::backends::gpu::cuda

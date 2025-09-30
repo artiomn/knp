@@ -73,7 +73,17 @@ struct SynapticImpact
      * @brief Compare synaptic impact messages.
      * @return `true` if synaptic impacts are equal.
      */
-    bool operator==(const SynapticImpact &) const;
+    __host__ __device__ bool operator==(const SynapticImpact &other) const
+    {
+        return connection_index_ == other.connection_index_ && impact_value_ == other.impact_value_
+                && synapse_type_ == other.synapse_type_ && presynaptic_neuron_index_ == other.presynaptic_neuron_index_
+                && postsynaptic_neuron_index_ == other.postsynaptic_neuron_index_;
+    }
+
+    __host__ __device__ bool operator!=(const SynapticImpact &other) const
+    {
+        return !(*this == other);
+    }
 };
 
 
@@ -109,7 +119,18 @@ struct SynapticImpactMessage
      */
     bool is_forcing_ = false;
 
-    void actualize() { impacts_.actualize(); }
+    __host__ __device__ void actualize() { impacts_.actualize(); }
+
+
+    __host__ __device__ bool operator==(const SynapticImpactMessage &other)
+    {
+        return header_ == other.header_
+            && presynaptic_population_uid_ == other.presynaptic_population_uid_
+            && postsynaptic_population_uid_ == other.postsynaptic_population_uid_
+            && impacts_ == other.impacts_;
+    }
+
+    __host__ __device__ bool operator!=(const SynapticImpactMessage &other) { return !(*this == other); }
 };
 
 
