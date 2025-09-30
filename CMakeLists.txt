@@ -261,12 +261,12 @@ if (MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
-add_third_party("gh:zlib-ng/zlib-ng#2.2.5"
+add_third_party("gh:madler/zlib@1.3.1"
 			    USE_LOCAL_PACKAGES NO
                 OPTIONS
                     "ZLIB_INSTALL OFF"
-                    "ZLIB_ENABLE_TESTS OFF"
-                    "ZLIBNG_ENABLE_TESTS OFF")
+                    "ZLIB_BUILD_TESTING OFF"
+                    "ZLIB_BUILD_STATIC ON")
 
 add_third_party(NAME "libzmq"
                 GITHUB_REPOSITORY "zeromq/libzmq"
@@ -312,8 +312,8 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
                     "HDF5_BUILD_TOOLS OFF"
                     "HDF5_BUILD_UTILS OFF"
                     "HDF5_USE_ZLIB_STATIC ON"
-                    "HDF5_VOL_ALLOW_EXTERNAL YES"
-                    "ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/zlib-ng-build")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
+                    "HDF5_VOL_ALLOW_EXTERNAL YES")
+#                    "ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/zlib-ng-build")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
 
 include_directories("${CPM_PACKAGE_hdf5_SOURCE_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}/_deps/hdf5-build/src") # $<BUILD_INTERFACE:${CPM_PACKAGE_hdf5_SOURCE_DIR}>
 
