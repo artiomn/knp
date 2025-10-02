@@ -51,9 +51,9 @@ TEST(CudaVectorSuite, Memcpy)
     const uint64_t val = 112;
     uint64_t *val_gpu;
     uint64_t val_cpu = 0;
-    cudaMalloc(&val_gpu, sizeof(uint64_t));
-    cudaMemcpy(val_gpu, &val, sizeof(uint64_t), cudaMemcpyHostToDevice);
-    cudaMemcpy(&val_cpu, val_gpu, sizeof(uint64_t), cudaMemcpyDeviceToHost);
+    call_and_check(cudaMalloc(&val_gpu, sizeof(uint64_t)));
+    call_and_check(cudaMemcpy(val_gpu, &val, sizeof(uint64_t), cudaMemcpyHostToDevice));
+    call_and_check(cudaMemcpy(&val_cpu, val_gpu, sizeof(uint64_t), cudaMemcpyDeviceToHost));
     cudaFree(val_gpu);
     ASSERT_EQ(val, val_cpu);
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
@@ -203,8 +203,9 @@ TEST(CudaVectorSuite, VectorPushBack)
     std::cout << cuda_vec << std::endl;
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
     cuda_vec.push_back(3);
-    std::cout << cuda_vec << std::endl;
+    // std::cout << cuda_vec << std::endl;
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
+    std::cout << "Has success" << std::endl;
     ASSERT_EQ(cuda_vec.size(), 3);
     ASSERT_GE(cuda_vec.capacity(), 3);
     std::vector<uint64_t> exp_results{1, 2, 3};

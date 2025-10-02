@@ -42,8 +42,9 @@ namespace knp::backends::gpu::cuda
  * @brief Structure that contains the synaptic impact value and indexes of presynaptic and postsynaptic neurons.
  * @details Synaptic impact changes parameters of neurons after the synapses state is calculated.
  */
-struct SynapticImpact
+class SynapticImpact
 {
+public:
     /**
      * @brief Index of the population synapse.
      */
@@ -90,8 +91,9 @@ struct SynapticImpact
 /**
  * @brief Structure of the synaptic impact message.
  */
-struct SynapticImpactMessage
+class SynapticImpactMessage
 {
+public:
     /**
      * @brief Message header.
      */

@@ -65,7 +65,7 @@ public:
     {
         #ifdef __CUDA_ARCH__
         data_ = allocator_.allocate(size_);
-        for (size_type i = 0; i < size_; ++i) decltype(allocator_)::construct(data_ + i);
+        for (size_type i = 0; i < size_; ++i) Allocator::construct(data_ + i);
         #else
         if (size_)
         {
@@ -121,7 +121,7 @@ public:
     __host__ __device__ ~CUDAVector()
     {
         #ifdef __CUDA_ARCH__
-        for (size_type i = 0; i < size_; ++i) decltype(allocator_)::destroy(data_ + i);
+        for (size_type i = 0; i < size_; ++i) Allocator::destroy(data_ + i);
         allocator_.deallocate(data_, size_);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
@@ -204,10 +204,6 @@ public:
         return *this;
     }
 
-    // template<class Other>
-    // __host__ CUDAVector& operator=(const std::vector<Other> &vec)
-    // {
-    // }
 
     __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
@@ -223,22 +219,6 @@ public:
             copy_kernel<<<num_blocks, num_threads>>>(vec.data(), 0, size_, data_);
         }
         return *this;
-    }
-
-
-    /**
-     * @brief Set vector to another without freeing its memory, this is a very specific case for when it has been copied
-     * by cudaMemcpy as a part of a larger structure and shouldn't be freed by destructor.
-     * @param other data source.
-     */
-    __host__ __device__ void set_ndest(CUDAVector &&other)
-    {
-        size_ = other.size_;
-        other.size_ = 0;
-        capacity_ = other.capacity_;
-        other.capacity_ = 0;
-        data_ = other.data_;
-        other.data_ = nullptr;
     }
 
 
@@ -281,12 +261,7 @@ public:
         #ifdef __CUDA_ARCH__
         data_[index] = value;
         #else
-
-        call_and_check(cudaMemcpy(data_ + index, &value, sizeof(value_type), cudaMemcpyHostToDevice));
-        if constexpr (!std::is_trivially_copyable_v<value_type>)
-        {
-            gpu_insert<T>(value, data_ + index);
-        }
+        gpu_insert<T>(value, data_ + index);
         #endif
         return true;
     }
@@ -350,12 +325,12 @@ public:
     __host__ __device__ void push_back(const value_type& value)
     {
         if (size_ == capacity_) reserve((size_ + 1) * 2);
-        #ifdef __CUDA_ARCH__
-        data_[size_++] = value;
-        #else
-        //static_assert(std::is_trivially_copyable_v<T>);
-        call_and_check(cudaMemcpy(data_ + size_, &value, sizeof(value_type), cudaMemcpyHostToDevice));
-        ++size_;
+    #ifdef __CUDA_ARCH__
+        Allocator::construct(data_ + size_, value);
+    #else
+        std::cout << "Constructing at " << data_ + size_ << " with capacity of " << capacity_ << std::endl;
+        resize(size_ + 1);
+        set(size_ - 1, value);
 
         // #ifdef DEBUG
         if constexpr (std::is_same_v<uint64_t, value_type>)
@@ -365,15 +340,8 @@ public:
             std::cout << "Pushed back " << val << std::endl;
         }
         // #endif
-        #endif
+    #endif
     }
-
-    // __device__ void push_back(T&& value)
-    // {
-    //     if (size_ == capacity_) reserve((size_ + 1) * 2);
-
-    //     data_[size_++] = std::move(value);
-    // }
 
     __device__ value_type pop_back()
     {
@@ -501,7 +469,7 @@ private:
         {
             for (size_type i = new_size; i < size_ - new_size; ++i)
             {
-                decltype(allocator_)::destroy(data_ + i);
+                Allocator::destroy(data_ + i);
             }
 
             dev_reserve(new_size);
@@ -512,10 +480,9 @@ private:
 
             for (size_type i = size_ - 1; i < new_size - size_; ++i)
             {
-                decltype(allocator_)::construct(data_ + i);
+                Allocator::construct(data_ + i);
             }
         }
-
         size_ = new_size;
     }
 

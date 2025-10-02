@@ -33,8 +33,9 @@ namespace  knp::backends::gpu::cuda
 /**
  * @brief Common header for messages.
  */
-struct MessageHeader
+class MessageHeader
 {
+public:
     /**
      * @brief UID of the object that sent the message.
      */

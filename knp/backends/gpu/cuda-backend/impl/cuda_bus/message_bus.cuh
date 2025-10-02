@@ -73,6 +73,7 @@ public:
     template <typename MessageType>
     __host__ bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
     {
+        SPDLOG_DEBUG("Looking for existing subscriptions");
         for (size_t index = 0; index < subscriptions_.size(); ++index)
         {
             const auto subscr = subscriptions_.copy_at(index);
@@ -91,9 +92,9 @@ public:
                 return false;
             }
         }
-
+        SPDLOG_DEBUG("Adding new subscription");
         subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
-
+        SPDLOG_DEBUG("Done adding new subscription");
         return true;
     }
 

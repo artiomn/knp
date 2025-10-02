@@ -49,8 +49,9 @@ using SpikeData = knp::backends::gpu::cuda::device_lib::CUDAVector<SpikeIndex>;
 /**
  * @brief Structure of the spike message.
  */
-struct SpikeMessage
+class SpikeMessage
 {
+public:
     /**
      * @brief Message header.
      */
