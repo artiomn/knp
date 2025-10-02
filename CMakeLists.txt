@@ -268,6 +268,11 @@ add_third_party("gh:madler/zlib@1.3.1"
                     "ZLIB_BUILD_TESTING OFF"
                     "ZLIB_BUILD_STATIC ON")
 
+# Need to build HDF5.
+include_directories(ZLIB_ROOT "${zlib_BINARY_DIR}")
+set(ZLIB_LIBRARIES "${zlib_BINARY_DIR}/zlib")
+#
+
 add_third_party(NAME "libzmq"
                 GITHUB_REPOSITORY "zeromq/libzmq"
                 VERSION "4.3.5"
