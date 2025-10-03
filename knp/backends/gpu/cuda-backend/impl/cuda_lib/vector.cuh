@@ -71,7 +71,7 @@ public:
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             data_ = allocator_.allocate(capacity_);
-            construct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
+            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
             cudaDeviceSynchronize();
         }
         #endif
@@ -125,7 +125,7 @@ public:
         allocator_.deallocate(data_, size_);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
+        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
         cudaDeviceSynchronize();
         std::cout << "vector destructor" << std::endl;
         if (capacity_) allocator_.deallocate(data_, capacity_);
@@ -249,7 +249,7 @@ public:
         for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
+        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
         cudaDeviceSynchronize();
         #endif
         size_ = 0;
@@ -284,19 +284,6 @@ public:
         #endif
     }
 
-/*    __host__ __device__ T& operator[](size_t index)
-    {
-        #ifdef __CUDA_ARCH__
-        return data_[index];
-        #else
-        // TODO: return thrust::reference (or smth. like this).
-        static_assert(std::is_trivially_copyable_v<value_type>);
-        T result;
-        call_and_check(cudaMemcpy(&result, data_ + index, sizeof(value_type), cudaMemcpyDeviceToHost));
-        return result;
-        #endif
-    }
-*/
     __host__ __device__ size_type capacity() const
     {
         return capacity_;
@@ -330,6 +317,7 @@ public:
     #else
         std::cout << "Constructing at " << data_ + size_ << " with capacity of " << capacity_ << std::endl;
         resize(size_ + 1);
+        std::cout << "Done constructing" << std::endl;
         set(size_ - 1, value);
 
         // #ifdef DEBUG
@@ -365,7 +353,7 @@ public:
             auto result = cudaGetLastError();
             if (result != cudaSuccess)
                 std::cout << cudaGetErrorString(result) << std::endl;
-            destruct_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, allocator_);
+            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
             cudaDeviceSynchronize();
         }
         std::cout << "Vector reserve" << std::endl;
@@ -385,12 +373,12 @@ public:
         {
             reserve(new_size);
             auto [num_blocks, num_threads] = get_blocks_config(new_size - size_);
-            construct_kernel<<<num_blocks, num_threads>>>(data_, size_, new_size, allocator_);
+            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_, new_size);
         }
         else if (new_size < size_)
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_ - new_size);
-            destruct_kernel<<<num_blocks, num_threads>>>(data_, new_size, size_, allocator_);
+            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, new_size, size_);
         }
         cudaDeviceSynchronize();
         size_ = new_size;

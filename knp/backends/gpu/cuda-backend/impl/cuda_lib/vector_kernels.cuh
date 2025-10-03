@@ -40,22 +40,22 @@ namespace knp::backends::gpu::cuda::device_lib
 
 // TODO : Move kernels to a different .h file.
 template <class T, class Allocator>
-__global__ void construct_kernel(T *data, size_t begin, size_t end, Allocator allocator)
+__global__ void construct_kernel(T *data, size_t begin, size_t end)
 {
+    printf("Construct kernel, begin: %lu, end: %lu", begin, end);
     if (end <= begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= end - begin) return;
-    allocator.construct(data + begin + i);
+    Allocator::construct(data + begin + i);
 }
 
-template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t begin, size_t end,
-        CuMallocAllocator<UID>);
+template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t begin, size_t end);
 
 
 template<typename T, class Allocator>
-__global__ void copy_construct_kernel(T* dest, const T src, Allocator allocator)
+__global__ void copy_construct_kernel(T* dest, const T src)
 {
-    allocator.construct(dest, src);
+    Allocator::construct(dest, src);
 }
 
 
@@ -86,12 +86,12 @@ __global__ void move_kernel(T* data_from, size_t begin, size_t end, T* data_to)
 
 
 template<class T, class Allocator>
-__global__ void destruct_kernel(T* data, size_t begin, size_t end, Allocator allocator)
+__global__ void destruct_kernel(T* data, size_t begin, size_t end)
 {
     if (end < begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= end - begin) return;
-    allocator.destroy(data + begin + i);
+    Allocator::destroy(data + begin + i);
 }
 
 
