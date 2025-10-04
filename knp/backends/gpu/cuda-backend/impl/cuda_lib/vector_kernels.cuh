@@ -40,40 +40,31 @@ namespace knp::backends::gpu::cuda::device_lib
 
 // TODO : Move kernels to a different .h file.
 template <class T, class Allocator>
-__global__ void construct_kernel(T *data, size_t begin, size_t end)
+__global__ void construct_kernel(T *data, size_t num_values)
 {
-    if (end <= begin) return;
+    if (num_values == 0) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return;
-    printf("Construct kernel at %p, begin: %lu, end: %lu\n", data + i, begin, end);
+    if (i >= num_values) return;
+    printf("Construct kernel at %p, size: %lu\n", data + i, num_values);
 
-    Allocator::construct(data + begin + i);
+    Allocator::construct(data + i);
 }
 
-template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t begin, size_t end);
-
-
-template<typename T, class Allocator>
-__global__ void copy_construct_kernel(T* dest, const T src)
-{
-    Allocator::construct(dest, src);
-}
+template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t num_values);
 
 
 template <class T>
-__global__ void copy_kernel(const T* data_from, size_t begin, size_t end, T* data_to)
+__global__ void copy_construct_kernel(T* data_to, size_t num_objects, const T* data_from)
 {
-    printf("Copy kernel, begin: %lu, end: %lu, sizeof data %lu\n", begin, end, sizeof(T));
-    if (end <= begin) return;
+    if (num_objects == 0) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    printf("Copy kernel: index %lu, from %p to %p\n", i, data_from + begin + i, data_to + begin + i);
-    if (i >= end - begin) return;
-    new (data_to + begin + i) T(*(data_from + begin + i));
-    // *(data_to + begin + i) = *(data_from + begin + i);
+    printf("Copy construct kernel: index %lu, from %p to %p\n", i, data_from + i, data_to + i);
+    if (i >= num_objects) return;
+    new (data_to + i) T(*(data_from + i));
 }
 
 
-template __global__ void copy_kernel<UID>(const UID*, size_t, size_t, UID*);
+template __global__ void copy_construct_kernel<UID>(UID*, size_t, const UID*);
 
 
 template <class T>

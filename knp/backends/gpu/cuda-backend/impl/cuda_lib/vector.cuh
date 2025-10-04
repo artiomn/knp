@@ -71,7 +71,7 @@ public:
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             data_ = allocator_.allocate(capacity_);
-            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
+            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
             cudaDeviceSynchronize();
         }
         #endif
@@ -148,7 +148,7 @@ public:
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         if (num_threads > 0)
         {
-            copy_kernel<<<num_blocks, num_threads>>>(other.data_, 0, size_, data_);
+            copy_construct_kernel<<<num_blocks, num_threads>>>(data_, size_, other.data_);
             cudaDeviceSynchronize();
         }
         #endif
@@ -216,7 +216,7 @@ public:
         else
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_);
-            copy_kernel<<<num_blocks, num_threads>>>(vec.data(), 0, size_, data_);
+            copy_construct_kernel<<<num_blocks, num_threads>>>(data_, size_, vec.data());
         }
         return *this;
     }
@@ -319,15 +319,6 @@ public:
         resize(size_ + 1);
         std::cout << "Done constructing" << std::endl;
         set(size_ - 1, value);
-
-        // #ifdef DEBUG
-        if constexpr (std::is_same_v<uint64_t, value_type>)
-        {
-            value_type val;
-            call_and_check(cudaMemcpy(&val, data_ + size_ - 1, sizeof(value_type), cudaMemcpyDeviceToHost));
-            std::cout << "Pushed back " << val << std::endl;
-        }
-        // #endif
     #endif
     }
 
@@ -348,7 +339,7 @@ public:
         std::cout << "Running copy kernel: " << num_blocks << " blocks, " << num_threads << " threads" << std::endl;
         if (num_threads > 0)
         {
-            copy_kernel<<<num_blocks, num_threads>>>(data_, 0, size_, new_data);
+            copy_construct_kernel<<<num_blocks, num_threads>>>(new_data, size_, data_);
             cudaDeviceSynchronize();
             auto result = cudaGetLastError();
             if (result != cudaSuccess)
@@ -373,7 +364,7 @@ public:
         {
             reserve(new_size);
             auto [num_blocks, num_threads] = get_blocks_config(new_size - size_);
-            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_, new_size);
+            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_ + size_, new_size - size_);
         }
         else if (new_size < size_)
         {
@@ -426,7 +417,7 @@ public:
             new (data_ + i) T(*(source_data + i));
     #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        copy_kernel<<<num_blocks, num_threads>>>(source_data, 0, size_, data_);
+        copy_construct_kernel<<<num_blocks, num_threads>>>(data_, size_, source_data);
 
     #endif
     }

@@ -87,7 +87,7 @@ TEST(CudaVectorSuite, CopyKernel)
     std::vector<uint64_t> vec_from = {3, 2, 4, 5, 1, 0, 4, 0};
     std::vector<uint64_t> vec_out(vec_from.size());
     cudaMemcpy(array_from, vec_from.data(), 8 * sizeof(uint64_t), cudaMemcpyHostToDevice);
-    knp_cuda::device_lib::copy_kernel<<<1, 8>>>(array_from, 0, 8, array_to);
+    knp_cuda::device_lib::copy_construct_kernel<<<1, 8>>>(array_to, 8, array_from);
     cudaMemcpy(vec_out.data(), array_to, vec_from.size() * sizeof(uint64_t), cudaMemcpyDeviceToHost);
     cudaFree(array_from);
     cudaFree(array_to);
@@ -108,6 +108,7 @@ __global__ void copy_uid_kernel(size_t begin, size_t end, knp::backends::gpu::cu
     new (data_to + begin + i) knp::backends::gpu::cuda::UID(*(data_from + begin + i));
     // *(data_to + begin + i) = *(data_from + begin + i);
 }
+
 
 TEST(CudaVectoSuite, CopyUidKernel)
 {
@@ -134,7 +135,7 @@ TEST(CudaVectoSuite, CopyUidKernel)
         std::cout << "ERROR 1: " << cudaGetErrorString(error) << std::endl;
 
     // copy_uid_kernel<<<1, 4>>>(0, 4, array_to, array_from);
-    knp_cuda::device_lib::copy_kernel<<<1, 4>>>(array_from, 0, 4, array_to);
+    knp_cuda::device_lib::copy_construct_kernel<<<1, 4>>>(array_to, 4, array_from);
     error = cudaGetLastError();
     if (error != cudaSuccess)
         std::cout << "ERROR 2: " << cudaGetErrorString(error) << std::endl;
@@ -173,7 +174,7 @@ TEST(CudaVectorSuite, ConstructKernel)
     Constructable *gpu_val = allocator.allocate(num_structs);
     cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
     ASSERT_EQ(buffer, 0);
-    knpcd::construct_kernel<Constructable, MyAlloc><<<1, num_structs>>>(gpu_val, 0, num_structs);
+    knpcd::construct_kernel<Constructable, MyAlloc><<<1, num_structs>>>(gpu_val, num_structs);
     cudaDeviceSynchronize();
     cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
     ASSERT_EQ(buffer, num_structs);
