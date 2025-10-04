@@ -42,10 +42,11 @@ namespace knp::backends::gpu::cuda::device_lib
 template <class T, class Allocator>
 __global__ void construct_kernel(T *data, size_t begin, size_t end)
 {
-    printf("Construct kernel, begin: %lu, end: %lu", begin, end);
     if (end <= begin) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= end - begin) return;
+    printf("Construct kernel at %p, begin: %lu, end: %lu\n", data + i, begin, end);
+
     Allocator::construct(data + begin + i);
 }
 

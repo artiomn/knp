@@ -93,7 +93,6 @@ TEST(CudaVectorSuite, CopyKernel)
     cudaFree(array_to);
     ASSERT_EQ(vec_from, vec_out);
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
-
 }
 
 
@@ -144,6 +143,48 @@ TEST(CudaVectoSuite, CopyUidKernel)
     cudaFree(array_to);
     ASSERT_EQ(vec_from, vec_out);
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
+}
+
+
+__device__ int counter = 0;
+
+
+struct Constructable
+{
+    __device__ Constructable() { atomicAdd(&counter, 1); }
+    __device__ ~Constructable() { atomicAdd(&counter, -1); }
+    int data;
+};
+
+
+TEST(CudaVectorSuite, ConstructKernel)
+{
+    int buffer = 0;
+    namespace knpcd = knp::backends::gpu::cuda::device_lib;
+    namespace knpc = knp::backends::gpu::cuda;
+    cudaDeviceReset();
+    cudaMemcpyToSymbol(counter, &buffer, sizeof(int));
+    cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
+    std::cout << "Read from cuda " << buffer << std::endl;
+    constexpr int num_structs = 5;
+
+    typedef knpcd::CuMallocAllocator<Constructable> MyAlloc;
+    MyAlloc allocator;
+    Constructable *gpu_val = allocator.allocate(num_structs);
+    cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
+    ASSERT_EQ(buffer, 0);
+    knpcd::construct_kernel<Constructable, MyAlloc><<<1, num_structs>>>(gpu_val, 0, num_structs);
+    cudaDeviceSynchronize();
+    cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
+    ASSERT_EQ(buffer, num_structs);
+    EXPECT_EQ(cudaGetLastError(), cudaSuccess);
+
+    knpcd::destruct_kernel<Constructable, MyAlloc><<<1, num_structs>>>(gpu_val, 0, num_structs);
+    cudaDeviceSynchronize();
+    cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
+    ASSERT_EQ(buffer, 0);
+    EXPECT_EQ(cudaGetLastError(), cudaSuccess);
+    cudaFree(gpu_val);
 }
 
 
@@ -217,7 +258,6 @@ TEST(CudaVectorSuite, VectorPushBack)
     ASSERT_EQ(cuda_vec[2], 3);
     ASSERT_EQ(cuda_vec, res);
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
-
 }
 
 
