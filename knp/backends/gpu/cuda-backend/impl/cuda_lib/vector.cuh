@@ -234,7 +234,7 @@ public:
         bool *d_equal;
         cudaMalloc(&d_equal, sizeof(bool));
         equal_kernel<<<1, 1>>>(data_, other.data_, size_, d_equal);
-        call_and_check(cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyHostToDevice));
+        call_and_check(cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyDeviceToHost));
         cudaFree(d_equal);
         return equal;
 

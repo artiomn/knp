@@ -38,8 +38,14 @@
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
 
 
-// using Population = knp::backends::gpu::CUDABackend::PopulationVariants;
-// using Projection = knp::backends::gpu::CUDABackend::ProjectionVariants;
+template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<uint64_t,
+        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t);
+
+template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<uint64_t>(
+        uint64_t*, size_t, const uint64_t *);
+
+template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<uint64_t,
+        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t, size_t);
 
 
 namespace knp::testing
@@ -254,7 +260,6 @@ TEST(CudaVectorSuite, VectorPushBack)
     knp_cuda::device_lib::CUDAVector res(exp_results.data(), exp_results.size());
     // ASSERT_EQ(cuda_vec, exp_results);
     ASSERT_EQ(cuda_vec[0], 1);
-
     ASSERT_EQ(cuda_vec[1], 2);
     ASSERT_EQ(cuda_vec[2], 3);
     ASSERT_EQ(cuda_vec, res);

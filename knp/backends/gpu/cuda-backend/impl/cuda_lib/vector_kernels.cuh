@@ -50,6 +50,7 @@ __global__ void construct_kernel(T *data, size_t num_values)
     Allocator::construct(data + i);
 }
 
+
 template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t num_values);
 
 
