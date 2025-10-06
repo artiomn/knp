@@ -261,12 +261,12 @@ if (MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
-add_third_party("gh:madler/zlib@1.3.1"
+add_third_party("gh:zlib-ng/zlib-ng@2.0.0-RC2"
 			    USE_LOCAL_PACKAGES NO
                 OPTIONS
-                    "ZLIB_INSTALL OFF"
-                    "ZLIB_BUILD_TESTING OFF"
-                    "ZLIB_BUILD_STATIC ON")
+                    "ZLIB_ENABLE_TESTS OFF"
+                    "ZLIBNG_ENABLE_TESTS OFF"
+                    "SKIP_INSTALL_ALL ON")
 
 # Need to build HDF5.
 include_directories(ZLIB_ROOT "${zlib_BINARY_DIR}")
@@ -316,6 +316,8 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
                     "HDF5_BUILD_SHARED_LIBS ON"
                     "HDF5_BUILD_TOOLS OFF"
                     "HDF5_BUILD_UTILS OFF"
+                    "HDF5_ENABLE_Z_LIB_SUPPORT ON"
+                    "HDF5_USE_ZLIB_NG ON"
                     "HDF5_USE_ZLIB_STATIC ON"
                     "HDF5_VOL_ALLOW_EXTERNAL YES")
 #                    "ZLIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/_deps/zlib-ng-build")  # "HDF5_ALLOW_EXTERNAL_SUPPORT GIT" SZIP_USE_EXTERNAL
