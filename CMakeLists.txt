@@ -200,15 +200,18 @@ if (KNP_ENABLE_AVX)
     # -include bits/stdc++.h
 endif()
 
-if (NOT KNP_MAINTAINER_BUILD AND KNP_BUILD_AUTONOMOUS)
-    execute_process(COMMAND pre-commit install
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-    if(ret AND NOT ret EQUAL 0)
-        message(FATAL_ERROR "Cannot install pre-commit hooks.")
-    endif()
-    execute_process(COMMAND pre-commit install -t commit-msg
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-endif()
+# TODO: fix it!
+# An error has occurred: FatalError: git failed. Is it installed, and are you in a Git repository directory?
+# Check the log at /root/.cache/pre-commit/pre-commit.log
+#if (NOT KNP_MAINTAINER_BUILD AND KNP_BUILD_AUTONOMOUS)
+#    execute_process(COMMAND pre-commit install
+#                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+#    if(ret AND NOT ret EQUAL 0)
+#        message(FATAL_ERROR "Cannot install pre-commit hooks.")
+#    endif()
+#    execute_process(COMMAND pre-commit install -t commit-msg
+#                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+#endif()
 
 if (KNP_BUILD_TESTS)
     add_compile_definitions(SPDLOG_ACTIVE_LEVEL=0)
