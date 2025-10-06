@@ -69,43 +69,44 @@ template __global__ void copy_construct_kernel<UID>(UID*, size_t, const UID*);
 
 
 template <class T>
-__global__ void move_kernel(T* data_from, size_t begin, size_t end, T* data_to)
+__global__ void move_kernel(T* data_to, size_t num_elements, T* data_from)
 {
-    if (end <= begin) return;
+    if (num_elements == 0) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return;
-    *(data_to + begin + i) = ::cuda::std::move(*(data_from + begin + i));
+    if (i >= num_elements) return;
+    *(data_to + i) = ::cuda::std::move(*(data_from + i));
 }
 
 
 template<class T, class Allocator>
-__global__ void destruct_kernel(T* data, size_t begin, size_t end)
+__global__ void destruct_kernel(T* data, size_t num_elements)
 {
-    if (end < begin) return;
+    if (num_elements == 0) return;
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= end - begin) return;
-    Allocator::destroy(data + begin + i);
+    if (i >= num_elements) return;
+    Allocator::destroy(data + i);
 }
 
 
 template<typename T>
 __global__ void equal_kernel(T *data_1, const T *data_2, size_t size, bool *equal)
 {
-    printf("Starting\n");
-//        #ifdef __CUDA_ARCH__
-    for (size_t i = 0; i < size; ++i)
-    {
-        printf("Index %lu\n", i);
-        if (*(data_1 + i) != *(data_2 + i))
-        {
-            printf("Not equal!\n");
-            *equal = false;
-            return;
-        }
-    }
-//#endif
-    printf("Equal!\n");
-    *equal = true;
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i == 0) *equal = true;
+    __syncthreads();
+    if (i >= size) return;
+    if (!(*(data_1 + i) == *(data_2 + i)))
+        *equal = false; // it's only safe if all threads writing to the same location write the same value as it's here.
 };
 
+
+#define REGISTER_VECTOR_TYPE(data_type) \
+    template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<data_type, \
+    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type *, size_t); \
+    template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<data_type>( \
+    data_type *, size_t, const data_type *); \
+    template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(     \
+    data_type *, size_t, data_type*); \
+    template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,  \
+    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t)
 } // namespace knp::backends::gpu::cuda::device_lib

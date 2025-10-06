@@ -38,14 +38,15 @@
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
 
 
-template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<uint64_t,
-        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t);
-
-template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<uint64_t>(
-        uint64_t*, size_t, const uint64_t *);
-
-template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<uint64_t,
-        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t, size_t);
+//template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<uint64_t,
+//        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t);
+//
+//template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<uint64_t>(
+//        uint64_t*, size_t, const uint64_t *);
+//
+//template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<uint64_t,
+//        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t);
+REGISTER_VECTOR_TYPE(uint64_t);
 
 
 namespace knp::testing
@@ -186,7 +187,7 @@ TEST(CudaVectorSuite, ConstructKernel)
     ASSERT_EQ(buffer, num_structs);
     EXPECT_EQ(cudaGetLastError(), cudaSuccess);
 
-    knpcd::destruct_kernel<Constructable, MyAlloc><<<1, num_structs>>>(gpu_val, 0, num_structs);
+    knpcd::destruct_kernel<Constructable, MyAlloc><<<1, num_structs>>>(gpu_val, num_structs);
     cudaDeviceSynchronize();
     cudaMemcpyFromSymbol(&buffer, counter, sizeof(int));
     ASSERT_EQ(buffer, 0);
@@ -221,10 +222,11 @@ TEST(CudaVectorSuite, EqualKernel)
     bool *gpu_result;
 
     cudaMalloc(&gpu_result, sizeof(bool));
-    knp_cuda::device_lib::equal_kernel<<<1, 1>>>(array, array_same, num_values, gpu_result);
+    auto [num_blocks, num_threads] = knp_cuda::device_lib::get_blocks_config(values.size());
+    knp_cuda::device_lib::equal_kernel<<<num_blocks, num_threads>>>(array, array_same, num_values, gpu_result);
     cudaMemcpy(&result, gpu_result, sizeof(bool), cudaMemcpyDeviceToHost);
     ASSERT_TRUE(result);
-    knp_cuda::device_lib::equal_kernel<<<1, 1>>>(array, array_other, num_values, gpu_result);
+    knp_cuda::device_lib::equal_kernel<<<num_blocks, num_threads>>>(array, array_other, num_values, gpu_result);
     cudaMemcpy(&result, gpu_result, sizeof(bool), cudaMemcpyDeviceToHost);
     ASSERT_FALSE(result);
     cudaFree(array);

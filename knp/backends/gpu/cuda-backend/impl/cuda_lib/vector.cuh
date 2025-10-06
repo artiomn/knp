@@ -125,7 +125,7 @@ public:
         allocator_.deallocate(data_, size_);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
+        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
         cudaDeviceSynchronize();
         std::cout << "vector destructor" << std::endl;
         if (capacity_) allocator_.deallocate(data_, capacity_);
@@ -249,7 +249,7 @@ public:
         for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
         #else
         auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
+        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
         cudaDeviceSynchronize();
         #endif
         size_ = 0;
@@ -344,7 +344,7 @@ public:
             auto result = cudaGetLastError();
             if (result != cudaSuccess)
                 std::cout << cudaGetErrorString(result) << std::endl;
-            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, 0, size_);
+            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
             cudaDeviceSynchronize();
         }
         std::cout << "Vector reserve" << std::endl;
@@ -369,7 +369,7 @@ public:
         else if (new_size < size_)
         {
             auto [num_blocks, num_threads] = get_blocks_config(size_ - new_size);
-            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, new_size, size_);
+            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_ + new_size, size_ - new_size);
         }
         cudaDeviceSynchronize();
         size_ = new_size;
