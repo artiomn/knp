@@ -261,11 +261,6 @@ if (MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
-# Need to build HDF5.
-include_directories(ZLIB_ROOT "${zlib_BINARY_DIR}")
-set(ZLIB_LIBRARIES "${zlib_BINARY_DIR}/zlib")
-#
-
 add_third_party(NAME "libzmq"
                 GITHUB_REPOSITORY "zeromq/libzmq"
                 VERSION "4.3.5"
