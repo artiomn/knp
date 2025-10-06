@@ -261,13 +261,6 @@ if (MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
-add_third_party("gh:zlib-ng/zlib-ng@2.0.0-RC2"
-			    USE_LOCAL_PACKAGES NO
-                OPTIONS
-                    "ZLIB_ENABLE_TESTS OFF"
-                    "ZLIBNG_ENABLE_TESTS OFF"
-                    "SKIP_INSTALL_ALL ON")
-
 # Need to build HDF5.
 include_directories(ZLIB_ROOT "${zlib_BINARY_DIR}")
 set(ZLIB_LIBRARIES "${zlib_BINARY_DIR}/zlib")
@@ -316,7 +309,7 @@ add_third_party("gh:HDFGroup/hdf5#hdf5_1.14.6"
                     "HDF5_BUILD_SHARED_LIBS ON"
                     "HDF5_BUILD_TOOLS OFF"
                     "HDF5_BUILD_UTILS OFF"
-                    "HDF5_ENABLE_Z_LIB_SUPPORT ON"
+                    "HDF5_ENABLE_Z_LIB_SUPPORT OFF"
                     "HDF5_USE_ZLIB_NG ON"
                     "HDF5_USE_ZLIB_STATIC ON"
                     "HDF5_VOL_ALLOW_EXTERNAL YES")
