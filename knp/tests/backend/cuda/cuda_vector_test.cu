@@ -38,15 +38,7 @@
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
 
 
-//template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<uint64_t,
-//        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t);
-//
-//template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<uint64_t>(
-//        uint64_t*, size_t, const uint64_t *);
-//
-//template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<uint64_t,
-//        knp::backends::gpu::cuda::device_lib::CuMallocAllocator<uint64_t>>(uint64_t*, size_t);
-REGISTER_VECTOR_TYPE(uint64_t);
+REGISTER_CUDA_VECTOR_TYPE(uint64_t);
 
 
 namespace knp::testing

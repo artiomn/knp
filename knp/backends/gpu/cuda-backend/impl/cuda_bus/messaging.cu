@@ -61,6 +61,7 @@ namespace detail
     }
 }
 
+
 template<>
 void gpu_insert<MessageVariant>(const MessageVariant &cpu_source, MessageVariant *gpu_target)
 {

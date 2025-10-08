@@ -31,12 +31,22 @@
 #include <iostream>
 #include <vector>
 
-
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/extraction.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/safe_call.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/messaging.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
+
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SpikeMessage);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpactMessage);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
+
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::Subscription<knp::backends::gpu::cuda::SpikeMessage>);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::Subscription<knp::backends::gpu::cuda::SynapticImpactMessage>);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SubscriptionVariant);
+
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::UID);
 
 
 namespace knp::testing

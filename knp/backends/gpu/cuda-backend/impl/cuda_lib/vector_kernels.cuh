@@ -29,6 +29,7 @@
 
 #include "safe_call.cuh"
 #include "cu_alloc.cuh"
+#include "extraction.cuh"
 #include "../uid.cuh"
 
 
@@ -51,9 +52,6 @@ __global__ void construct_kernel(T *data, size_t num_values)
 }
 
 
-template __global__ void construct_kernel<UID, CuMallocAllocator<UID>>(UID *data, size_t num_values);
-
-
 template <class T>
 __global__ void copy_construct_kernel(T* data_to, size_t num_objects, const T* data_from)
 {
@@ -63,9 +61,6 @@ __global__ void copy_construct_kernel(T* data_to, size_t num_objects, const T* d
     if (i >= num_objects) return;
     new (data_to + i) T(*(data_from + i));
 }
-
-
-template __global__ void copy_construct_kernel<UID>(UID*, size_t, const UID*);
 
 
 template <class T>
@@ -100,13 +95,15 @@ __global__ void equal_kernel(T *data_1, const T *data_2, size_t size, bool *equa
 };
 
 
-#define REGISTER_VECTOR_TYPE(data_type) \
+#define REGISTER_CUDA_VECTOR_TYPE(data_type) \
     template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<data_type, \
     knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type *, size_t); \
     template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<data_type>( \
     data_type *, size_t, const data_type *); \
-    template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(     \
+    template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(       \
     data_type *, size_t, data_type*); \
-    template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,  \
-    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t)
+    template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,    \
+    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t) // ;     \
+//    template __host__ data_type knp::backends::gpu::cuda::gpu_extract<data_type>(const data_type* );       \
+//    template __host__ void knp::backends::gpu::cuda::gpu_insert<data_type>(const data_type &, data_type *)
 } // namespace knp::backends::gpu::cuda::device_lib

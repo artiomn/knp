@@ -124,9 +124,12 @@ public:
         for (size_type i = 0; i < size_; ++i) Allocator::destroy(data_ + i);
         allocator_.deallocate(data_, size_);
         #else
-        auto [num_blocks, num_threads] = get_blocks_config(size_);
-        destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
-        cudaDeviceSynchronize();
+        if (size_)
+        {
+            auto [num_blocks, num_threads] = get_blocks_config(size_);
+            destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
+            cudaDeviceSynchronize();
+        }
         std::cout << "vector destructor" << std::endl;
         if (capacity_) allocator_.deallocate(data_, capacity_);
         #endif

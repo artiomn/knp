@@ -35,6 +35,7 @@
 #include "../cuda_lib/safe_call.cuh"
 #include "../cuda_lib/kernels.cuh"
 #include "../cuda_lib/extraction.cuh"
+#include "../cuda_lib/get_blocks_config.cuh"
 #include "../uid.cuh"
 #include "messaging.cuh"
 
@@ -160,14 +161,12 @@ public:
         printf("No sender found");
         return false;
 #else
+        if (senders_.size() == 0) return false;
         int *d_result = nullptr;
         cudaMalloc(&d_result, sizeof(int));
         cudaMemset(d_result, 0, sizeof(int));
-        constexpr
-        uint32_t threads_per_block = 256;
-        size_t num_threads = std::min<size_t>(senders_.size(), threads_per_block);
         std::cout << "Num senders " << senders_.size() << std::endl;
-        size_t num_blocks = (senders_.size() + threads_per_block - 1) / threads_per_block;
+        auto [num_blocks, num_threads] = device_lib::get_blocks_config(senders_.size());
         std::cout
                 << "Running has_sender kernel: "
                 << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
