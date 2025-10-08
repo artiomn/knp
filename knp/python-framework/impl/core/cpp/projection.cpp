@@ -69,16 +69,15 @@ py::class_<core::Synapse>(
                     "STDPAndSpike",
                     SharedSynapseParametersT<core::synapse_traits::STDP<Rule, SynapseT>>::ProcessingType::1);
 */
-
+//py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();
 
 #    define INSTANCE_PY_PROJECTIONS(n, template_for_instance, synapse_type)                                            \
         py::implicitly_convertible<core::Projection<st::synapse_type>, core::AllProjectionsVariant>();                 \
-        py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();                                    \
         py::class_<typename core::Projection<st::synapse_type>::Synapse>(                                              \
             BOOST_PP_STRINGIZE(BOOST_PP_CAT(synapse_type, Parameters)));                                               \
                                                                                                                        \
         py::class_<core::Projection<st::synapse_type>>(                                                                \
-            BOOST_PP_STRINGIZE(                                             \
+            BOOST_PP_STRINGIZE(                                                                                        \
                 BOOST_PP_CAT(synapse_type, Projection)),                                                               \
                 "The Projection class is a definition of similar connections between the neurons of two populations.", \
                 py::no_init)                                                                                           \

@@ -20,14 +20,11 @@
  */
 #if defined(KNP_IN_CORE)
 
-/*
 py::enum_<core::DeviceType>("DeviceType")
-    .value("CPU", DeviceType::0)
-    .value("GPU", DeviceType::1)
-    .value("AltAI1_NPU", DeviceType::2);
+    .value("CPU", core::DeviceType::CPU)
+    .value("GPU", core::DeviceType::GPU)
+    .value("NPU", core::DeviceType::NPU);
 
-py::class_<core::Device>("Device", "The Device class is the base class for devices supported by the device library.");
-
-*/
+//py::class_<core::Device>("Device", "The Device class is the base class for devices supported by the device library.");
 
 #endif

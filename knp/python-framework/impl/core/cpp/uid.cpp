@@ -42,7 +42,7 @@ py::class_<boost::uuids::uuid>("uuid", "Boost UUID.")
     .add_property("is_nil", &boost::uuids::uuid::is_nil, "Define if UUID is empty.")
     .add_property("variant", &boost::uuids::uuid::variant, "Define UID format variant.");
 
-py::to_python_converter<boost::uuids::uuid, uid_into_python>();
+//py::to_python_converter<boost::uuids::uuid, uid_into_python>();
 uid_from_python();
 
 py::class_<core::UID>("UID", "The UID class is a definition of unique identifiers for entities.")
