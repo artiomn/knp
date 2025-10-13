@@ -109,7 +109,7 @@ __global__ void copy_uid_kernel(size_t begin, size_t end, knp::backends::gpu::cu
 }
 
 
-TEST(CudaVectoSuite, CopyUidKernel)
+TEST(CudaVectorSuite, CopyUidKernel)
 {
     namespace knp_cuda = knp::backends::gpu::cuda;
     knp_cuda::UID *array_from = nullptr;
