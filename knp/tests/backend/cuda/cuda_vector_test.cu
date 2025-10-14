@@ -34,6 +34,7 @@
 
 
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector_ops.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector_kernels.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
 

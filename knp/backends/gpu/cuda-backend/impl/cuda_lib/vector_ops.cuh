@@ -30,5 +30,22 @@
 namespace knp::backends::gpu::cuda::device_lib
 {
 
+template<class T>
+std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
+{
+    if (vec.size() == 0)
+    {
+        stream << "{}";
+        return stream;
+    }
+
+    stream << "{";
+    for (size_t i = 0; i < vec.size() - 1; ++i)
+    {
+        stream << vec[i] << ", ";
+    }
+    stream << vec[vec.size() - 1] << "}";
+    return stream;
+}
 
 } // namespace knp::backends::gpu::cuda::device_lib

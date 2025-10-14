@@ -77,7 +77,6 @@ public:
         #endif
     }
 
-
     // Copy constructor from a cpu pointer-based array.
     __host__ __device__ CUDAVector(const value_type *vec, size_type size)
     {
@@ -130,7 +129,7 @@ public:
             destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
             cudaDeviceSynchronize();
         }
-        SPDLOG_TRACE("Deallocating memory for {} elements at {}.", capacity_, (void*)data_);
+        SPDLOG_TRACE("Deallocating memory for {} elements at {}.", capacity_, reinterpret_cast<void*>(data_));
         if (capacity_) allocator_.deallocate(data_, capacity_);
         #endif
     }
@@ -152,8 +151,9 @@ public:
         SPDLOG_TRACE("Copy constructing vector of size {}", size_);
         if (num_threads > 0)
         {
-            SPDLOG_TRACE("Call copy kernel with {} blocks and {} threads", num_blocks, num_threads);
-            copy_construct_kernel<<<num_blocks, num_threads>>>((void*)data_, size_, (const void*)other.data_);
+            SPDLOG_TRACE("Call copy construct kernel with {} blocks and {} threads", num_blocks, num_threads);
+            copy_construct_kernel<<<num_blocks, num_threads>>>(reinterpret_cast<void*>(data_), size_,
+                                                               reinterpret_cast<const void*>(other.data_));
             cudaDeviceSynchronize();
         }
         #endif
@@ -164,7 +164,8 @@ public:
         capacity_(other.capacity_), size_(other.size_), data_(other.data_)
     {
     #ifndef __CUDA_ARCH__
-        SPDLOG_TRACE("Moving construct vector with data at {} and size {}", (void*)other.data_, other.size_);
+        SPDLOG_TRACE("Moving construct vector with data at {} and size {}",
+                     reinterpret_cast<void*>(other.data_), other.size_);
     #endif
         capacity_ = other.capacity_;
         other.capacity_ = 0;
@@ -221,7 +222,6 @@ public:
         return *this;
     }
 
-
     __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
 #ifndef __CUDA_ARCH__
@@ -240,7 +240,6 @@ public:
         }
         return *this;
     }
-
 
     __host__ __device__ bool operator==(const CUDAVector &other) const
     {
@@ -263,6 +262,7 @@ public:
         call_and_check(cudaMemcpy(&equal, d_equal, sizeof(bool), cudaMemcpyDeviceToHost));
         cudaFree(d_equal);
         SPDLOG_TRACE("Vectors equal: {}", equal);
+
         return equal;
         #endif
     }
@@ -376,7 +376,7 @@ public:
             destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
             cudaDeviceSynchronize();
         }
-        SPDLOG_TRACE("Data reserved, freeing old memory at {}", (const void*)data_);
+        SPDLOG_TRACE("Data reserved, freeing old memory at {}", reinterpret_cast<const void*>(data_));
         allocator_.deallocate(data_);
         data_ = new_data;
         capacity_ = new_capacity;
@@ -421,7 +421,6 @@ public:
     __host__ __device__ const iterator end() const { return data_ + size_; }
     __host__ __device__ const_iterator cend() const { return data_ + size_; }
 
-
     __host__ T copy_at(size_t index)
     {
         T result;
@@ -450,6 +449,7 @@ public:
 
     #endif
     }
+
 private:
     __device__ void dev_reserve(size_type new_capacity)
     {
@@ -494,7 +494,6 @@ private:
         size_ = new_size;
     }
 
-
     Allocator allocator_;
     pointer data_ = nullptr;
     // Maximum elements count.
@@ -503,26 +502,6 @@ private:
     size_type size_ = 0;
 };
 
-
-template<class T>
-std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
-{
-    if (vec.size() == 0)
-    {
-        stream << "{}";
-        return stream;
-    }
-
-    stream << "{";
-    for (size_t i = 0; i < vec.size() - 1; ++i)
-    {
-        stream << vec[i] << ", ";
-    }
-    stream << vec[vec.size() - 1] << "}";
-    return stream;
-}
-
-
 } // namespace knp::backends::gpu::cuda::device_lib
 
 
@@ -530,12 +509,14 @@ namespace knp::backends::gpu::cuda
 {
 template<class T, class Allocator>
 __host__ device_lib::CUDAVector<T, Allocator> gpu_extract<device_lib::CUDAVector<T, Allocator>>(
-const device_lib::CUDAVector<T, Allocator> *dev_vector)
+    const device_lib::CUDAVector<T, Allocator> *dev_vector)
 {
     device_lib::CUDAVector<T, Allocator> result;
+
     call_and_check(cudaMemcpy(&result, dev_vector, sizeof(device_lib::CUDAVector<T, Allocator>),
                               cudaMemcpyDeviceToHost));
     result.actualize();
+
     return result;
 }
 } // namespace knp::backends::gpu::cuda
