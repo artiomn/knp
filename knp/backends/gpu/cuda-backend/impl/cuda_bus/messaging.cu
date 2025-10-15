@@ -119,11 +119,15 @@ SubscriptionVariant extract_subscription_by_index(const void *sub_ptr)
 template<>
 SubscriptionVariant gpu_extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant)
 {
+    SPDLOG_TRACE("Extracting subscription from GPU");
     int *type_gpu;
     const void **sub_gpu; // This is a gpu pointer to gpu pointer to gpu subscription.
     call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
     call_and_check(cudaMalloc(&sub_gpu, sizeof(void *)));
+    SPDLOG_TRACE("Calling get_subscription_kernel");
     get_subscription_kernel<<<1, 1>>>(sub_variant, type_gpu, sub_gpu);
+    cudaDeviceSynchronize();
+    SPDLOG_TRACE("Got subscription from gpu");
     int type;
 
     // This is a gpu pointer to gpu message. &msg_ptr is a cpu pointer to gpu pointer to gpu message.
@@ -132,14 +136,17 @@ SubscriptionVariant gpu_extract<SubscriptionVariant>(const SubscriptionVariant *
     call_and_check(cudaMemcpy(&sub_ptr, sub_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
     call_and_check(cudaFree(type_gpu));
     call_and_check(cudaFree(sub_gpu));
+    SPDLOG_TRACE("Copied pointed subscription to host.");
     // Here we have a type index and a gpu pointer to message.
     SubscriptionVariant result;
     // TODO: Remove crunchs.
     switch(type)
     {
-        case 0: result = extract_subscription_by_index<0>(sub_ptr);
-        case 1: result = extract_subscription_by_index<1>(sub_ptr);
+        case 0: result = extract_subscription_by_index<0>(sub_ptr); break;
+        case 1: result = extract_subscription_by_index<1>(sub_ptr); break;
+        default: assert(false);
     }
+    SPDLOG_TRACE("Successfully extracted subscription");
     return result;
 }
 

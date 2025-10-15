@@ -224,7 +224,13 @@ public:
      */
     __host__ __device__ void actualize()
     {
+    #ifndef __CUDA_ARCH__
+        SPDLOG_TRACE("Actualizing subscription senders");
+    #endif
         senders_.actualize();
+    #ifndef __CUDA_ARCH__
+        SPDLOG_TRACE("Actualizing subscription messages");
+    #endif
         messages_.actualize();
     }
 

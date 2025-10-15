@@ -212,14 +212,15 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
         return ::cuda::std::visit([&receiver](const auto &arg)
         {
             using T = std::decay_t<decltype(arg)>;
-            return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
+            if constexpr (std::is_same<MessageType, typename T::MessageType>::value) return false;
+            return (arg.get_receiver_uid() == receiver);
         }, subscr);
     });
 
     if (subscriptions_.end() == sub_iter) return false;
 
     // TODO: Need to fix erase()!!!
-    // subscriptions_.erase(sub_iter);
+    subscriptions_.erase(sub_iter);
 
     return true;
 }

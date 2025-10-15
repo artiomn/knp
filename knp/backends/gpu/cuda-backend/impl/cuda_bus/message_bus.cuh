@@ -46,6 +46,7 @@
  */
 namespace knp::backends::gpu::cuda
 {
+
 /**
  * @brief The MessageBus class is a definition of an interface to a message bus.
  */
@@ -77,6 +78,7 @@ public:
         for (size_t index = 0; index < subscriptions_.size(); ++index)
         {
             const auto subscr = subscriptions_.copy_at(index);
+            SPDLOG_TRACE("Visiting subscription");
             const bool is_sub_exists = ::cuda::std::visit(
                 [&receiver](auto &arg)
                 {
@@ -85,6 +87,7 @@ public:
                         (arg.get_receiver_uid() == receiver);
                 },
                 subscr);
+            SPDLOG_TRACE("Finish visiting, subscription exists: {}", is_sub_exists);
 
             // TODO: Check, that senders contain all senders in the formal parameter or `senders` has something new?
             if (is_sub_exists)
@@ -184,5 +187,8 @@ __host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const thrust::
 
 template
 __host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const thrust::device_vector<UID>&);
+
+
+
 
 }  // namespace knp::backends::gpu::cuda

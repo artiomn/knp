@@ -119,6 +119,7 @@ public:
 
     __host__ __device__ ~CUDAVector()
     {
+        if (!data_ || !capacity_) return;
         #ifdef __CUDA_ARCH__
         for (size_type i = 0; i < size_; ++i) Allocator::destroy(data_ + i);
         allocator_.deallocate(data_, size_);
@@ -175,6 +176,9 @@ public:
 
         data_ = other.data_;
         other.data_ = nullptr;
+    #ifndef __CUDA_ARCH__
+        SPDLOG_TRACE("Done moving vector");
+    #endif
     }
 
     // Copy assignment operator.
@@ -207,7 +211,7 @@ public:
     }
 
     // Move assignment operator.
-    __device__ CUDAVector& operator=(CUDAVector&& other) noexcept
+    __host__ __device__ CUDAVector& operator=(CUDAVector&& other) noexcept
     {
         if (this == &other) return *this;
         capacity_ = other.capacity_;
@@ -438,15 +442,23 @@ public:
      */
     __host__ __device__ void actualize()
     {
+        if (!size_)
+        {
+            data_ = nullptr;
+            return;
+        }
         T* source_data = data_;
         data_ = allocator_.allocate(capacity_);
     #ifdef __CUDA_ARCH__
+        printf("Device vector actualize\n");
         for (size_t i = 0; i < size_; ++i)
             new (data_ + i) T(*(source_data + i));
     #else
+        SPDLOG_TRACE("Actualizing vector of {}.", typeid(T).name());
         auto [num_blocks, num_threads] = get_blocks_config(size_);
         copy_construct_kernel<<<num_blocks, num_threads>>>(data_, size_, source_data);
-
+        cudaDeviceSynchronize();
+        SPDLOG_TRACE("Done actualizing vector");
     #endif
     }
 
@@ -464,8 +476,8 @@ private:
             new_data[i] = data_[i];
             allocator_.destroy(data_ + i);
         }
-
-        allocator_.deallocate(data_);
+        if (data_ && capacity_)
+            allocator_.deallocate(data_);
 
         data_ = new_data;
         capacity_ = new_capacity;
