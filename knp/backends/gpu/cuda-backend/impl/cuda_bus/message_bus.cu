@@ -202,7 +202,6 @@ __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint6
 }
 
 
-
 template <typename MessageType>
 __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
@@ -220,7 +219,7 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
     if (subscriptions_.end() == sub_iter) return false;
 
     // TODO: Need to fix erase()!!!
-    subscriptions_.erase(sub_iter);
+    // subscriptions_.erase(sub_iter);
 
     return true;
 }
