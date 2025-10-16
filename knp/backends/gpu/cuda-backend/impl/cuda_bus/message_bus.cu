@@ -96,7 +96,8 @@ __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContaine
 }
 
 
-__host__ thrust::device_vector<uint64_t> get_senders_numbers(const CUDAMessageBus::SubscriptionContainer &subscriptions)
+__host__ thrust::device_vector<uint64_t> get_senders_numbers(
+    const CUDAMessageBus::SubscriptionContainer &subscriptions)
 {
     thrust::device_vector<uint64_t> result(subscriptions.size());
     uint64_t num_threads = std::min<uint64_t>(threads_per_block, subscriptions.size());
@@ -149,7 +150,7 @@ __global__ void find_by_sender(
     {
         const cuda::MessageVariant &msg = messages[i];
         if (msg.index() != type_index) continue;
-        cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) {return msg.header_.sender_uid_; }, msg);
+        cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) { return msg.header_.sender_uid_; }, msg);
         // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid);
 //        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i);
     }
@@ -225,9 +226,9 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 }
 
 
-
 //template<class MessageType>
-//__host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> CUDAMessageBus::index_messages()
+//__host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>>
+// CUDAMessageBus::index_messages()
 //{
 //    uint64_t buf_size = messages_to_route_.size();
 //    // constexpr int type_index = boost::mp_find<MessageVariant, MessageType>::value;
@@ -310,7 +311,8 @@ __global__ void get_subscription_kernel(const SubscriptionVariant *var, int *typ
 
 __global__ void get_message_kernel(const MessageVariant *var, int *type, const void **msg) {
     int type_val = var->index();
-    switch (type_val) {
+    switch (type_val)
+    {
         // TODO : Add more after adding new messages
         case 0:
             *msg = ::cuda::std::get_if<0>(var);
