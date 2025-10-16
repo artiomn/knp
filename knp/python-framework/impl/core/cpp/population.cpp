@@ -49,11 +49,13 @@
 // "Get parameters of the specific neuron in the population.")
 // py::class_<nt::neuron_parameters<nt::neuron_type>>(BOOST_PP_STRINGIZE(BOOST_PP_CAT(neuron_type, parameters)));
 
+
+// py::implicitly_convertible<nt::neuron_parameters<nt::neuron_type>, py::class_<nt::neuron_type>>();
+
 namespace nt = knp::neuron_traits;
 
 #    define INSTANCE_PY_POPULATIONS(n, template_for_instance, neuron_type)                                             \
         py::implicitly_convertible<core::Population<nt::neuron_type>, core::AllPopulationsVariant>();                  \
-        py::implicitly_convertible<nt::neuron_parameters<nt::neuron_type>, py::class_<nt::neuron_type>>();             \
         py::class_<core::Population<nt::neuron_type>>(                                                                 \
             BOOST_PP_STRINGIZE(BOOST_PP_CAT(neuron_type, Population)),                                                 \
                                "The Population class is a container of neurons of the same model.", py::no_init)       \
