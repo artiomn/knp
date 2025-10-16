@@ -52,10 +52,6 @@ function(knp_set_target_parameters target visibility)
         endif()
     endif()
 
-    # if (MSVC)  # AND ($<COMPILE_LANGUAGE> STREQUAL CXX OR $<COMPILE_LANGUAGE> STREQUAL C))
-    #    set_property(TARGET "${target}" PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-    # endif()
-
     target_compile_options("${target}" ${visibility} $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wdocumentation>)
     target_compile_options("${target}" ${visibility} $<$<COMPILE_LANG_AND_ID:CXX,Clang>:-Wdocumentation>)
 
@@ -153,6 +149,11 @@ function (_knp_add_library lib_name lib_type)
             target_compile_definitions("${lib_name}" ${_visibility} "KNP_LIBRARY_NAME_PREFIX=${CMAKE_STATIC_LIBRARY_PREFIX}")
             target_compile_definitions("${lib_name}" ${_visibility} "KNP_FULL_LIBRARY_NAME=${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}")
         endif()
+
+        if (WIN32)
+            # Windows 7 target.
+            target_compile_definitions("${lib_name}" PRIVATE "_WIN32_WINNT=_WIN32_WINNT_WIN7")
+        endif()
     endif()
 endfunction()
 
@@ -192,12 +193,12 @@ function (knp_add_library lib_name lib_type)
 endfunction()
 
 
-# Function:                 knp_add_python_library
+# Function:                 knp_add_python_module
 # Description:              Add Python module, using Boost::Python.
 # Param name:               Module name.
 # Param LINK_LIBRARIES:     Additional libraries to link.
 # Requires:
-#     find_package(Python COMPONENTS Interpreter Development REQUIRED)
+#     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 #     find_package(Boost 1.66.0 COMPONENTS python REQUIRED)
 function(knp_add_python_module name)
     cmake_parse_arguments(
@@ -230,7 +231,13 @@ function(knp_add_python_module name)
     endif()
 
     target_include_directories("${LIB_NAME}" PRIVATE ${Python3_INCLUDE_DIRS})
-    target_link_libraries("${LIB_NAME}" PRIVATE Boost::headers Boost::python${PARSED_ARGS_PY_VER} ${PARSED_ARGS_LINK_LIBRARIES})
+    message(TRACE "Linking ${LIB_NAME} with Boost::python${PARSED_ARGS_PY_VER}...")
+    target_link_libraries("${LIB_NAME}" PRIVATE Boost::disable_autolinking Boost::headers Boost::python${PARSED_ARGS_PY_VER} ${PARSED_ARGS_LINK_LIBRARIES})
+
+    # if (MSVC) # AND ($<COMPILE_LANGUAGE> STREQUAL CXX OR $<COMPILE_LANGUAGE> STREQUAL C))
+    #    # Dynamic MSVC runtime.
+    #    set_property(TARGET "${LIB_NAME}" PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    # endif()
 
 #    set_target_properties(${LIB_NAME} PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
 #    set_target_properties(${LIB_NAME} PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
@@ -238,13 +245,14 @@ function(knp_add_python_module name)
     set_target_properties("${LIB_NAME}" PROPERTIES LIBRARY_OUTPUT_DIRECTORY
             "$<BUILD_INTERFACE:${PARSED_ARGS_OUTPUT_DIRECTORY}/${name}>$<INSTALL_INTERFACE:LIBRARY_OUTPUT_DIRECTORY=${Python_SITEARCH}/knp/${name}>")
 
-    target_compile_definitions("${LIB_NAME}" PRIVATE
-            BOOST_PYTHON_STATIC_LIB
-            Py_NO_ENABLE_SHARED
-            CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON)
+    target_compile_definitions("${LIB_NAME}" PRIVATE BOOST_PYTHON_STATIC_LIB)
+
+    if (NOT WIN32)
+        target_compile_definitions("${LIB_NAME}" PRIVATE Py_NO_ENABLE_SHARED)
+    endif()
 
     add_custom_command(TARGET "${LIB_NAME}" POST_BUILD
-                      COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/impl/${name}/python" "$<TARGET_FILE_DIR:${LIB_NAME}>")
+                       COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/impl/${name}/python" "$<TARGET_FILE_DIR:${LIB_NAME}>")
 endfunction()
 
 
@@ -283,7 +291,7 @@ function(knp_packaging_set_parameters component_name project_name)
 
     if (PARSED_ARGS_DEPENDS)
         string(REPLACE ";" ", " PARSED_ARGS_DEPENDS "${PARSED_ARGS_DEPENDS}")
-        set(CPACK_COMPONENT_${COMPONENT_VAR_NAME}_DEPE  NDS "${PARSED_ARGS_DEPENDS}" CACHE STRING "${project_name} dependencies" FORCE)
+        set(CPACK_COMPONENT_${COMPONENT_VAR_NAME}_DEPENDS "${PARSED_ARGS_DEPENDS}" CACHE STRING "${project_name} dependencies" FORCE)
     else()
         unset(CPACK_COMPONENT_${COMPONENT_VAR_NAME}_DEPENDS CACHE)
     endif()

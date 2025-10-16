@@ -69,16 +69,15 @@ py::class_<core::Synapse>(
                     "STDPAndSpike",
                     SharedSynapseParametersT<core::synapse_traits::STDP<Rule, SynapseT>>::ProcessingType::1);
 */
-
+//py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();
 
 #    define INSTANCE_PY_PROJECTIONS(n, template_for_instance, synapse_type)                                            \
         py::implicitly_convertible<core::Projection<st::synapse_type>, core::AllProjectionsVariant>();                 \
-        py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();                                    \
         py::class_<typename core::Projection<st::synapse_type>::Synapse>(                                              \
             BOOST_PP_STRINGIZE(BOOST_PP_CAT(synapse_type, Parameters)));                                               \
                                                                                                                        \
         py::class_<core::Projection<st::synapse_type>>(                                                                \
-            BOOST_PP_STRINGIZE(                                             \
+            BOOST_PP_STRINGIZE(                                                                                        \
                 BOOST_PP_CAT(synapse_type, Projection)),                                                               \
                 "The Projection class is a definition of similar connections between the neurons of two populations.", \
                 py::no_init)                                                                                           \
@@ -103,20 +102,15 @@ py::class_<core::Synapse>(
                     "uid", make_handler([](core::Projection<st::synapse_type> &proj) { return proj.get_uid(); }),      \
                     "Get projection UID.")                                                                             \
                 .def(                                                                                                  \
-                    "__iter__",                                                                                        \
-                    py::range(                                                                                         \
-                        static_cast<std::vector<core::Projection<st::synapse_type>::Synapse>::iterator (               \
-                            core::Projection<st::synapse_type>::*)()>(&core::Projection<st::synapse_type>::begin),     \
-                        static_cast<std::vector<core::Projection<st::synapse_type>::Synapse>::iterator (               \
-                            core::Projection<st::synapse_type>::*)()>(&core::Projection<st::synapse_type>::end)),      \
-                    "Get an iterator of the population.")                                                              \
+                    "__iter__", py::iterator<core::Projection<st::synapse_type>>(),                                    \
+                    "Get an iterator of the projection.")                                                              \
                 .def(                                                                                                  \
                     "__len__", &core::Projection<st::synapse_type>::size,                                              \
                     "Count number of synapses in the projection.")                                                     \
                 .def(                                                                                                  \
                     "__getitem__",                                                                                     \
                     static_cast<core::Projection<st::synapse_type>::Synapse &(                                         \
-                        core::Projection<st::synapse_type>::*)(size_t index)>(                                         \
+                        core::Projection<st::synapse_type>::*)(size_t)>(                                               \
                         &core::Projection<st::synapse_type>::operator[]),                                              \
                     py::return_internal_reference<>(),                                                                 \
                     "Get parameter values of a synapse with the given index.");  // NOLINT
