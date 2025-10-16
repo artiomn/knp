@@ -149,18 +149,6 @@ TEST(CudaBackendSuite, CudaBusSubscription)
 }
 
 
-TEST(CudaBackendSuite, SmallestNetwork)
-{
-    // Create a single-neuron neural network: input -> input_projection -> population <=> loop_projection.
-
-    namespace kt = knp::testing;
-
-    // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).
-    // const std::vector<knp::core::Step> expected_results = {1, 6, 7, 11, 12, 13, 16, 17, 18, 19};
-    // ASSERT_EQ(results, expected_results);
-}
-
-
 TEST(CudaBackendSuite, NeuronsGettingTest)
 {
     // const knp::testing::MTestingBack backend;

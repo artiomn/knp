@@ -91,7 +91,7 @@ class CcccCmd(StaticAnalyzerCmd):  # type: ignore
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         with open(self.limits_file, encoding='utf8') as f:
-            load(f)
+            limits = load(f)
 
         for file in self.files:
             self.run_command(self._make_command(file))
@@ -102,12 +102,11 @@ class CcccCmd(StaticAnalyzerCmd):  # type: ignore
             except ElementTree.ParseError as e:
                 print(f'WARNING: CCCC BUG: {e}.')
                 return
+
             root = tree.getroot()
-            print(type(root))
 
             for module in root.findall('./procedural_summary/'):
-                # pylint: disable=E0602(undefined-variable)
-                self._process_param(file, module, limits)  # type: ignore # noqa: F821
+                self._process_param(file, module, limits)
 
 
 def main(argv: list[str]) -> None:
