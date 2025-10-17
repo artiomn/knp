@@ -262,9 +262,24 @@ TEST(CudaVectorSuite, VectorPushBack)
 }
 
 
+
+TEST(CudaVectorSuite, EraseElementsTest)
+{
+    namespace knp_cuda = knp::backends::gpu::cuda;
+    knp_cuda::device_lib::CUDAVector<uint64_t> cuda_vec(std::vector<uint64_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+    cuda_vec.erase(cuda_vec.begin() + 7, cuda_vec.begin() + 20);
+    knp_cuda::device_lib::CUDAVector<uint64_t> expected_vec(std::vector<uint64_t>{1, 2, 3, 4, 5, 6, 7});
+    ASSERT_EQ(cuda_vec, expected_vec);
+    cuda_vec.erase(cuda_vec.begin() + 1, cuda_vec.begin() + 5);
+    expected_vec = std::vector<uint64_t>{1, 6, 7};
+    ASSERT_EQ(cuda_vec, expected_vec);
+}
+
+
 TEST(CudaVectorSuite, CUDAVectorConstruct)
 {
     namespace knp_cuda = knp::backends::gpu::cuda;
+    cudaDeviceReset();
 
     knp_cuda::device_lib::CUDAVector<uint64_t> cuda_vec_1;
     knp_cuda::device_lib::CUDAVector<uint64_t> cuda_vec_2(10);

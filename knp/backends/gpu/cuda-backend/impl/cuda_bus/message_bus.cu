@@ -28,6 +28,7 @@
 #include <thrust/device_vector.h>
 #include <knp/meta/macro.h>
 #include "message_bus.cuh"
+#include "../cuda_lib/get_blocks_config.cuh"
 
 // Как у нас работает бэк:
 // 0. Мы индексируем index_messages() сообщения нужных нам типов (или всех типов?) и сохраняем вектор индексов.
@@ -203,25 +204,37 @@ __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint6
 }
 
 
+__global__ void find_subscription_by_receiver(const SubscriptionVariant *subscriptions, size_t size, const UID receiver,
+                                              size_t type, size_t *index_out)
+{
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= size) return;
+    const SubscriptionVariant &sub = subscriptions[i];
+    if (sub.index() != type) return;
+    bool result = ::cuda::std::visit([receiver](const auto &arg)
+    {
+        return (arg.get_receiver_uid() == receiver);
+    }, sub);
+    if (result) *index_out = i; // Should only work once
+}
+
+
 template <typename MessageType>
 __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
-    auto sub_iter = std::find_if(subscriptions_.begin(), subscriptions_.end(),
-    [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
-    {
-        return ::cuda::std::visit([&receiver](const auto &arg)
-        {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same<MessageType, typename T::MessageType>::value) return false;
-            return (arg.get_receiver_uid() == receiver);
-        }, subscr);
-    });
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(subscriptions_.size());
 
-    if (subscriptions_.end() == sub_iter) return false;
-
-    // TODO: Need to fix erase()!!!
-    // subscriptions_.erase(sub_iter);
-
+    size_t *index_out;
+    cudaMalloc(&index_out, sizeof(size_t));
+    size_t subscriptions_size = subscriptions_.size();
+    cudaMemcpy(index_out, &subscriptions_size, sizeof(size_t), cudaMemcpyHostToDevice);
+    constexpr size_t type_index = boost::mp11::mp_find<MessageVariant, MessageType>::value;
+    find_subscription_by_receiver<<<num_blocks, num_threads>>>(subscriptions_.data(), subscriptions_.size(), receiver,
+                                                               type_index, index_out);
+    size_t result;
+    cudaMemcpy(&result, index_out, sizeof(size_t), cudaMemcpyDeviceToHost);
+    if (result >= subscriptions_.size()) return false;
+    subscriptions_.erase(subscriptions_.begin() + result, subscriptions_.begin() + result + 1);
     return true;
 }
 

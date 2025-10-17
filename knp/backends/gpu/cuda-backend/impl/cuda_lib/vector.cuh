@@ -354,6 +354,7 @@ public:
 
     __device__ value_type pop_back()
     {
+        if (!size_) return value_type{};
         return data_[--size_];
     }
 
@@ -409,6 +410,14 @@ public:
         #endif
     }
 
+    __host__ __device__ iterator begin() { return data_; }
+    __host__ __device__ const iterator begin() const { return data_; }
+    __host__ __device__ const_iterator cbegin() const { return data_; }
+
+    __host__ __device__ iterator end() { return data_ + size_; }
+    __host__ __device__ const iterator end() const { return data_ + size_; }
+    __host__ __device__ const_iterator cend() const { return data_ + size_; }
+
     __host__ __device__ void erase(size_type index)
     {
         if (index >= size_) return;
@@ -417,13 +426,43 @@ public:
         --size_;
     }
 
-    __host__ __device__ iterator begin() { return data_; }
-    __host__ __device__ const iterator begin() const { return data_; }
-    __host__ __device__ const_iterator cbegin() const { return data_; }
 
-    __host__ __device__ iterator end() { return data_ + size_; }
-    __host__ __device__ const iterator end() const { return data_ + size_; }
-    __host__ __device__ const_iterator cend() const { return data_ + size_; }
+    __host__ __device__ void erase(iterator begin_iter, iterator end_iter)
+    {
+
+        if (begin_iter < begin() || begin_iter >= end()) return;
+        if (end_iter <= begin_iter) return;
+        const size_t num_to_remove = ::cuda::std::min(end_iter, end()) - begin_iter;
+        if (end_iter >= end())
+        {
+            resize(size_ - num_to_remove);
+            return;
+        }
+        size_t tail_length = end() - end_iter;
+        size_t num_destruct = end() - begin_iter;
+#ifdef __CUDA_ARCH__
+        for (size_t i = 0; i < tail_length; ++i)
+        {
+            *(begin_iter + i) = ::cuda::std::move(*(begin_iter + i + num_destruct));
+        }
+        resize(size_ - num_destruct);
+#else
+        // Allocate memory
+        T* data_buf = allocator_.allocate(tail_length);
+        // Move_construct tail to memory. All these kernels are implicitly synchronized.
+        auto [num_blocks_mv, num_threads_mv] = get_blocks_config(tail_length);
+        move_construct_kernel<T><<<num_blocks_mv, num_threads_mv>>>(data_buf, tail_length, end_iter);
+        // destruct all past begin.
+        auto [num_blocks_er, num_threads_er] = get_blocks_config(num_destruct);
+        destruct_kernel<T, Allocator><<<num_blocks_er, num_threads_er>>>(begin_iter, num_destruct);
+        // Move_construct to source vector.
+        move_construct_kernel<T><<<num_blocks_mv, num_threads_mv>>>(begin_iter, tail_length, data_buf);
+        // Clean up buffer
+        destruct_kernel<T, Allocator><<<num_blocks_mv, num_threads_mv>>>(data_buf, tail_length);
+        allocator_.deallocate(data_buf);
+#endif
+    }
+
 
     __host__ T copy_at(size_t index)
     {

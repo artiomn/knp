@@ -73,6 +73,16 @@ __global__ void move_kernel(T* data_to, size_t num_elements, T* data_from)
 }
 
 
+template <class T>
+__global__ void move_construct_kernel(T* data_to, size_t num_elements, T* data_from)
+{
+    if (num_elements == 0) return;
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_elements) return;
+    new (data_to + i) T(std::move(*(data_from + i)));
+}
+
+
 template<class T, class Allocator>
 __global__ void destruct_kernel(T* data, size_t num_elements)
 {
@@ -101,7 +111,9 @@ __global__ void equal_kernel(T *data_1, const T *data_2, size_t size, bool *equa
     template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<data_type>( \
     data_type *, size_t, const data_type *); \
     template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(       \
-    data_type *, size_t, data_type*); \
+    data_type *, size_t, data_type*);        \
+    template __global__ void knp::backends::gpu::cuda::device_lib::move_construct_kernel<data_type>( \
+    data_type *, size_t, data_type *);                                          \
     template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,    \
     knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t) // ;     \
 //    template __host__ data_type knp::backends::gpu::cuda::gpu_extract<data_type>(const data_type* );       \
