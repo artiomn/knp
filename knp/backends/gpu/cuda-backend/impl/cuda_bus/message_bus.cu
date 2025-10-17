@@ -20,14 +20,15 @@
  */
 
 #include <algorithm>
+#include <vector>
 #include <boost/mp11/algorithm.hpp>
 #include <boost/preprocessor.hpp>
 #include <cuda/std/detail/libcxx/include/algorithm>
-#include <thrust/host_vector.h>
 #include <thrust/device_ptr.h>
-#include <thrust/device_vector.h>
 #include <knp/meta/macro.h>
 #include "message_bus.cuh"
+
+#include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/get_blocks_config.cuh"
 
 // Как у нас работает бэк:
@@ -51,11 +52,11 @@ constexpr int threads_per_block = 256;
 
 
 template <class T>
-using DevVec = thrust::device_vector<T>;
+using DevVec = device_lib::CUDAVector<T>;
 
 
 __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions,
-                                      thrust::device_vector<uint64_t> &result)
+                                      DevVec<uint64_t> &result)
 {
     uint64_t id = threadIdx.x + blockIdx.x;
     if (id >= subscriptions.size()) return;
@@ -69,13 +70,18 @@ __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContaine
 }
 
 
-__host__ thrust::device_vector<uint64_t> get_senders_numbers(
+__host__ std::vector<uint64_t> get_senders_numbers(
     const CUDAMessageBus::SubscriptionContainer &subscriptions)
 {
-    thrust::device_vector<uint64_t> result(subscriptions.size());
+    std::vector<uint64_t> result(subscriptions.size());
     uint64_t num_threads = std::min<uint64_t>(threads_per_block, subscriptions.size());
     uint64_t num_blocks = (subscriptions.size() - 1) / threads_per_block + 1;
-    get_subscription_size<<<num_blocks, num_threads>>>(subscriptions, result);
+
+    DevVec<uint64_t> dev_result(subscriptions.size());
+    get_subscription_size<<<num_blocks, num_threads>>>(subscriptions, dev_result);
+
+    for (const auto &e : dev_result) result.push_back(e);
+
     return result;
 }
 
@@ -88,7 +94,7 @@ __host__ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::S
 {
     DevVec<DevVec<DevVec<uint64_t>>> res;
     uint64_t size_x = subscriptions.size();
-    thrust::host_vector<uint64_t> senders_numbers = get_senders_numbers(subscriptions);
+    std::vector<uint64_t> senders_numbers = get_senders_numbers(subscriptions);
     res.reserve(size_x);
     for (uint64_t i = 0; i < size_x; ++i)
     {
@@ -158,7 +164,7 @@ __global__ void find_messages_by_receiver(
 
 
 template<class MessageType>
-__host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> CUDAMessageBus::index_messages()
+__host__ DevVec<DevVec<DevVec<uint64_t>>> CUDAMessageBus::index_messages()
 {
     uint64_t buf_size = messages_to_route_.size();
     // constexpr int type_index = boost::mp_find<MessageVariant, MessageType>::value;
@@ -303,7 +309,7 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
 namespace cm = knp::backends::gpu::cuda;
 
 #define INSTANCE_MESSAGES_FUNCTIONS(n, template_for_instance, message_type)                \
-    template __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> \
+    template __host__ DevVec<DevVec<DevVec<uint64_t>>> \
         CUDAMessageBus::index_messages<cm::message_type>(); \
     template bool CUDAMessageBus::unsubscribe<cm::message_type>(const UID &receiver);
 

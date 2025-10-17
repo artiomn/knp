@@ -33,8 +33,6 @@
 #include <memory>
 #include <utility>
 
-#include <thrust/device_vector.h>
-
 #include "subscription.cuh"
 #include "../uid.cuh"
 #include "messaging.cuh"
@@ -72,7 +70,7 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    __host__ bool subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
+    __host__ bool subscribe(const UID &receiver, const device_lib::CUDAVector<UID> &senders)
     {
         SPDLOG_DEBUG("Looking for existing subscriptions");
         for (size_t index = 0; index < subscriptions_.size(); ++index)
@@ -169,7 +167,7 @@ private:
      *
      */
     template<class MessageType>
-    __host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>> index_messages();
+    __host__ device_lib::CUDAVector<device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>>> index_messages();
 
     /**
      * @brief Container that stores all the subscriptions for the current endpoint.
@@ -183,12 +181,9 @@ private:
 
 
 template
-__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const thrust::device_vector<UID>&);
+__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const device_lib::CUDAVector<UID>&);
 
 template
-__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const thrust::device_vector<UID>&);
-
-
-
+__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const device_lib::CUDAVector<UID>&);
 
 }  // namespace knp::backends::gpu::cuda
