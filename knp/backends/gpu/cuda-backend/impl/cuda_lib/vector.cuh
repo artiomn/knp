@@ -418,18 +418,16 @@ public:
     __host__ __device__ const iterator end() const { return data_ + size_; }
     __host__ __device__ const_iterator cend() const { return data_ + size_; }
 
-    __host__ __device__ void erase(size_type index)
-    {
-        if (index >= size_) return;
-        for (size_type i = index; i < size_ - 1; ++i)
-            data_[i] = ::cuda::std::move(data_[i + 1]);
-        --size_;
-    }
-
+//    __host__ __device__ void erase(size_type index)
+//    {
+//        if (index >= size_) return;
+//        for (size_type i = index; i < size_ - 1; ++i)
+//            data_[i] = ::cuda::std::move(data_[i + 1]);
+//        --size_;
+//    }
 
     __host__ __device__ void erase(iterator begin_iter, iterator end_iter)
     {
-
         if (begin_iter < begin() || begin_iter >= end()) return;
         if (end_iter <= begin_iter) return;
         const size_t num_to_remove = ::cuda::std::min(end_iter, end()) - begin_iter;
@@ -445,7 +443,7 @@ public:
         {
             *(begin_iter + i) = ::cuda::std::move(*(begin_iter + i + num_destruct));
         }
-        resize(size_ - num_destruct);
+        resize(size_ - num_destruct + tail_length);
 #else
         // Allocate memory
         T* data_buf = allocator_.allocate(tail_length);
@@ -457,9 +455,11 @@ public:
         destruct_kernel<T, Allocator><<<num_blocks_er, num_threads_er>>>(begin_iter, num_destruct);
         // Move_construct to source vector.
         move_construct_kernel<T><<<num_blocks_mv, num_threads_mv>>>(begin_iter, tail_length, data_buf);
+        resize(size_ - num_destruct + tail_length);
         // Clean up buffer
         destruct_kernel<T, Allocator><<<num_blocks_mv, num_threads_mv>>>(data_buf, tail_length);
         allocator_.deallocate(data_buf);
+
 #endif
     }
 

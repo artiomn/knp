@@ -106,7 +106,8 @@ public:
         uint64_t index = 0;
         for (uint64_t index = 0; index < senders_.size(); ++index) {
             if (senders_[index] == uid) {
-                senders_.erase(index);
+                auto iter = senders_.begin() + index;
+                senders_.erase(iter, iter + 1);
                 return true;
             }
         }

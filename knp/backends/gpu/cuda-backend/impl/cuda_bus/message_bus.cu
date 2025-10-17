@@ -53,34 +53,6 @@ constexpr int threads_per_block = 256;
 template <class T>
 using DevVec = thrust::device_vector<T>;
 
-/*
-template <typename MessageType>
-__host__ bool CUDAMessageBus::subscribe(const UID &receiver, const thrust::device_vector<UID> &senders)
-{
-    for (const auto &subscr : subscriptions_)
-    {
-        const bool is_sub_exists = ::cuda::std::visit(
-            [&receiver](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                return std::is_same<MessageType, typename T::MessageType>::value &&
-                       (arg.get_receiver_uid() == receiver);
-            },
-            subscr);
-
-        // TODO: Check, that senders contain all senders in the formal parameter or `senders` has something new?
-        if (is_sub_exists)
-        {
-            return false;
-        }
-    }
-
-    subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
-
-    return true;
-}
-*/
-
 
 __global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions,
                                       thrust::device_vector<uint64_t> &result)
@@ -222,6 +194,7 @@ __global__ void find_subscription_by_receiver(const SubscriptionVariant *subscri
 template <typename MessageType>
 __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 {
+    SPDLOG_DEBUG("Unsubscribing");
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(subscriptions_.size());
 
     size_t *index_out;
@@ -232,9 +205,17 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
     find_subscription_by_receiver<<<num_blocks, num_threads>>>(subscriptions_.data(), subscriptions_.size(), receiver,
                                                                type_index, index_out);
     size_t result;
+
     cudaMemcpy(&result, index_out, sizeof(size_t), cudaMemcpyDeviceToHost);
-    if (result >= subscriptions_.size()) return false;
+    cudaFree(index_out);
+    if (result >= subscriptions_.size())
+    {
+        SPDLOG_TRACE("No subscriptions found to unsubscribe from: returned {}", result);
+        return false;
+    }
+    SPDLOG_TRACE("Removing subscription #{}", result);
     subscriptions_.erase(subscriptions_.begin() + result, subscriptions_.begin() + result + 1);
+    SPDLOG_TRACE("Done unsubscribing");
     return true;
 }
 
@@ -256,27 +237,6 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 //                                                           found_messages_indices, type_index);
 //
 //    return found_messages_indices;
-//}
-
-
-//template <typename MessageType>
-//__host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
-//{
-//    auto sub_iter = std::find_if(subscriptions_.begin(), subscriptions_.end(),
-//    [&receiver](const cuda::SubscriptionVariant &subscr) -> bool
-//    {
-//        return ::cuda::std::visit([&receiver](const auto &arg)
-//        {
-//            using T = std::decay_t<decltype(arg)>;
-//            return std::is_same<MessageType, typename T::MessageType>::value && (arg.get_receiver_uid() == receiver);
-//        }, subscr);
-//    });
-//
-//    if (subscriptions_.end() == sub_iter) return false;
-//
-//    subscriptions_.erase(sub_iter);
-//
-//    return true;
 //}
 
 
