@@ -94,25 +94,19 @@ TEST(CudaBackendSuite, BusSubscriptionsTest)
     knp_cuda::UID uid_1{knp_cuda::new_uid()}, uid_2{knp_cuda::new_uid()};
     knp_cuda::UID uid_3{knp_cuda::new_uid()}, uid_4{knp_cuda::new_uid()};
 
-    knp_cuda::device_lib::CUDAVector<knp_cuda::UID> uid_vec1;
-    uid_vec1.push_back(uid_2);
-    uid_vec1.push_back(uid_3);
+    std::vector<knp_cuda::UID> uid_vec1{uid_2, uid_3};
 
     message_buses.gpu_.subscribe<knp_cuda::SpikeMessage>(uid_1, uid_vec1);
     ASSERT_EQ(message_buses.gpu_.get_subscriptions().size(), 1);
     std::cout << "Number of subscriptions is 1" << std::endl;
 
-    knp_cuda::device_lib::CUDAVector<knp_cuda::UID> uid_vec2;
-    uid_vec2.push_back(uid_3);
-    uid_vec2.push_back(uid_4);
-
+    std::vector<knp_cuda::UID> uid_vec2{uid_3, uid_4};
     message_buses.gpu_.subscribe<knp_cuda::SpikeMessage>(uid_2, uid_vec2);
     std::cout << "Added subscription" << std::endl;
     ASSERT_EQ(message_buses.gpu_.get_subscriptions().size(), 2);
     std::cout << "Number of subscriptions is 2" << std::endl;
 
-    knp_cuda::device_lib::CUDAVector<knp_cuda::UID> uid_vec3;
-    uid_vec3.push_back(uid_1);
+    std::vector<knp_cuda::UID> uid_vec3{uid_1};
 
     message_buses.gpu_.subscribe<knp_cuda::SpikeMessage>(uid_1, uid_vec3);
     // TODO check corresponding subscription size, should become 3.

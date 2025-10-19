@@ -30,6 +30,7 @@
 #include <thrust/device_vector.h>
 
 #include <algorithm>
+#include <vector>
 
 #include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/safe_call.cuh"
@@ -71,16 +72,21 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ __device__ Subscription(const UID &receiver, const thrust::device_vector <cuda::UID> &senders) :
-            receiver_(receiver) {
-#ifdef __CUDA_ARCH__
-        for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
-#else
+    __host__ Subscription(const UID &receiver, const std::vector<cuda::UID> &senders) :
+            receiver_(receiver)
+    {
         SPDLOG_TRACE("Initializing with {} senders.", senders.size());
-        thrust::host_vector <UID> host_vec = senders;
-        for (size_t i = 0; i < host_vec.size(); ++i) add_sender(host_vec[i]);
+        for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
         SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
-#endif
+    }
+
+
+    __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<UID> &senders)
+    {
+        for (size_t i = 0; i < senders.size(); ++i)
+        {
+            add_sender(*(senders.data() + i));
+        }
     }
 
     /**
@@ -129,7 +135,6 @@ public:
 #ifndef __CUDA_ARCH__
         std::cout << "Added sender" << std::endl;
 #endif
-
         return true;
     }
 
@@ -143,7 +148,6 @@ public:
         for (size_t i = 0; i < senders.size(); ++i) {
             result += add_sender(senders[i]);
         }
-
         return result;
     }
 

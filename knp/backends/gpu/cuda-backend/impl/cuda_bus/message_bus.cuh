@@ -32,6 +32,7 @@
 #include <functional>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "subscription.cuh"
 #include "../uid.cuh"
@@ -70,28 +71,14 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    __host__ bool subscribe(const UID &receiver, const device_lib::CUDAVector<UID> &senders)
+    __host__ bool subscribe(const UID &receiver, const std::vector<UID> &senders)
     {
         SPDLOG_DEBUG("Looking for existing subscriptions");
-        for (size_t index = 0; index < subscriptions_.size(); ++index)
+        size_t sub_index = find_subscription<MessageType>(receiver);
+        if (sub_index != subscriptions_.size())
         {
-            const auto subscr = subscriptions_.copy_at(index);
-            SPDLOG_TRACE("Visiting subscription");
-            const bool is_sub_exists = ::cuda::std::visit(
-                [&receiver](auto &arg)
-                {
-                    using T = std::decay_t<decltype(arg)>;
-                    return std::is_same<MessageType, typename T::MessageType>::value &&
-                        (arg.get_receiver_uid() == receiver);
-                },
-                subscr);
-            SPDLOG_TRACE("Finish visiting, subscription exists: {}", is_sub_exists);
-
-            // TODO: Check, that senders contain all senders in the formal parameter or `senders` has something new?
-            if (is_sub_exists)
-            {
-                return false;
-            }
+            // TODO If subscription exists need to add all new senders. As of now, recreate subscription.
+            return false;
         }
         SPDLOG_DEBUG("Adding new subscription");
         subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
@@ -118,7 +105,7 @@ public:
      * @brief Send a message to the message bus.
      * @param message message to send.
      */
-    __device__ void send_message(const cuda::MessageVariant &message); // Done
+    __device__ void send_message(const cuda::MessageVariant &message);
 
     /**
      * @brief Delete all messages inside the bus.
@@ -163,6 +150,9 @@ private:
      */
     __host__ int synchronize();
 
+    template <typename MessageType>
+    size_t find_subscription(const UID &receiver);
+
     /**
      *
      */
@@ -181,9 +171,9 @@ private:
 
 
 template
-__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const device_lib::CUDAVector<UID>&);
+__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const std::vector<UID>&);
 
 template
-__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const device_lib::CUDAVector<UID>&);
+__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const std::vector<UID>&);
 
 }  // namespace knp::backends::gpu::cuda

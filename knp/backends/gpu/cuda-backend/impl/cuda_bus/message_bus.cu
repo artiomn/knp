@@ -198,9 +198,8 @@ __global__ void find_subscription_by_receiver(const SubscriptionVariant *subscri
 
 
 template <typename MessageType>
-__host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
+__host__ size_t CUDAMessageBus::find_subscription(const UID &receiver)
 {
-    SPDLOG_DEBUG("Unsubscribing");
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(subscriptions_.size());
 
     size_t *index_out;
@@ -208,19 +207,29 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
     size_t subscriptions_size = subscriptions_.size();
     cudaMemcpy(index_out, &subscriptions_size, sizeof(size_t), cudaMemcpyHostToDevice);
     constexpr size_t type_index = boost::mp11::mp_find<MessageVariant, MessageType>::value;
+
     find_subscription_by_receiver<<<num_blocks, num_threads>>>(subscriptions_.data(), subscriptions_.size(), receiver,
                                                                type_index, index_out);
-    size_t result;
 
+    size_t result;
     cudaMemcpy(&result, index_out, sizeof(size_t), cudaMemcpyDeviceToHost);
     cudaFree(index_out);
-    if (result >= subscriptions_.size())
+    return result;
+}
+
+
+template <typename MessageType>
+__host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
+{
+    SPDLOG_DEBUG("Unsubscribing");
+    size_t sub_index = find_subscription<MessageType>(receiver);
+    if (sub_index >= subscriptions_.size())
     {
-        SPDLOG_TRACE("No subscriptions found to unsubscribe from: returned {}", result);
+        SPDLOG_TRACE("No subscriptions found to unsubscribe from: returned {}", sub_index);
         return false;
     }
-    SPDLOG_TRACE("Removing subscription #{}", result);
-    subscriptions_.erase(subscriptions_.begin() + result, subscriptions_.begin() + result + 1);
+    SPDLOG_TRACE("Removing subscription #{}", sub_index);
+    subscriptions_.erase(subscriptions_.begin() + sub_index, subscriptions_.begin() + sub_index + 1);
     SPDLOG_TRACE("Done unsubscribing");
     return true;
 }
