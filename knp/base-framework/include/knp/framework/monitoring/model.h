@@ -93,7 +93,7 @@ KNP_DECLSPEC void add_spikes_logger(
  * received at each logging interval.
  * @param model_executor model executor.
  * @param model model.
- * @param log_stream output stream to wtite model status information.
+ * @param log_stream output stream to write model status information.
  * @param logging_period interval between logging operations.
  */
 KNP_DECLSPEC void add_status_logger(
