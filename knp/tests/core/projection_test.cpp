@@ -28,6 +28,9 @@
 #include <optional>
 
 
+namespace knp::testing
+{
+
 namespace knc = knp::core;
 
 using DeltaProjection = knc::Projection<knp::synapse_traits::DeltaSynapse>;
@@ -59,7 +62,7 @@ SynapseGenerator make_cyclic_generator(std::pair<uint32_t, uint32_t> pop_sizes, 
 }
 
 
-TEST(ProjectionSuite, Generation)
+TEST(ProjectionSuite, Generation)  // cppcheck-suppress syntaxError
 {
     // Test constructor, get_connections, get_connection, operator[], get_size.
     const size_t presynaptic_size = 99;
@@ -268,3 +271,5 @@ TEST(ProjectionSuite, GetUIDTest)
     ASSERT_EQ(projection.get_presynaptic(), uid_from);
     ASSERT_EQ(projection.get_postsynaptic(), uid_to);
 }
+
+}  // namespace knp::testing
