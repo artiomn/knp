@@ -80,7 +80,8 @@ TEST(CudaBackendSuite, CudaHostSubscription)
     knp_cuda::UID sender_1 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_2 = knp_cuda::to_gpu_uid(knp::core::UID{});
     knp_cuda::UID sender_3 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_4 = knp_cuda::to_gpu_uid(knp::core::UID{});
     ASSERT_NE(sender_1, sender_2);
-    knp_cuda::Subscription<knp_cuda::SpikeMessage> subscription(receiver_uid, {sender_1, sender_2, sender_3});
+    knp_cuda::Subscription<knp_cuda::SpikeMessage> subscription(receiver_uid,
+                                                                std::vector{sender_1, sender_2, sender_3});
     ASSERT_EQ(subscription.get_senders().size(), 3);
     ASSERT_TRUE(subscription.has_sender(sender_2));
     ASSERT_FALSE(subscription.has_sender(sender_4));

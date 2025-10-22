@@ -48,7 +48,8 @@ namespace knp::backends::gpu::cuda
  * @tparam MessageT type of messages that are exchanged via the subscription.
  */
 template <class MessageT>
-class Subscription final {
+class Subscription final
+{
 public:
     /**
      * @brief Message type.
@@ -67,26 +68,25 @@ public:
 public:
     __host__ __device__ Subscription() = default;
 
-    /**
-     * @brief Subscription constructor.
-     * @param receiver receiver UID.
-     * @param senders list of sender UIDs.
-     */
-    __host__ Subscription(const UID &receiver, const std::vector<cuda::UID> &senders) :
-            receiver_(receiver)
-    {
-        SPDLOG_TRACE("Initializing with {} senders.", senders.size());
-        for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
-        SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
-    }
-
-
-    __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<UID> &senders)
+    __device__ Subscription(const cuda::UID &receiver, const device_lib::CUDAVector<cuda::UID> &senders)
     {
         for (size_t i = 0; i < senders.size(); ++i)
         {
             add_sender(*(senders.data() + i));
         }
+    }
+
+    /**
+     * @brief Subscription constructor.
+     * @param receiver receiver UID.
+     * @param senders list of sender UIDs.
+     */
+    __host__ Subscription(const gpu::cuda::UID &receiver, const std::vector<gpu::cuda::UID> &senders) :
+        receiver_(receiver)
+    {
+        SPDLOG_TRACE("Initializing with {} senders.", senders.size());
+        for (const auto &sender : senders) add_sender(sender);
+        SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
     }
 
     /**
@@ -107,11 +107,14 @@ public:
      * @param uid sender UID.
      * @return true if sender was deleted from subscription.
      */
-    __device__ __host__ bool remove_sender(const UID &uid) {
+    __device__ __host__ bool remove_sender(const UID &uid)
+    {
         // auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
         uint64_t index = 0;
-        for (uint64_t index = 0; index < senders_.size(); ++index) {
-            if (senders_[index] == uid) {
+        for (uint64_t index = 0; index < senders_.size(); ++index)
+        {
+            if (senders_[index] == uid)
+            {
                 auto iter = senders_.begin() + index;
                 senders_.erase(iter, iter + 1);
                 return true;
@@ -126,7 +129,8 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __host__ __device__ bool add_sender(const UID uid) {
+    __host__ __device__ bool add_sender(const cuda::UID &uid)
+    {
 #ifndef __CUDA_ARCH__
         std::cout << "Adding sender" << std::endl;
 #endif
@@ -143,9 +147,11 @@ public:
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders) {
+    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders)
+    {
         size_t result = 0;
-        for (size_t i = 0; i < senders.size(); ++i) {
+        for (size_t i = 0; i < senders.size(); ++i)
+        {
             result += add_sender(senders[i]);
         }
         return result;
@@ -156,7 +162,8 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const {
+    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
+    {
 #ifdef __CUDA_ARCH__
         printf("Using has_sender on device");
         for (size_t i = 0; i < senders_.size(); ++i)
@@ -194,7 +201,6 @@ public:
     {
         return !(*this == other);
     }
-
 
 public:
     /**
@@ -283,6 +289,5 @@ SubscriptionVariant gpu_extract<SubscriptionVariant>(const SubscriptionVariant *
 
 template<>
 void gpu_insert<SubscriptionVariant>(const SubscriptionVariant &source, SubscriptionVariant *target);
-
 
 } // namespace knp::backends::gpu::cuda
