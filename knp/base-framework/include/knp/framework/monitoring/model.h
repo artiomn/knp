@@ -77,7 +77,7 @@ KNP_DECLSPEC void add_projection_weights_logger(
 /**
  * @brief Add a logger that outputs all spike messages with detailed information.
  * @details The function sets up an observer that captures all spike messages from the specified senders and
- * writes details spike information to the provided output stream.
+ * writes detailed spike information to the provided output stream.
  * @param model_executor model executor.
  * @param senders_names UID-name mapping of senders that will have spike observer attached to them.
  * @param log_stream output stream to write spike messages.
