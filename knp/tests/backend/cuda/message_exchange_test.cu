@@ -40,7 +40,7 @@ TEST(CUDAMessagingSuite, AddSubscriptionMessage)
     SpikeMessage msg{{knp_cuda::UID{}}, {1, 2, 3, 4, 5}};
 
     std::vector<knp_cuda::UID> senders{msg.header_.sender_uid_};
-    knp_cuda::Subscription<SpikeMessage> sub{knp_cuda::UID(), senders};
+    knp_cuda::Subscription sub{knp_cuda::UID(), senders, knp_cuda::get_msg_index<SpikeMessage>()};
 /*
     EXPECT_EQ(sub.get_messages().size(), 0);
 
