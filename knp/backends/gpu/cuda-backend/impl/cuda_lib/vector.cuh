@@ -138,13 +138,11 @@ public:
         #endif
     }
 
-
     static __host__ __device__ CUDAVector<T, Allocator> from_gpu_pointer(T *data_pointer, size_t data_size)
     {
         CUDAVector<T, Allocator> result;
         result.reserve(data_size);
     }
-
 
     __host__ __device__ ~CUDAVector()
     {

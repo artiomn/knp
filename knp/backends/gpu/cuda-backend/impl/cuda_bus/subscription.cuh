@@ -57,7 +57,6 @@ public:
 public:
     __host__ __device__ Subscription() = default;
 
-
     /**
      * @brief Subscription constructor.
      * @param receiver receiver UID.
@@ -161,7 +160,8 @@ public:
     __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders)
     {
         size_t result = 0;
-        for (size_t i = 0; i < senders.size(); ++i) {
+        for (size_t i = 0; i < senders.size(); ++i)
+        {
             result += add_sender(senders.copy_at(i));
         }
         return result;
