@@ -87,7 +87,7 @@ __global__ void find_subscription_by_receiver(const Subscription *subscriptions,
 
 
 template <typename MessageType>
-__host__ size_t CUDAMessageBus::find_subscription(const UID &receiver)
+__host__ size_t CUDAMessageBus::find_subscription(const cuda::UID &receiver)
 {
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(subscriptions_.size());
 
@@ -108,7 +108,7 @@ __host__ size_t CUDAMessageBus::find_subscription(const UID &receiver)
 
 
 template <typename MessageType>
-__host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
+__host__ bool CUDAMessageBus::unsubscribe(const cuda::UID &receiver)
 {
     SPDLOG_DEBUG("Unsubscribing");
     size_t sub_index = find_subscription<MessageType>(receiver);
@@ -124,7 +124,7 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 }
 
 
-__host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
+__host__ void CUDAMessageBus::remove_receiver(const cuda::UID &receiver)
 {
     for (auto sub_iter = subscriptions_.begin(); sub_iter != subscriptions_.end(); ++sub_iter)
     {
@@ -170,12 +170,12 @@ __global__ void find_messages_kernel(const MessageVariant *messages, size_t mess
 
 
 template <class MessageType>
-device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const knp::core::UID &receiver_uid)
+device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const cuda::UID &receiver_uid)
 {
     size_t sub_index = find_subscription<MessageType>(receiver_uid);
     if (sub_index >= subscriptions_.size()) return device_lib::CUDAVector<uint64_t>{};
 
-    Subscription &subscription = subscriptions_[sub_index];
+    Subscription subscription = subscriptions_.copy_at(sub_index);
     constexpr size_t message_type = boost::mp11::mp_find<MessageVariant, MessageType>();
     if (subscription.type() != message_type) return device_lib::CUDAVector<uint64_t>{};
 
@@ -190,9 +190,10 @@ device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const knp::core
     size_t cpu_counter;
     cudaMemcpy(&cpu_counter, counter, sizeof(cpu_counter), cudaMemcpyDeviceToHost);
     cudaFree(counter);
-    device_lib::CUDAVector result(counter);
+    device_lib::CUDAVector<uint64_t> result(cpu_counter);
     auto [num_blocks_copy, num_threads_copy] = device_lib::get_blocks_config(cpu_counter);
-    device_lib::copy_kernel<<<num_blocks_copy, num_threads_copy>>>(result.data(), indices, cpu_counter);
+    device_lib::copy_kernel<<<num_blocks_copy, num_threads_copy>>>(result.data(), cpu_counter, indices);
+    cudaFree(indices);
     return result;
 }
 
@@ -217,8 +218,23 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
 
 namespace cm = knp::backends::gpu::cuda;
 
+template
+__host__ bool cm::CUDAMessageBus::subscribe<SpikeMessage>(const cm::UID&, const std::vector<cuda::UID>&);
+
+template
+__host__ bool cm::CUDAMessageBus::subscribe<SynapticImpactMessage>(const cm::UID&, const std::vector<cuda::UID>&);
+
+template
+__host__ cm::device_lib::CUDAVector<uint64_t> cm::CUDAMessageBus::unload_messages<SpikeMessage>(
+        const cm::UID &receiver_uid);
+
+template
+__host__ cm::device_lib::CUDAVector<uint64_t> cm::CUDAMessageBus::unload_messages<SynapticImpactMessage>(
+        const cm::UID &receiver_uid);
+
+
 #define INSTANCE_MESSAGES_FUNCTIONS(n, template_for_instance, message_type)                \
-    template bool CUDAMessageBus::unsubscribe<cm::message_type>(const UID &receiver);
+    template bool CUDAMessageBus::unsubscribe<cm::message_type>(const cuda::UID &receiver);
 
 BOOST_PP_SEQ_FOR_EACH(INSTANCE_MESSAGES_FUNCTIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_CUDA_MESSAGES))
 

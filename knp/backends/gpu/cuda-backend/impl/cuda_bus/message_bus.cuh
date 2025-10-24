@@ -141,7 +141,7 @@ public:
     }
 
     template <class MessageType>
-    __host__ device_lib::CUDAVector<uint64_t> unload_messages(const knp::core::UID &receiver_uid);
+    __host__ device_lib::CUDAVector<uint64_t> unload_messages(const cuda::UID &receiver_uid);
 
 
 public:
@@ -165,7 +165,7 @@ private:
     __host__ int synchronize();
 
     template <typename MessageType>
-    __host__ size_t find_subscription(const UID &receiver);
+    __host__ size_t find_subscription(const cuda::UID &receiver);
 
     template <typename MessageType>
     __host__ __device__ ::cuda::std::vector<uint64_t> find_messages(const Subscription &subscription);
@@ -181,10 +181,7 @@ private:
 };
 
 
-template
-__host__ bool CUDAMessageBus::subscribe<SpikeMessage>(const UID&, const std::vector<UID>&);
 
-template
-__host__ bool CUDAMessageBus::subscribe<SynapticImpactMessage>(const UID&, const std::vector<UID>&);
+
 
 }  // namespace knp::backends::gpu::cuda
