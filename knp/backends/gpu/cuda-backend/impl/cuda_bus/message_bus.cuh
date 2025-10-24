@@ -71,7 +71,7 @@ public:
      * @return number of senders added to the subscription.
      */
     template <typename MessageType>
-    __host__ bool subscribe(const UID &receiver, const std::vector<UID> &senders)
+    __host__ bool subscribe(const cuda::UID &receiver, const std::vector<cuda::UID> &senders)
     {
         SPDLOG_DEBUG("Looking for existing subscriptions");
         size_t sub_index = find_subscription<MessageType>(receiver);
@@ -94,13 +94,13 @@ public:
      * @return true if a subscription was deleted, false otherwise.
      */
     template <typename MessageType>
-    __host__ bool unsubscribe(const UID &receiver);
+    __host__ bool unsubscribe(const cuda::UID &receiver);
 
     /**
      * @brief Remove all subscriptions for a receiver with given UID.
      * @param receiver receiver UID.
      */
-    __host__ void remove_receiver(const UID &receiver);
+    __host__ void remove_receiver(const cuda::UID &receiver);
 
     /**
      * @brief Send a message to the message bus.

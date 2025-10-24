@@ -25,6 +25,9 @@
 #include <tests_common.h>
 
 
+namespace knp::testing
+{
+
 using BLIFATParams = knp::neuron_traits::neuron_parameters<knp::neuron_traits::BLIFATNeuron>;
 
 BLIFATParams neuron_generator(size_t index)
@@ -38,7 +41,7 @@ BLIFATParams neuron_generator(size_t index)
 const auto neurons_count = 10;
 
 
-TEST(PopulationSuite, Create)
+TEST(PopulationSuite, Create)  // cppcheck-suppress syntaxError
 {
     knp::core::Population<knp::neuron_traits::BLIFATNeuron> population(neuron_generator, neurons_count);
 
@@ -81,3 +84,5 @@ TEST(PopulationSuite, SetNeuronParameter)
 
     ASSERT_EQ(150, population[p_index].potential_);
 }
+
+}  // namespace knp::testing

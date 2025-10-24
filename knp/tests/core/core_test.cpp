@@ -24,6 +24,9 @@
 #include <tests_common.h>
 
 
+namespace knp::testing
+{
+
 TEST(CoreSuite, TagMapTest)
 {
     knp::core::TagMap tag_map;
@@ -38,3 +41,5 @@ TEST(CoreSuite, TagMapTest)
 
     ASSERT_TRUE(!tag_map.empty());
 }
+
+}  // namespace knp::testing

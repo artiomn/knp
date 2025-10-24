@@ -55,24 +55,24 @@ using DevVec = device_lib::CUDAVector<T>;
  * @brief Find messages with a given sender.
  * @param senders vector of senders, we select one based on thread
  */
-__global__ void find_by_sender(
-    const thrust::device_vector<cuda::UID> &senders,
-    const CUDAMessageBus::MessageBuffer &messages,
-    thrust::device_ptr<DevVec<uint64_t>> sub_message_indices,
-    int type_index)
-{
-    int sender_index = blockIdx.x + threadIdx.x;
-    if (sender_index >= senders.size()) return;
-    cuda::UID uid = senders[sender_index];
-    for (uint64_t i = 0; i < messages.size(); ++i)
-    {
-        const cuda::MessageVariant &msg = messages[i];
-        if (msg.index() != type_index) continue;
-        cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) { return msg.header_.sender_uid_; }, msg);
-        // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid);
-//        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i);
-    }
-}
+//__global__ void find_by_sender(
+//    const thrust::device_vector<cuda::UID> &senders,
+//    const CUDAMessageBus::MessageBuffer &messages,
+//    thrust::device_ptr<DevVec<uint64_t>> sub_message_indices,
+//    int type_index)
+//{
+//    int sender_index = blockIdx.x + threadIdx.x;
+//    if (sender_index >= senders.size()) return;
+//    cuda::UID uid = senders[sender_index];
+//    for (uint64_t i = 0; i < messages.size(); ++i)
+//    {
+//        const cuda::MessageVariant &msg = messages[i];
+//        if (msg.index() != type_index) continue;
+//        cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) { return msg.header_.sender_uid_; }, msg);
+//        // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid);
+////        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i);
+//    }
+//}
 
 
 __global__ void find_subscription_by_receiver(const Subscription *subscriptions, size_t size, const UID receiver,
@@ -149,21 +149,21 @@ __host__ __device__ void CUDAMessageBus::send_message(const cuda::MessageVariant
 
 /**
  * @brief Find all message indices that correspond to the current subscription.
- * @param messages
- * @param message_size
- * @param sub
- * @param type
+ * @param messages pointer to messages
+ * @param messages_size number of messages
+ * @param subscription the subscription used for searching
  * @param indexes
+ * @param counter a zero-initialized counter, it would be equal to number of found messages after the function finishes
  * @return
  */
-__global__ void find_messages_kernel(const MessageVariant *messages, size_t message_size, Subscription *subscription,
+__global__ void find_messages_kernel(const MessageVariant *messages, size_t messages_size, Subscription *subscription,
                               uint64_t *indices, unsigned long long *counter)
 {
     uint64_t i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= message_size) return;
+    if (i >= messages_size) return;
     if (subscription->is_my_message(messages[i]))
     {
-        uint64_t index = atomicAdd(counter, 1ull);
+        uint64_t index = atomicAdd(counter, 1ull); // atomicAdd doesn't work with uint64_t but does with ULL.
         indices[index] = i;
     }
 }

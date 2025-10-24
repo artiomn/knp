@@ -57,12 +57,13 @@ public:
 public:
     __host__ __device__ Subscription() = default;
 
+
     /**
      * @brief Subscription constructor.
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ Subscription(const UID &receiver, const std::vector<cuda::UID> &senders, int type_index) :
+    __host__ Subscription(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, int type_index) :
             receiver_(receiver), type_index_(type_index)
     {
         SPDLOG_TRACE("Initializing with {} senders.", senders.size());
@@ -71,13 +72,28 @@ public:
     }
 
 
-    __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<UID> &senders, int type_index) :
+    __device__ Subscription(const cuda::UID &receiver,
+                            const device_lib::CUDAVector<cuda::UID> &senders,
+                            int type_index) :
     receiver_(receiver), type_index_(type_index)
     {
         for (size_t i = 0; i < senders.size(); ++i)
         {
             add_sender(*(senders.data() + i));
         }
+    }
+
+    /**
+     * @brief Subscription constructor.
+     * @param receiver receiver UID.
+     * @param senders list of sender UIDs.
+     */
+    __host__ Subscription(const gpu::cuda::UID &receiver, const std::vector<gpu::cuda::UID> &senders) :
+        receiver_(receiver)
+    {
+        SPDLOG_TRACE("Initializing with {} senders.", senders.size());
+        for (const auto &sender : senders) add_sender(sender);
+        SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
     }
 
     /**
@@ -104,9 +120,12 @@ public:
      * @param uid sender UID.
      * @return true if sender was deleted from subscription.
      */
-    __device__ __host__ bool remove_sender(const UID &uid) {
-        for (uint64_t index = 0; index < senders_.size(); ++index) {
-            if (senders_.copy_at(index) == uid) {
+    __device__ __host__ bool remove_sender(const cuda::UID &uid)
+    {
+        for (uint64_t index = 0; index < senders_.size(); ++index)
+        {
+            if (senders_.copy_at(index) == uid)
+            {
                 auto iter = senders_.begin() + index;
                 senders_.erase(iter, iter + 1);
                 return true;
@@ -121,7 +140,8 @@ public:
      * @param uid UID of the new sender.
      * @return true if sender added.
      */
-    __host__ __device__ bool add_sender(const UID uid) {
+    __host__ __device__ bool add_sender(const cuda::UID &uid)
+    {
 #ifndef __CUDA_ARCH__
         std::cout << "Adding sender" << std::endl;
 #endif
@@ -138,7 +158,8 @@ public:
      * @param senders vector of sender UIDs.
      * @return number of senders added.
      */
-    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders) {
+    __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders)
+    {
         size_t result = 0;
         for (size_t i = 0; i < senders.size(); ++i) {
             result += add_sender(senders.copy_at(i));
@@ -151,7 +172,8 @@ public:
      * @param uid sender UID.
      * @return `true` if the sender with the given UID exists, `false` if the sender with the given UID doesn't exist.
      */
-    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const {
+    [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
+    {
 #ifdef __CUDA_ARCH__
         printf("Using has_sender on device");
         for (size_t i = 0; i < senders_.size(); ++i)
@@ -199,7 +221,6 @@ public:
         return !(*this == other);
     }
 
-
 public:
     /**
      * @brief Restore after shallow copying from device.
@@ -228,5 +249,4 @@ private:
      */
     int type_index_;
 };
-
 } // namespace knp::backends::gpu::cuda

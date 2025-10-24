@@ -31,10 +31,13 @@ extern "C"
 
 #include <tests_common.h>
 
+namespace knp::testing
+{
+
 TEST(DeviceTestSuite, CPUTest)
 {
     GTEST_SKIP() << "This test doesn't work under Github builders";
-    
+
 #if defined(WIN32)
     GTEST_SKIP() << "Test needs driver under Windows";
 #else
@@ -52,7 +55,7 @@ TEST(DeviceTestSuite, CPUTest)
 }
 
 
-TEST(DeviceTestSuite, BackendDevicesTest)
+TEST(DeviceTestSuite, BackendDevicesTest)  // cppcheck-suppress syntaxError
 {
     GTEST_SKIP() << "This test doesn't work under Github builders";
 
@@ -81,3 +84,5 @@ TEST(DeviceTestSuite, BackendDevicesTest)
 
     // std::cout << device.get_name() << std::endl;
 }
+
+}  // namespace knp::testing

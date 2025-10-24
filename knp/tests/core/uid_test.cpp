@@ -24,6 +24,9 @@
 #include <tests_common.h>
 
 
+namespace knp::testing
+{
+
 TEST(UidSuite, UidGenerator)
 {
     using uuid = ::boost::uuids::uuid;
@@ -41,7 +44,7 @@ TEST(UidSuite, UidGenerator)
 }
 
 
-TEST(UidSuite, UidToString)
+TEST(UidSuite, UidToString)  // cppcheck-suppress syntaxError
 {
     ::knp::core::UID uid{::boost::uuids::uuid{{1, 2, 3}}};
 
@@ -87,3 +90,5 @@ TEST(UidSuite, UidHash)
     uid_container[uid1] = uid1;
     ASSERT_EQ(uid_container[uid1], uid1);
 }
+
+}  // namespace knp::testing
