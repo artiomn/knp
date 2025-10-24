@@ -81,7 +81,8 @@ public:
             return false;
         }
         SPDLOG_DEBUG("Adding new subscription");
-        subscriptions_.push_back(Subscription<MessageType>(receiver, senders));
+        constexpr auto type_index = boost::mp11::mp_find<MessageVariant, MessageType>();
+        subscriptions_.push_back(Subscription(receiver, senders, type_index));
         SPDLOG_DEBUG("Done adding new subscription");
         return true;
     }
@@ -105,7 +106,7 @@ public:
      * @brief Send a message to the message bus.
      * @param message message to send.
      */
-    __device__ void send_message(const cuda::MessageVariant &message);
+    __host__ __device__ void send_message(const cuda::MessageVariant &message);
 
     /**
      * @brief Delete all messages inside the bus.
@@ -119,22 +120,35 @@ public:
     __host__ void reserve_message_buffer(uint64_t num_messages) { messages_to_route_.reserve(num_messages); }
 
     /**
-     * @brief Read messages of the specified type received via subscription.
+     * @brief Send messages of the specified type to a bus.
      * @tparam MessageType type of messages to read.
      * @param receiver_uid receiver UID.
      * @return vector of messages.
      */
     template <class MessageType>
-    __device__ void receive_messages(const cuda::UID &receiver_uid,
-                                     device_lib::CUDAVector<MessageType> &result_messages);
+    __host__ void send_messages(const cuda::UID &receiver_uid, device_lib::CUDAVector<MessageType> &result_messages);
 
-    __device__ cuda::MessageVariant& get_message(uint64_t message_index);
+    template <class MessageType>
+    __device__ const MessageType& get_message_gpu(size_t message_index) const
+    {
+        return ::cuda::std::get<MessageType>(messages_to_route_[message_index]);
+    }
+
+    template<class MessageType>
+    __host__ MessageType get_message_cpu(size_t message_index) const
+    {
+        return ::cuda::std::get<MessageType>(messages_to_route_.copy_at(message_index));
+    }
+
+    template <class MessageType>
+    __host__ device_lib::CUDAVector<uint64_t> unload_messages(const knp::core::UID &receiver_uid);
+
 
 public:
     /**
      * @brief Type of subscription container.
      */
-    using SubscriptionContainer = device_lib::CUDAVector<SubscriptionVariant>;
+    using SubscriptionContainer = device_lib::CUDAVector<Subscription>;
 
     using MessageBuffer = device_lib::CUDAVector<cuda::MessageVariant>;
 
@@ -151,13 +165,10 @@ private:
     __host__ int synchronize();
 
     template <typename MessageType>
-    size_t find_subscription(const UID &receiver);
+    __host__ size_t find_subscription(const UID &receiver);
 
-    /**
-     *
-     */
-    template<class MessageType>
-    __host__ device_lib::CUDAVector<device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>>> index_messages();
+    template <typename MessageType>
+    __host__ __device__ ::cuda::std::vector<uint64_t> find_messages(const Subscription &subscription);
 
     /**
      * @brief Container that stores all the subscriptions for the current endpoint.

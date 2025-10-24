@@ -48,69 +48,8 @@
 
 namespace knp::backends::gpu::cuda
 {
-constexpr int threads_per_block = 256;
-
-
 template <class T>
 using DevVec = device_lib::CUDAVector<T>;
-
-
-__global__ void get_subscription_size(const CUDAMessageBus::SubscriptionContainer &subscriptions,
-                                      DevVec<uint64_t> &result)
-{
-    uint64_t id = threadIdx.x + blockIdx.x;
-    if (id >= subscriptions.size()) return;
-/*    uint64_t senders_num = ::cuda::std::visit([](const auto &s)
-    {
-        return s.get_senders().size();
-    }, static_cast<const SubscriptionVariant&>(subscriptions[id]));
-
-    result[id] = senders_num;
-*/
-}
-
-
-__host__ std::vector<uint64_t> get_senders_numbers(
-    const CUDAMessageBus::SubscriptionContainer &subscriptions)
-{
-    std::vector<uint64_t> result(subscriptions.size());
-    uint64_t num_threads = std::min<uint64_t>(threads_per_block, subscriptions.size());
-    uint64_t num_blocks = (subscriptions.size() - 1) / threads_per_block + 1;
-
-    DevVec<uint64_t> dev_result(subscriptions.size());
-    get_subscription_size<<<num_blocks, num_threads>>>(subscriptions, dev_result);
-
-    for (const auto &e : dev_result) result.push_back(e);
-
-    return result;
-}
-
-
-// фигачим вектор, его задача в том чтобы для каждой подписки и каждого отправителя был свой вектор,
-// зарезервированный под размер
-// всех сообщений. На самом деле бы лучше сделать это для каждой подписки нужного типа, но логика будет сложнее.
-__host__ DevVec<DevVec<DevVec<uint64_t>>> reserve_vector(const CUDAMessageBus::SubscriptionContainer &subscriptions,
-    uint64_t size_z)
-{
-    DevVec<DevVec<DevVec<uint64_t>>> res;
-    uint64_t size_x = subscriptions.size();
-    std::vector<uint64_t> senders_numbers = get_senders_numbers(subscriptions);
-    res.reserve(size_x);
-    for (uint64_t i = 0; i < size_x; ++i)
-    {
-        DevVec<DevVec<uint64_t>> buf;
-        buf.reserve(senders_numbers[i]);
-        for (uint64_t j = 0; j < senders_numbers[i]; ++j)
-        {
-            DevVec<uint64_t> sub_buf;
-            sub_buf.reserve(size_z);
-            //buf.push_back(std::move(sub_buf));
-        }
-        // res.push_back(std::move(buf));
-    }
-    return res;
-}
-
 
 /**
  * @brief Find messages with a given sender.
@@ -136,64 +75,14 @@ __global__ void find_by_sender(
 }
 
 
-// Так, надо найти вектор сообщений с известным получателем и известного типа. Это несложно.
-// Что нам надо: для каждого получателя получить отправителей.
-// Запустить поиск по отправителю. Собрать результаты в вектор.
-// Что нам надо для верхней функции: набор подписок и индекс типа, вектор сообщений, размеры для набора и вектора.
-// Ещё нужен вектор для результата:
-__global__ void find_messages_by_receiver(
-        const CUDAMessageBus::SubscriptionContainer &subscriptions,
-        const CUDAMessageBus::MessageBuffer &messages,
-        DevVec<DevVec<DevVec<uint64_t>>> &message_indices,
-        int type_index)
-{
-    uint64_t sub_index = threadIdx.x + blockIdx.x;
-    if (sub_index >= subscriptions.size()) return;
-/*    const SubscriptionVariant &subscription = subscriptions[sub_index];
-    if (subscription.index() != type_index) return;
-    const DevVec<cuda::UID> &senders = ::cuda::std::visit([](const auto &sub) { return sub.get_senders(); }, subscription);
-    uint64_t buf_size = messages.size();
-
-    // Find number of threads and blocks
-    const int num_threads = std::min<int>(threads_per_block, subscriptions.size());
-    const int num_blocks = subscriptions.size() / threads_per_block + 1;
-    thrust::device_ptr<DevVec<DevVec<uint64_t>>> ptr = message_indices.data();
-    find_by_sender<<<num_blocks, num_threads>>>(senders, messages, (ptr + sub_index)->data(), type_index);
-*/
-}
-
-
-template<class MessageType>
-__host__ DevVec<DevVec<DevVec<uint64_t>>> CUDAMessageBus::index_messages()
-{
-    uint64_t buf_size = messages_to_route_.size();
-    // constexpr int type_index = boost::mp_find<MessageVariant, MessageType>::value;
-    constexpr int type_index = 0; // TODO fix the code above.
-    //Reserve memory:
-    // Triple vector: receiver * senders * all_messages
-    auto found_messages_indices = reserve_vector(subscriptions_, messages_to_route_.size());
-    // Find number of threads and blocks and run the core.
-    const int num_threads = std::min<int>(threads_per_block, subscriptions_.size());
-    const int num_blocks = subscriptions_.size() / threads_per_block + 1;
-    find_messages_by_receiver<<<num_blocks, num_threads>>>(subscriptions_, messages_to_route_,
-                                                           found_messages_indices, type_index);
-
-    return found_messages_indices;
-}
-
-
-__global__ void find_subscription_by_receiver(const SubscriptionVariant *subscriptions, size_t size, const UID receiver,
+__global__ void find_subscription_by_receiver(const Subscription *subscriptions, size_t size, const UID receiver,
                                               size_t type, size_t *index_out)
 {
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;
-    const SubscriptionVariant &sub = subscriptions[i];
-    if (sub.index() != type) return;
-    bool result = ::cuda::std::visit([receiver](const auto &arg)
-    {
-        return (arg.get_receiver_uid() == receiver);
-    }, sub);
-    if (result) *index_out = i; // Should only work once
+    const Subscription &sub = subscriptions[i];
+    if (sub.type() != type) return;
+    if (sub.get_receiver_uid() == receiver) *index_out = i; // Should only work once, so no race condition problems.
 }
 
 
@@ -235,26 +124,6 @@ __host__ bool CUDAMessageBus::unsubscribe(const UID &receiver)
 }
 
 
-//template<class MessageType>
-//__host__ thrust::device_vector<thrust::device_vector<thrust::device_vector<uint64_t>>>
-// CUDAMessageBus::index_messages()
-//{
-//    uint64_t buf_size = messages_to_route_.size();
-//    // constexpr int type_index = boost::mp_find<MessageVariant, MessageType>::value;
-//    constexpr int type_index = 0; // TODO fix the code above.
-//    //Reserve memory:
-//    // Triple vector: receiver * senders * all_messages
-//    auto found_messages_indices = reserve_vector(subscriptions_, messages_to_route_.size());
-//    // Find number of threads and blocks and run the core.
-//    const int num_threads = std::min<int>(threads_per_block, subscriptions_.size());
-//    const int num_blocks = subscriptions_.size() / threads_per_block + 1;
-//    find_messages_by_receiver<<<num_blocks, num_threads>>>(subscriptions_, messages_to_route_,
-//                                                           found_messages_indices, type_index);
-//
-//    return found_messages_indices;
-//}
-
-
 __host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
 {
     for (auto sub_iter = subscriptions_.begin(); sub_iter != subscriptions_.end(); ++sub_iter)
@@ -265,35 +134,66 @@ __host__ void CUDAMessageBus::remove_receiver(const UID &receiver)
 
 
 // This is not threadsafe, make sure it's not run in parallel.
-__device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
+__host__ __device__ void CUDAMessageBus::send_message(const cuda::MessageVariant &message)
 {
     messages_to_route_.push_back(message);
 }
 
 
-template <class MessageType>
-__device__ void CUDAMessageBus::receive_messages(const cuda::UID &receiver_uid,
-        device_lib::CUDAVector<MessageType> &result_messages)
+// first we collect all messages and put it into common buffer. Then for each subscription we check if it is their
+// message, this is index_messages(). Then we extract a message by receiver. Or do we need it? What if extracting is
+// done by asking a subscription and using a kernel? Then we don't need a subscription as a template, but it just has
+// a type index. We say "receiver" and "type", the Bus finds a subscription by a kernel, and uses subscription to find
+// messages by a second kernel, no indexing required. Yeah, let's do it like this. A subscription is never reused.
+
+
+/**
+ * @brief Find all message indices that correspond to the current subscription.
+ * @param messages
+ * @param message_size
+ * @param sub
+ * @param type
+ * @param indexes
+ * @return
+ */
+__global__ void find_messages_kernel(const MessageVariant *messages, size_t message_size, Subscription *subscription,
+                              uint64_t *indices, unsigned long long *counter)
 {
-    // locate messages
+    uint64_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= message_size) return;
+    if (subscription->is_my_message(messages[i]))
+    {
+        uint64_t index = atomicAdd(counter, 1ull);
+        indices[index] = i;
+    }
 }
 
 
-__global__ void get_subscription_kernel(const SubscriptionVariant *var, int *type, const void **sub) {
-    int type_val = var->index();
-    switch (type_val)
-    {
-        // TODO : Add more after adding new messages
-        case 0:
-            *sub = ::cuda::std::get_if<0>(var);
-            break;
-        case 1:
-            *sub = ::cuda::std::get_if<1>(var);
-            break;
-        default:
-            *sub = nullptr;
-    }
-    *type = type_val;
+template <class MessageType>
+device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const knp::core::UID &receiver_uid)
+{
+    size_t sub_index = find_subscription<MessageType>(receiver_uid);
+    if (sub_index >= subscriptions_.size()) return device_lib::CUDAVector<uint64_t>{};
+
+    Subscription &subscription = subscriptions_[sub_index];
+    constexpr size_t message_type = boost::mp11::mp_find<MessageVariant, MessageType>();
+    if (subscription.type() != message_type) return device_lib::CUDAVector<uint64_t>{};
+
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(messages_to_route_.size());
+    unsigned long long *counter;
+    cudaMalloc(&counter, sizeof(uint64_t));
+    uint64_t *indices;
+    cudaMalloc(&indices, sizeof(uint64_t) * messages_to_route_.size());
+    find_messages_kernel<<<num_blocks, num_threads>>>(messages_to_route_.data(), messages_to_route_.size(),
+               subscriptions_.data() + sub_index, indices, counter);
+    // Here we have a set of message indexes. Is that enough? I think it is.
+    size_t cpu_counter;
+    cudaMemcpy(&cpu_counter, counter, sizeof(cpu_counter), cudaMemcpyDeviceToHost);
+    cudaFree(counter);
+    device_lib::CUDAVector result(counter);
+    auto [num_blocks_copy, num_threads_copy] = device_lib::get_blocks_config(cpu_counter);
+    device_lib::copy_kernel<<<num_blocks_copy, num_threads_copy>>>(result.data(), indices, cpu_counter);
+    return result;
 }
 
 
@@ -318,8 +218,6 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
 namespace cm = knp::backends::gpu::cuda;
 
 #define INSTANCE_MESSAGES_FUNCTIONS(n, template_for_instance, message_type)                \
-    template __host__ DevVec<DevVec<DevVec<uint64_t>>> \
-        CUDAMessageBus::index_messages<cm::message_type>(); \
     template bool CUDAMessageBus::unsubscribe<cm::message_type>(const UID &receiver);
 
 BOOST_PP_SEQ_FOR_EACH(INSTANCE_MESSAGES_FUNCTIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_CUDA_MESSAGES))

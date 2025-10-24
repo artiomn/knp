@@ -64,6 +64,16 @@ __global__ void copy_construct_kernel(T* data_to, size_t num_objects, const T* d
 
 
 template <class T>
+__global__ void copy_kernel(T* data_to, size_t num_objects, const T* data_from)
+{
+    if (num_objects == 0) return;
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_objects) return;
+    *(data_to + i) = *(data_from + i);
+}
+
+
+template <class T>
 __global__ void move_kernel(T* data_to, size_t num_elements, T* data_from)
 {
     if (num_elements == 0) return;

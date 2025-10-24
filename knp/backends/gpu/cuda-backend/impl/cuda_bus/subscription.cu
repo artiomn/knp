@@ -18,17 +18,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+// TODO REMOVE
 #include "subscription.cuh"
 #include "../cuda_lib/vector.cuh"
-
-
-/**
- * @brief CUDA messaging namespace.
- */
-namespace knp::backends::gpu::cuda
-{
-
-template class device_lib::CUDAVector<SubscriptionVariant>;
-
-} // namespace knp::backends::gpu::cuda

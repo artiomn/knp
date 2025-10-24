@@ -254,9 +254,9 @@ TEST(CudaVectorSuite, VectorPushBack)
     std::vector<uint64_t> exp_results{1, 2, 3};
     knp_cuda::device_lib::CUDAVector res(exp_results.data(), exp_results.size());
     // ASSERT_EQ(cuda_vec, exp_results);
-    ASSERT_EQ(cuda_vec[0], 1);
-    ASSERT_EQ(cuda_vec[1], 2);
-    ASSERT_EQ(cuda_vec[2], 3);
+    ASSERT_EQ(cuda_vec.copy_at(0), 1);
+    ASSERT_EQ(cuda_vec.copy_at(1), 2);
+    ASSERT_EQ(cuda_vec.copy_at(2), 3);
     ASSERT_EQ(cuda_vec, res);
     ASSERT_EQ(cudaGetLastError(), cudaSuccess);
 }

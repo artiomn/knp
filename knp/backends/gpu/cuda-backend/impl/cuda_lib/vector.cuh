@@ -100,6 +100,14 @@ public:
         #endif
     }
 
+
+    static __host__ __device__ CUDAVector<T, Allocator> from_gpu_pointer(T *data_pointer, size_t data_size)
+    {
+        CUDAVector<T, Allocator> result;
+        result.reserve(data_size);
+    }
+
+
     __host__ CUDAVector(const std::vector<value_type> &vec)
     {
         clear();
@@ -296,22 +304,10 @@ public:
         return true;
     }
 
-    __host__ __device__ value_type operator[](size_type index) const
+
+    __device__ value_type& operator[](size_type index) const
     {
-        #ifdef __CUDA_ARCH__
         return data_[index];
-        #else
-        if constexpr (std::is_trivially_copyable_v<value_type>)
-        {
-            T result;
-            call_and_check(cudaMemcpy(&result, data_ + index, sizeof(value_type), cudaMemcpyDeviceToHost));
-            return result;
-        }
-        else
-        {
-            return gpu_extract(data_ + index);
-        }
-        #endif
     }
 
     __host__ __device__ size_type capacity() const
@@ -462,18 +458,16 @@ public:
 
 #endif
     }
-
-
-    __host__ T copy_at(size_t index)
+    __host__ T copy_at(size_t index) const
     {
-        T result;
         if constexpr (std::is_trivially_copyable<T>::value)
         {
+            T result;
             call_and_check(cudaMemcpy(&result, data_ + index, sizeof(T), cudaMemcpyDeviceToHost));
+            return result;
         }
         else
-        result = gpu_extract(data_ + index);
-        return result;
+            return gpu_extract(data_ + index);
     }
 
     /**

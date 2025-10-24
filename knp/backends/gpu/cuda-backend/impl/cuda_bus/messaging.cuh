@@ -45,10 +45,13 @@ using MessageVariant = boost::mp11::mp_rename<AllCudaMessages, ::cuda::std::vari
 
 __global__ void get_message_kernel(const MessageVariant *var, int *type, const void **msg);
 
+template<class MessageType>
+__host__ __device__ constexpr int get_msg_index() { return boost::mp11::mp_find<MessageVariant, MessageType>(); }
 
 template <>
 MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message);
 
 template <>
 void gpu_insert<MessageVariant>(const MessageVariant &cpu_source, MessageVariant *gpu_target);
+
 }  // namespace knp::backends::gpu::cuda

@@ -42,9 +42,7 @@ REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SpikeMessage);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpactMessage);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
 
-REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::Subscription<knp::backends::gpu::cuda::SpikeMessage>);
-REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::Subscription<knp::backends::gpu::cuda::SynapticImpactMessage>);
-REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SubscriptionVariant);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::Subscription);
 
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::UID);
 
@@ -80,7 +78,8 @@ TEST(CudaBackendSuite, CudaHostSubscription)
     knp_cuda::UID sender_1 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_2 = knp_cuda::to_gpu_uid(knp::core::UID{});
     knp_cuda::UID sender_3 = knp_cuda::to_gpu_uid(knp::core::UID{}), sender_4 = knp_cuda::to_gpu_uid(knp::core::UID{});
     ASSERT_NE(sender_1, sender_2);
-    knp_cuda::Subscription<knp_cuda::SpikeMessage> subscription(receiver_uid, {sender_1, sender_2, sender_3});
+    auto type_index = boost::mp11::mp_find<knp_cuda::MessageVariant, knp_cuda::SpikeMessage>();
+    knp_cuda::Subscription subscription(receiver_uid, {sender_1, sender_2, sender_3}, type_index);
     ASSERT_EQ(subscription.get_senders().size(), 3);
     ASSERT_TRUE(subscription.has_sender(sender_2));
     ASSERT_FALSE(subscription.has_sender(sender_4));

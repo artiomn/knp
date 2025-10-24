@@ -126,26 +126,6 @@ TEST(CudaBackendSuite, CudaBusSubscription)
     call_and_check(cudaDeviceSynchronize());
     error = cudaGetLastError();
     ASSERT_EQ(error, cudaSuccess);
-    // using knp::backends::gpu::cuda::to_gpu_uid;
-    // using knp::backends::gpu::cuda::device_lib::CUDAVector;
-    // using knp::backends::gpu::cuda::UID;
-    // MessageBusTandem bus_pair;
-    // knp::core::UID sender_1, sender_2, receiver_1, receiver_2;
-    // CUDAVector<UID> senders_1, senders_2;
-    // senders_1.push_back(to_gpu_uid(sender_1));
-    // senders_1.push_back(to_gpu_uid(sender_2));
-    // bus_pair.gpu_.subscribe<knp::backends::gpu::cuda::SpikeMessage>(
-    //         to_gpu_uid(receiver_1), senders_1);
-    // senders_2.push_back(to_gpu_uid(sender_1));
-    // bus_pair.gpu_.subscribe<knp::backends::gpu::cuda::SpikeMessage>(
-    //     to_gpu_uid(receiver_2), senders_2);
-    // ASSERT_EQ(bus_pair.gpu_.get_subscriptions().size(), 2);
-
-
-    // const knp::backends::gpu::cuda::SubscriptionVariant &sub_v = bus_pair.gpu_.get_subscriptions()[0];
-    // const auto &sub = ::cuda::std::get<knp::backends::gpu::cuda::Subscription<
-    //                     knp::backends::gpu::cuda::SpikeMessage>>(sub_v);
-    // ASSERT_EQ(sub.get_senders().size(), 2);
 }
 
 

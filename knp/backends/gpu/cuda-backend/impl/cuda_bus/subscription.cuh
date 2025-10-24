@@ -47,18 +47,8 @@ namespace knp::backends::gpu::cuda
  * @brief The Subscription class is used for message exchange between the network entities.
  * @tparam MessageT type of messages that are exchanged via the subscription.
  */
-template <class MessageT>
 class Subscription final {
 public:
-    /**
-     * @brief Message type.
-     */
-    using MessageType = MessageT;
-    /**
-     * @brief Internal container for messages of the specified message type.
-     */
-    using MessageContainerType = device_lib::CUDAVector<MessageType>;
-
     /**
      * @brief Internal container for UIDs.
      */
@@ -72,8 +62,8 @@ public:
      * @param receiver receiver UID.
      * @param senders list of sender UIDs.
      */
-    __host__ Subscription(const UID &receiver, const std::vector<cuda::UID> &senders) :
-            receiver_(receiver)
+    __host__ Subscription(const UID &receiver, const std::vector<cuda::UID> &senders, int type_index) :
+            receiver_(receiver), type_index_(type_index)
     {
         SPDLOG_TRACE("Initializing with {} senders.", senders.size());
         for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
@@ -81,7 +71,8 @@ public:
     }
 
 
-    __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<UID> &senders)
+    __device__ Subscription(const UID &receiver, const device_lib::CUDAVector<UID> &senders, int type_index) :
+    receiver_(receiver), type_index_(type_index)
     {
         for (size_t i = 0; i < senders.size(); ++i)
         {
@@ -94,6 +85,12 @@ public:
      * @return senders UIDs.
      */
     [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
+
+
+    /**
+     * @brief get message type for subscription.
+     */
+     [[nodiscard]] __device__ __host__ int type() const { return type_index_; }
 
     /**
       * @brief Get UID of the entity that receives messages via the subscription.
@@ -108,10 +105,8 @@ public:
      * @return true if sender was deleted from subscription.
      */
     __device__ __host__ bool remove_sender(const UID &uid) {
-        // auto erase_iter = thrust::find(thrust::device, senders_.begin(), senders_.end(), uid);
-        uint64_t index = 0;
         for (uint64_t index = 0; index < senders_.size(); ++index) {
-            if (senders_[index] == uid) {
+            if (senders_.copy_at(index) == uid) {
                 auto iter = senders_.begin() + index;
                 senders_.erase(iter, iter + 1);
                 return true;
@@ -146,7 +141,7 @@ public:
     __host__ __device__ size_t add_senders(const device_lib::CUDAVector<cuda::UID> &senders) {
         size_t result = 0;
         for (size_t i = 0; i < senders.size(); ++i) {
-            result += add_sender(senders[i]);
+            result += add_sender(senders.copy_at(i));
         }
         return result;
     }
@@ -185,45 +180,27 @@ public:
 #endif
     }
 
-    __host__ __device__ bool operator==(const Subscription<MessageT> &other) const
+    __host__ __device__ bool is_my_message(const MessageVariant &message)
     {
-        return receiver_ == other.receiver_ && senders_ == other.senders_ && messages_ == other.messages_;
+        int message_type = message.index();
+        if (message_type != type_index_)
+            return false;
+        UID message_sender = ::cuda::std::visit([](const auto &msg){ return msg.header_.sender_uid_; }, message);
+        return has_sender(message_sender);
     }
 
-    __host__ __device__ bool operator!=(const Subscription<MessageT> &other) const
+    __host__ __device__ bool operator==(const Subscription &other) const
+    {
+        return receiver_ == other.receiver_ && senders_ == other.senders_;
+    }
+
+    __host__ __device__ bool operator!=(const Subscription &other) const
     {
         return !(*this == other);
     }
 
 
 public:
-    /**
-     * @brief Add a message to the subscription.
-     * @param message message to add.
-     */
-    __device__ __host__ void add_message(MessageType &&message) { messages_.push_back(message); }
-    /**
-     * @brief Add a message to the subscription.
-     * @param message constant message to add.
-     */
-    __device__ void add_message(const MessageType &message) { messages_.push_back(message); }
-
-    /**
-     * @brief Get all messages.
-     * @return reference to message container.
-     */
-    __device__ MessageContainerType &get_messages() { return messages_; }
-    /**
-     * @brief Get all messages.
-     * @return constant reference to message container.
-     */
-    __device__ const MessageContainerType &get_messages() const { return messages_; }
-
-    /**
-     * @brief Remove all stored messages.
-     */
-    __device__ void clear_messages() { messages_.clear(); }
-
     /**
      * @brief Restore after shallow copying from device.
      */
@@ -233,10 +210,6 @@ public:
         SPDLOG_TRACE("Actualizing subscription senders");
     #endif
         senders_.actualize();
-    #ifndef __CUDA_ARCH__
-        SPDLOG_TRACE("Actualizing subscription messages");
-    #endif
-        messages_.actualize();
     }
 
 private:
@@ -251,38 +224,9 @@ private:
     UidSet senders_;
 
     /**
-     * @brief Message storage.
+     * @brief message type index.
      */
-    MessageContainerType messages_;
+    int type_index_;
 };
-
-
-/**
- * @brief List of subscription types based on message types specified in `cuda::AllCudaMessages`.
- */
-using AllSubscriptions = boost::mp11::mp_transform<Subscription, cuda::AllCudaMessages>;
-
-
-/**
- * @brief Subscription variant that contains any subscription type specified in `AllSubscriptions`.
- * @details `SubscriptionVariant` takes the value of `std::variant<SubscriptionType_1,..., SubscriptionType_n>`,
- * where `SubscriptionType_[1..n]` is the subscription type specified in `AllSubscriptions`. \n For example, if
- * `AllSubscriptions` contains SpikeMessage and SynapticImpactMessage types, then `SubscriptionVariant =
- * std::variant<SpikeMessage, SynapticImpactMessage>`. \n `SubscriptionVariant` retains the same order of message
- * types as defined in `AllSubscriptions`.
- * @see ALL_CUDA_MESSAGES.
- */
-using SubscriptionVariant = boost::mp11::mp_rename<AllSubscriptions, ::cuda::std::variant>;
-
-
-__global__ void get_subscription_kernel(const SubscriptionVariant *var, int *type, const void **sub);
-
-
-template<>
-SubscriptionVariant gpu_extract<SubscriptionVariant>(const SubscriptionVariant *sub_variant);
-
-template<>
-void gpu_insert<SubscriptionVariant>(const SubscriptionVariant &source, SubscriptionVariant *target);
-
 
 } // namespace knp::backends::gpu::cuda
