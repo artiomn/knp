@@ -43,6 +43,13 @@
 namespace knp::backends::gpu::cuda
 {
 
+// helper type for the visitor.
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide.
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
 
 template <class ProjectionType>
 bool is_forcing()
@@ -83,18 +90,14 @@ __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
                                              std::uint64_t step)
 {
     // Calculate projections.
+    // using namespace std::placeholders;
+
     for (auto &projection : projections)
     {
-        ::cuda::std::visit(
-            [backend, step](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-
-                knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
-                // arg.messages_ .
-                backend->calculate_projection(arg, messages, step);
-            },
-            projection);
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
+        // TODO: Uncomment
+        //::cuda::std::visit(std::bind(
+        //      &CUDABackendImpl::calculate_projection, backend, _2, messages, step), projection);
     }
 }
 

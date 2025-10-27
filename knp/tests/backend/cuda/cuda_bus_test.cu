@@ -39,7 +39,7 @@
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
 
 
-
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::UID);
 
 namespace knp::testing
 {
@@ -123,8 +123,8 @@ TEST(CUDAMessagingSuite, AddReceiveBusMessage)
     using SpikeMessage = knp_cuda::SpikeMessage;
 
     MessageBusTandem message_buses;
-    SpikeMessage msg{{knp_cuda::UID{}}, {1, 2, 3, 4, 5}};
-    knp_cuda::UID receiver_uid{};
+    SpikeMessage msg{{knp_cuda::new_uid()}, {1, 2, 3, 4, 5}};
+    knp_cuda::UID receiver_uid = knp_cuda::new_uid();
     std::vector<knp_cuda::UID> senders{msg.header_.sender_uid_};
     message_buses.gpu_.subscribe<SpikeMessage>(receiver_uid, {msg.header_.sender_uid_});
     EXPECT_EQ(message_buses.gpu_.unload_messages<SpikeMessage>(receiver_uid).size(), 0);

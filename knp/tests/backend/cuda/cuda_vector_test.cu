@@ -40,6 +40,8 @@
 
 
 REGISTER_CUDA_VECTOR_TYPE(uint64_t);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::UID);
+
 
 
 namespace knp::testing
@@ -85,9 +87,9 @@ TEST(CudaVectorSuite, CopyKernel)
     cudaMalloc(&array_to, 8 * sizeof(uint64_t));
 
     std::vector<uint64_t> vec_from = {3, 2, 4, 5, 1, 0, 4, 0};
-    std::vector<uint64_t> vec_out(vec_from.size());
     cudaMemcpy(array_from, vec_from.data(), 8 * sizeof(uint64_t), cudaMemcpyHostToDevice);
     knp_cuda::device_lib::copy_construct_kernel<<<1, 8>>>(array_to, 8, array_from);
+    std::vector<uint64_t> vec_out(vec_from.size());
     cudaMemcpy(vec_out.data(), array_to, vec_from.size() * sizeof(uint64_t), cudaMemcpyDeviceToHost);
     cudaFree(array_from);
     cudaFree(array_to);
@@ -147,14 +149,14 @@ TEST(CudaVectorSuite, CopyUidKernel)
 }
 
 
-__device__ int counter = 0;
+static __device__ int counter;
 
 
 struct Constructable
 {
     __device__ Constructable() { atomicAdd(&counter, 1); }
     __device__ ~Constructable() { atomicAdd(&counter, -1); }
-    int data;
+    int data_;
 };
 
 

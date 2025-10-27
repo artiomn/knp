@@ -31,7 +31,7 @@ namespace knp::backends::gpu::cuda::device_lib
 {
 
 template<class T>
-std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
+__host__ std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
 {
     if (vec.size() == 0)
     {
@@ -42,9 +42,9 @@ std::ostream &operator<<(std::ostream &stream, const CUDAVector<T> &vec)
     stream << "{";
     for (size_t i = 0; i < vec.size() - 1; ++i)
     {
-        stream << vec[i] << ", ";
+        stream << vec.copy_at(i) << ", ";
     }
-    stream << vec[vec.size() - 1] << "}";
+    stream << vec.copy_at(vec.size() - 1) << "}";
     return stream;
 }
 
