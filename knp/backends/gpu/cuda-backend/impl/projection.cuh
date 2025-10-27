@@ -27,6 +27,7 @@
 #include <knp/synapse-traits/all_traits.h>
 
 #include "cuda_lib/vector.cuh"
+#include "cuda_bus/synaptic_impact_message.cuh"
 #include "uid.cuh"
 
 
@@ -60,7 +61,11 @@ struct CUDAProjection
      */
     using Synapse = thrust::tuple<SynapseParameters, uint32_t, uint32_t>;
 
-    __host__ __device__ CUDAProjection() = default;
+    __host__ __device__ CUDAProjection()
+    #if !defined(__CUDA_ARCH__)
+             :  is_locked_(thrust::device_malloc<bool>(1))
+    #endif
+    {}
 
     /**
      * @brief Constructor.
@@ -77,12 +82,7 @@ struct CUDAProjection
     /**
      * @brief Destructor.
      */
-    __host__ __device__ ~CUDAProjection()
-    {
-        #if !defined(__CUDA_ARCH__)
-        thrust::device_free(is_locked_);
-        #endif
-    }
+    __host__ __device__ ~CUDAProjection() = default;
 
     __host__ __device__ void lock_weights() { *is_locked_ = true; }
     __host__ __device__ void unlock_weights() { *is_locked_ = false; }
@@ -116,7 +116,7 @@ struct CUDAProjection
      * @brief Messages container.
      */
     // cppcheck-suppress unusedStructMember
-    device_lib::CUDAVector<::cuda::std::pair<uint64_t, knp::core::messaging::SynapticImpactMessage>> messages_;
+    device_lib::CUDAVector<::cuda::std::pair<uint64_t, cuda::SynapticImpactMessage>> messages_;
 };
 
 } // namespace knp::backends::gpu::cuda

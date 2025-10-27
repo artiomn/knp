@@ -85,6 +85,8 @@ set_target_properties(
 
 target_compile_options("${PROJECT_NAME}" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --expt-relaxed-constexpr -rdc=true>)
 target_compile_options("${PROJECT_NAME}_static" PRIVATE $<$<COMPILE_LANGUAGE:CUDA>: --expt-relaxed-constexpr -rdc=true>)
+set_property(TARGET "${PROJECT_NAME}" PROPERTY CUDA_ARCHITECTURES 60)
+set_property(TARGET "${PROJECT_NAME}_static" PROPERTY CUDA_ARCHITECTURES 60)
 
 if (KNP_INSTALL)
     knp_get_component_name("${PROJECT_NAME}" COMPONENT_NAME)
