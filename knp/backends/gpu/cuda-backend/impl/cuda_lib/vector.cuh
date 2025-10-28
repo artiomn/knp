@@ -85,6 +85,7 @@ public:
     {
         clear();
         reserve(vec.size());
+        if (!vec.size()) return;
 
         if constexpr (std::is_trivially_copyable<value_type>::value)
         {
