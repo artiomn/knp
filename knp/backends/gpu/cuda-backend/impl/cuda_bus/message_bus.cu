@@ -183,7 +183,10 @@ device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const cuda::UID
 
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(messages_to_route_.size());
     unsigned long long *counter;
+    const unsigned long long counter_start = 0;
+    // cudaMallocManaged(&counter, 0);
     cudaMalloc(&counter, sizeof(uint64_t));
+    cudaMemcpy(counter, &counter_start, sizeof(uint64_t), cudaMemcpyHostToDevice);
     uint64_t *indices;
     cudaMalloc(&indices, sizeof(uint64_t) * messages_to_route_.size());
     find_messages_kernel<<<num_blocks, num_threads>>>(messages_to_route_.data(), messages_to_route_.size(),

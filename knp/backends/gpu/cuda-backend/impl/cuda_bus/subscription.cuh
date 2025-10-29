@@ -175,12 +175,16 @@ public:
     [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
     {
 #ifdef __CUDA_ARCH__
-        printf("Using has_sender on device");
+        printf("Using has_sender on device\n");
         for (size_t i = 0; i < senders_.size(); ++i)
         {
-            if (senders_[i] == uid) return true;
+            if (senders_[i] == uid)
+            {
+                printf("Found sender\n");
+                return true;
+            }
         }
-        printf("No sender found");
+        printf("No sender found\n");
         return false;
 #else
         if (senders_.size() == 0) return false;
@@ -207,7 +211,9 @@ public:
         int message_type = message.index();
         if (message_type != type_index_)
             return false;
-        UID message_sender = ::cuda::std::visit([](const auto &msg){ return msg.header_.sender_uid_; }, message);
+
+        UID message_sender = ::cuda::std::visit([](const auto &msg){ return msg.header_.sender_uid_; },
+                                                message);
         return has_sender(message_sender);
     }
 
