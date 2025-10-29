@@ -265,12 +265,12 @@ public:
      * @param population population to calculate.
      * @return copy of a spike message if population is emitting one.
      */
-    __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
+    static __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);
 
-    __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
+    static __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
         std::uint64_t step_n);
@@ -281,17 +281,17 @@ public:
      * @param projection projection to calculate.
      * @param message_queue message queue to send to projection for calculation.
      */
-    __device__ void calculate_projection(
+    static __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
         std::uint64_t step_n);
 
-    __device__ void calculate_projection(
+    static __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
         std::uint64_t step_n);
 
-    __device__ void calculate_projection(
+    static __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
         std::uint64_t step_n);

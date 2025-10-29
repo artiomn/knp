@@ -78,7 +78,7 @@ __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
                 using T = std::decay_t<decltype(arg)>;
 
                 knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
-                auto message_opt = backend->calculate_population(arg, messages, step);
+                auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
             },
             population);
     }
@@ -96,8 +96,13 @@ __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
     {
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
         // TODO: Uncomment
-        //::cuda::std::visit(std::bind(
-        //      &CUDABackendImpl::calculate_projection, backend, _2, messages, step), projection);
+        ::cuda::std::visit([backend, step](auto &arg)
+        {
+            using T = std::decay_t<decltype(arg)>;
+
+            knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
+            cuda::CUDABackendImpl::calculate_projection(arg, messages, step);
+        }, projection);
     }
 }
 
