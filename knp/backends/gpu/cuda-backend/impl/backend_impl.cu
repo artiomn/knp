@@ -32,6 +32,8 @@
 
 #include <boost/mp11.hpp>
 
+#include <algorithm>
+
 #include "backend_impl.cuh"
 #include "projection.cuh"
 #include "population.cuh"
@@ -52,14 +54,14 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 
 template <class ProjectionType>
-bool is_forcing()
+inline bool is_forcing()
 {
     return false;
 }
 
 
 template <>
-bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
+inline bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 {
     return true;
 }
@@ -72,7 +74,10 @@ __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
     // Calculate populations. This is the same as inference.
     for (auto &population : populations)
     {
-        ::cuda::std::visit(
+//                knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
+//                auto arg = ::std::get<CUDAPopulation<knp::neuron_traits::BLIFATNeuron>>(population);
+//                auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
+/*        ::cuda::std::visit(
             [backend, step](auto &arg)
             {
                 using T = std::decay_t<decltype(arg)>;
@@ -80,7 +85,7 @@ __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
                 knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
                 auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
             },
-            population);
+            population);*/
     }
 }
 
@@ -96,6 +101,11 @@ __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
     {
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
         // TODO: Uncomment
+
+            auto arg = ::cuda::std::get<CUDAProjection<knp::synapse_traits::DeltaSynapse>>(projection);
+            cuda::CUDABackendImpl::calculate_projection(arg, messages, step);
+
+/*
         ::cuda::std::visit([backend, step](auto &arg)
         {
             using T = std::decay_t<decltype(arg)>;
@@ -103,6 +113,7 @@ __global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
             knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
             cuda::CUDABackendImpl::calculate_projection(arg, messages, step);
         }, projection);
+*/
     }
 }
 
@@ -379,7 +390,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                 if (thrust::get<core::source_neuron_id>(synapse) != spiked_neuron_index) continue;
 
                 // WeightUpdateSTDP<SynapseType>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
-/*                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
+                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
 
                 // The message is sent on step N - 1, received on step N.
                 size_t future_step = synapse_params.delay_ + step_n - 1;
@@ -388,24 +399,29 @@ __device__ void CUDABackendImpl::calculate_projection(
                     static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
                     static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
 
-                ::cuda::std::pair<uint64_t, cuda::SynapticImpactMessage> &future_messages = projection.messages_;
-
-//                auto iter = future_messages.find(future_step);
-//                if (iter != future_messages.end())
-//                {
-//                    iter->second.impacts_.push_back(impact);
-//                }
-//                else
+                // ::cuda::std::find_if() is not implemented yet.
+                auto iter = projection.messages_.begin();
+                for (; iter != projection.messages_.end(); ++iter)
                 {
-                    cuda::SynapticImpactMessage message_out{
+                    if (iter->first == future_step) break;
+                }
+
+                if (iter != projection.messages_.end())
+                {
+                    iter->second.impacts_.push_back(impact);
+                }
+                else
+                {
+/*                    cuda::SynapticImpactMessage message_out{
                         {projection.uid_, step_n},
                         projection.presynaptic_uid_,
                         projection.postsynaptic_uid_,
                         is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>(),
                         {impact}};
-                    future_messages.push_back(std::make_pair(future_step, message_out));
-                }
+
+                    projection.messages_.push_back(std::make_pair(future_step, message_out));
 */
+                }
             }
         }
     }
