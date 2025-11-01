@@ -87,7 +87,7 @@ public:
         return true;
     }
 
-    [[nodiscard]] __host__ const CUDAVector<MessageVariant> & all_messages() const { return messages_to_route_; }
+    [[nodiscard]] __host__ const device_lib::CUDAVector<MessageVariant> & all_messages() const { return messages_to_route_; }
 
     /**
      * @brief Unsubscribe from messages of a specified type.

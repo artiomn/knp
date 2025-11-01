@@ -40,13 +40,14 @@
 
 #include "cuda_lib/get_blocks_config.cuh"
 #include "cuda_lib/vector.cuh"
+#include "cuda_bus/messaging.cuh"
 
-
-REGISTER_CUDA_VECTOR_TYPE(cuda::MessageVariant);
-REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
 
 namespace knp::backends::gpu::cuda
 {
+
+REGISTER_CUDA_VECTOR_TYPE(cuda::MessageVariant);
+REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
 
 // helper type for the visitor.
 template<class... Ts>
@@ -54,8 +55,6 @@ struct overloaded : Ts... { using Ts::operator()...; };
 // explicit deduction guide.
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
-
-
 
 
 template <class ProjectionType>
@@ -69,6 +68,24 @@ template <>
 inline bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 {
     return true;
+}
+
+
+template<class T>
+__global__ void get_uids_kernel(const T* data, size_t size, cuda::UID *result)
+{
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    result[index] = ::cuda::std::visit([](auto &v) { return v.uid_; }, data[index]);
+}
+
+
+template<class VectorData>
+device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorData> &entities)
+{
+    device_lib::CUDAVector<cuda::UID> result(entities.size());
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(entities.size());
+    get_uids_kernel(entities.data(), entities.size(), result.data());
+    return result;
 }
 
 
@@ -100,35 +117,14 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
     // Calculate populations. This is the same as inference.
     // Calculate projections.
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
-    calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_.data(), device_populations_. step);
+    calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_, step);
     cudaDeviceSynchronize();
 }
 
 
-namespace detail
-{
-template<class T>
-__global__ void get_uids_kernel(const T* data, size_t size, cuda::UID *result)
-{
-    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-    result[index] = ::cuda::std::visit([](auto &v) { return v.uid_; }, data[index]);
-}
-
-
-template<class VectorData>
-device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorData> &entities)
-{
-    device_lib::CUDAVector<cuda::UID> result(entities.size());
-    auto [num_blocks, num_threads] = device_lib::get_blocks_config(entities.size());
-    get_uids_kernel(entities.data(), entities.size(), result.data());
-    return result;
-}
-} // namespace detail
-
-
-__global__ void calculate_projections_kernel(cuda::ProjectionVariant *projections, size_t num_projections,
+__global__ void calculate_projections_kernel(cuda::ProjectionVariants *projections, size_t num_projections,
                                              cuda::MessageVariant *messages, size_t messages_size,
-                                             CUDAVector<uint64_t> *indices, size_t indices_size,
+                                             cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
                                              std::uint64_t step)
 {
     // Calculate projections.
@@ -143,14 +139,14 @@ __global__ void calculate_projections_kernel(cuda::ProjectionVariant *projection
         msgs[n] = messages[message_index];
     }
     ::cuda::std::visit(::cuda::std::bind(
-            &CUDABackendImpl::calculate_projection, _2, msgs, step), projection);
+        &CUDABackendImpl::calculate_projection, _2, msgs, step), projection);
 }
 
 
 void CUDABackendImpl::calculate_projections(std::uint64_t step)
 {
     // Calculate projections.
-    device_lib::CUDAVector<cuda::UID> projection_uids = detail::get_uids(device_projections_);
+    device_lib::CUDAVector<cuda::UID> projection_uids = get_uids(device_projections_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
     device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>> projection_messages(device_projections_.size());
     for (size_t i = 0; i < device_projections_.size(); ++i)
