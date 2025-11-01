@@ -25,6 +25,7 @@ BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
 {
 #define _KNP_IN_NEURON_TRAITS
 
+#include "altai_lif.cpp"             // NOLINT
 #include "blifat.cpp"                // NOLINT
 #include "resource_stdp_blifat.cpp"  // NOLINT
 
