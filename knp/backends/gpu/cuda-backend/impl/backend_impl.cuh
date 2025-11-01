@@ -256,7 +256,7 @@ public:
     __host__ void calculate_populations(std::uint64_t step);
     __host__ void calculate_projections(std::uint64_t step);
 
-    __host__ __device__ knp::backends::gpu::cuda::CUDAMessageBus &get_message_bus() { return device_message_bus_; }
+    __host__ knp::backends::gpu::cuda::CUDAMessageBus &get_message_bus() { return device_message_bus_; }
 
 public:
     /**
@@ -283,17 +283,17 @@ public:
      */
     static __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+        const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
     static __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
-        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+        const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
     static __device__ void calculate_projection(
         CUDAProjection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
-        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+        const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
 protected:

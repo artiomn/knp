@@ -87,6 +87,8 @@ public:
         return true;
     }
 
+    [[nodiscard]] __host__ const CUDAVector<MessageVariant> & all_messages() const { return messages_to_route_; }
+
     /**
      * @brief Unsubscribe from messages of a specified type.
      * @tparam MessageType type of messages to which the receiver is subscribed.

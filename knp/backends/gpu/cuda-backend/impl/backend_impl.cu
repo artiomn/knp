@@ -42,6 +42,9 @@
 #include "cuda_lib/vector.cuh"
 
 
+REGISTER_CUDA_VECTOR_TYPE(cuda::MessageVariant);
+REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
+
 namespace knp::backends::gpu::cuda
 {
 
@@ -51,6 +54,8 @@ struct overloaded : Ts... { using Ts::operator()...; };
 // explicit deduction guide.
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
+
+
 
 
 template <class ProjectionType>
@@ -67,8 +72,7 @@ inline bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 }
 
 
-__global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
-                                             typename cuda::CUDABackendImpl::PopulationContainer &populations,
+__global__ void calculate_populations_kernel(typename cuda::CUDABackendImpl::PopulationContainer &populations,
                                              std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
@@ -78,42 +82,15 @@ __global__ void calculate_populations_kernel(cuda::CUDABackendImpl *backend,
 //                auto arg = ::std::get<CUDAPopulation<knp::neuron_traits::BLIFATNeuron>>(population);
 //                auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
 /*        ::cuda::std::visit(
-            [backend, step](auto &arg)
+            [step](auto &arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
                 knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
+                // TODO: get those messages or make them a parameter
                 auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
             },
             population);*/
-    }
-}
-
-
-__global__ void calculate_projections_kernel(cuda::CUDABackendImpl *backend,
-                                             typename cuda::CUDABackendImpl::ProjectionContainer &projections,
-                                             std::uint64_t step)
-{
-    // Calculate projections.
-    // using namespace std::placeholders;
-
-    for (auto &projection : projections)
-    {
-        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
-        // TODO: Uncomment
-
-            auto arg = ::cuda::std::get<CUDAProjection<knp::synapse_traits::DeltaSynapse>>(projection);
-            cuda::CUDABackendImpl::calculate_projection(arg, messages, step);
-
-/*
-        ::cuda::std::visit([backend, step](auto &arg)
-        {
-            using T = std::decay_t<decltype(arg)>;
-
-            knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> messages;
-            cuda::CUDABackendImpl::calculate_projection(arg, messages, step);
-        }, projection);
-*/
     }
 }
 
@@ -123,18 +100,69 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
     // Calculate populations. This is the same as inference.
     // Calculate projections.
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
-
-    calculate_populations_kernel<<<num_blocks, num_threads>>>(this, device_populations_, step);
+    calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_.data(), device_populations_. step);
     cudaDeviceSynchronize();
+}
+
+
+namespace detail
+{
+template<class T>
+__global__ void get_uids_kernel(const T* data, size_t size, cuda::UID *result)
+{
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    result[index] = ::cuda::std::visit([](auto &v) { return v.uid_; }, data[index]);
+}
+
+
+template<class VectorData>
+device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorData> &entities)
+{
+    device_lib::CUDAVector<cuda::UID> result(entities.size());
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(entities.size());
+    get_uids_kernel(entities.data(), entities.size(), result.data());
+    return result;
+}
+} // namespace detail
+
+
+__global__ void calculate_projections_kernel(cuda::ProjectionVariant *projections, size_t num_projections,
+                                             cuda::MessageVariant *messages, size_t messages_size,
+                                             CUDAVector<uint64_t> *indices, size_t indices_size,
+                                             std::uint64_t step)
+{
+    // Calculate projections.
+    // using namespace std::placeholders;
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    cuda::ProjectionVariant &projection = projections[index];
+    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> msgs(indices_size); // almost always 1
+    for (size_t n = 0; n < indices_size; ++n)
+    {
+        uint64_t message_index = indices[n];
+        if (message_index >= messages_size) continue;
+        msgs[n] = messages[message_index];
+    }
+    ::cuda::std::visit(::cuda::std::bind(
+            &CUDABackendImpl::calculate_projection, _2, msgs, step), projection);
 }
 
 
 void CUDABackendImpl::calculate_projections(std::uint64_t step)
 {
     // Calculate projections.
+    device_lib::CUDAVector<cuda::UID> projection_uids = detail::get_uids(device_projections_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
-
-    calculate_projections_kernel<<<num_blocks, num_threads>>>(this, device_projections_, step);
+    device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>> projection_messages(device_projections_.size());
+    for (size_t i = 0; i < device_projections_.size(); ++i)
+    {
+        CUDAVector<uint64_t> message_ids = message_bus_.unload_messages(projection_uids[i]);
+        gpu_insert(&message_ids, projection_messages.data() + i);
+    }
+    calculate_projections_kernel<<<num_blocks, num_threads>>>(device_projections_.data(), device_projections_.size(),
+                                                              message_bus_.messages().data(),
+                                                              message_bus_.messages().size()
+                                                              projection_messages.data(), projection_messages.size(),
+                                                              step);
     cudaDeviceSynchronize();
 }
 
@@ -349,21 +377,79 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
 }
 
 
-/*__device__ ::cuda::std::optional<core::messaging::SpikeMessage> CUDABackendImpl::calculate_population(
-    CUDAPopulation<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
+__device__ void CUDABackendImpl::calculate_projection(
+    CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
+    const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
     std::uint64_t step_n)
 {
-//    SPDLOG_TRACE("Calculate resource-based STDP-compatible BLIFAT population {}.", std::string(population.get_uid()));
-    return std::nullopt;
-}*/
+    constexpr size_t spike_message_index = boost::mp11::mp_find(cuda::MessageVariant, cuda::SpikeMessage);
+    for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
+    {
+        if (message_var.index() != spike_message_index) continue;
+        SpikeMessage &message = ::cuda::std::get<SpikeMessage>()
+        const auto &message_data = message.neuron_indexes_;
+        for (size_t i = 0; i < message_data.size(); ++i)
+        {
+            const auto &spiked_neuron_index = message_data[i];
+            for (size_t synapse_index = 0; synapse_index < projection.synapses_.size(); ++synapse_index)
+            {
+                CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse synapse =
+                        projection.synapses_[synapse_index];
+                if (thrust::get<core::source_neuron_id>(synapse) != spiked_neuron_index) continue;
+                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
+
+                // The message is sent on step N - 1, received on step N. Step 0 delay 1 means the message is sent on 0.
+                size_t future_step = synapse_params.delay_ + step_n - 1;
+                knp::backends::gpu::cuda::SynapticImpact impact{
+                        synapse_index, synapse_params.weight_, synapse_params.output_type_,
+                        static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
+                        static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
+
+                // ::cuda::std::find_if() is not implemented yet.
+                auto iter = projection.messages_.begin();
+                // TODO: Easy to parallelize
+                for (; iter != projection.messages_.end(); ++iter)
+                {
+                    if (iter->first == future_step) break;
+                }
+
+                if (iter != projection.messages_.end())
+                {
+                    iter->second.impacts_.push_back(impact);
+                }
+                else
+                {
+                    cuda::SynapticImpactMessage message_out{
+                            {projection.uid_, future_step},
+                            projection.presynaptic_uid_,
+                            projection.postsynaptic_uid_,
+                            is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>(),
+                            {impact}};
+
+                    projection.messages_.push_back(std::make_pair(future_step, message_out));
+                }
+            }
+        }
+    }
+}
 
 
 __device__ void CUDABackendImpl::calculate_projection(
-    CUDAProjection<knp::synapse_traits::DeltaSynapse> &projection,
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+    CUDAProjection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
+    const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
     std::uint64_t step_n)
 {
+    //SPDLOG_TRACE("Calculate AdditiveSTDPDelta synapse projection {}.", std::string(projection.get_uid()));
+}
+
+
+__device__ void CUDABackendImpl::calculate_projection(
+    CUDAProjection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
+    const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
+    std::uint64_t step_n)
+{
+//    SPDLOG_TRACE("Calculate STDPSynapticResource synapse projection {}.", std::string(projection.get_uid()));
+    // WeightUpdateSTDP<SynapseType>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
     // Run:
     // knp::backends::cpu::calculate_delta_synapse_projection(
     //    projection, get_message_endpoint(), message_queue, get_step());
@@ -376,21 +462,9 @@ __device__ void CUDABackendImpl::calculate_projection(
     // using SynapseType = typename ProjectionType::ProjectionSynapseType;
     // WeightUpdateSTDP<SynapseType>::init_projection(projection, messages, step_n);
 
-    for (const knp::backends::gpu::cuda::SpikeMessage message : messages)
-    {
-        const auto &message_data = message.neuron_indexes_;
-        for (size_t i = 0; i < message_data.size(); ++i)
-        {
-            const auto &spiked_neuron_index = message_data[i];
-
-            for (size_t synapse_index = 0; synapse_index < projection.synapses_.size(); ++synapse_index)
-            {
-                CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse synapse =
-                    projection.synapses_[synapse_index];
-                if (thrust::get<core::source_neuron_id>(synapse) != spiked_neuron_index) continue;
-
                 // WeightUpdateSTDP<SynapseType>::init_synapse(std::get<core::synapse_data>(synapse), step_n);
-                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
+//                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
+/*                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
 
                 // The message is sent on step N - 1, received on step N.
                 size_t future_step = synapse_params.delay_ + step_n - 1;
@@ -421,10 +495,10 @@ __device__ void CUDABackendImpl::calculate_projection(
 
                     projection.messages_.push_back(std::make_pair(future_step, message_out));
 */
-                }
-            }
-        }
-    }
+//                }
+//            }
+//        }
+//    }
 
 /*
     // WeightUpdateSTDP<SynapseType>::modify_weights(projection);
@@ -438,24 +512,6 @@ __device__ void CUDABackendImpl::calculate_projection(
         future_messages.erase(out_iter);
     }
 */
-}
-
-
-__device__ void CUDABackendImpl::calculate_projection(
-    CUDAProjection<knp::synapse_traits::AdditiveSTDPDeltaSynapse> &projection,
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
-    std::uint64_t step_n)
-{
-    //SPDLOG_TRACE("Calculate AdditiveSTDPDelta synapse projection {}.", std::string(projection.get_uid()));
-}
-
-
-__device__ void CUDABackendImpl::calculate_projection(
-    CUDAProjection<knp::synapse_traits::SynapticResourceSTDPDeltaSynapse> &projection,
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SpikeMessage> &messages,
-    std::uint64_t step_n)
-{
-//    SPDLOG_TRACE("Calculate STDPSynapticResource synapse projection {}.", std::string(projection.get_uid()));
 }
 
 

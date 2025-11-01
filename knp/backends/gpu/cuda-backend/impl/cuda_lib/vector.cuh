@@ -100,6 +100,8 @@ public:
         }
     }
 
+    // TODO: Make a cheap move from gpu to cpu and back.
+
     __host__ __device__ explicit CUDAVector(size_type size = 0) : capacity_(size), size_(size), data_(nullptr)
     {
         #ifdef __CUDA_ARCH__
