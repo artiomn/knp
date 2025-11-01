@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 @file cccc.py
 @brief Wrapper script for CCCC.

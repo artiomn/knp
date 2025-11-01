@@ -49,12 +49,10 @@
 // "Get parameters of the specific neuron in the population.")
 // py::class_<nt::neuron_parameters<nt::neuron_type>>(BOOST_PP_STRINGIZE(BOOST_PP_CAT(neuron_type, parameters)));
 
-
-// py::implicitly_convertible<nt::neuron_parameters<nt::neuron_type>, py::class_<nt::neuron_type>>();
-
 namespace nt = knp::neuron_traits;
 
 #    define INSTANCE_PY_POPULATIONS(n, template_for_instance, neuron_type)                                             \
+        detail::register_direct_converter<nt::neuron_parameters<knp::neuron_traits::neuron_type>>();                   \
         py::implicitly_convertible<core::Population<nt::neuron_type>, core::AllPopulationsVariant>();                  \
         py::class_<core::Population<nt::neuron_type>>(                                                                 \
             BOOST_PP_STRINGIZE(BOOST_PP_CAT(neuron_type, Population)),                                                 \

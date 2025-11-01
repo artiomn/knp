@@ -48,6 +48,7 @@ struct PopulationGeneratorProxy
         {
             return std::nullopt;
         }
+
         return py::extract<ElemParametersType>(res);
     }
 

@@ -69,12 +69,14 @@ py::class_<core::Synapse>(
                     "STDPAndSpike",
                     SharedSynapseParametersT<core::synapse_traits::STDP<Rule, SynapseT>>::ProcessingType::1);
 */
-//py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();
+
+// py::class_<typename core::Projection<st::synapse_type>::Synapse>(
+//    BOOST_PP_STRINGIZE(BOOST_PP_CAT(synapse_type, Parameters)));
 
 #    define INSTANCE_PY_PROJECTIONS(n, template_for_instance, synapse_type)                                            \
+        detail::register_direct_converter<st::synapse_parameters<knp::synapse_traits::synapse_type>>();                \
         py::implicitly_convertible<core::Projection<st::synapse_type>, core::AllProjectionsVariant>();                 \
-        py::class_<typename core::Projection<st::synapse_type>::Synapse>(                                              \
-            BOOST_PP_STRINGIZE(BOOST_PP_CAT(synapse_type, Parameters)));                                               \
+        py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();                                    \
                                                                                                                        \
         py::class_<core::Projection<st::synapse_type>>(                                                                \
             BOOST_PP_STRINGIZE(                                                                                        \

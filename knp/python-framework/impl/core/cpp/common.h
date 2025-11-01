@@ -56,6 +56,7 @@
 #include <boost/python.hpp>
 #include <boost/python/implicit.hpp>
 #include <boost/python/iterator.hpp>
+#include <boost/python/object/class_metadata.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 
@@ -64,6 +65,18 @@ namespace core = knp::core;
 
 namespace detail
 {
+
+template <typename T>
+void register_direct_converter()
+{
+    // Need to register converter.
+    // Without this extract from the different module can't convert Python object to C++ object.
+    py::converter::registry::insert(
+        [](PyObject *p) { return static_cast<void *>(p); }, py::type_id<T>(),
+        &py::converter::registered_pytype_direct<T>::get_pytype);
+}
+
+
 template <typename F>
 struct function_traits : public function_traits<decltype(&F::operator())>
 {
