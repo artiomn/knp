@@ -98,7 +98,7 @@ constexpr bool is_forcing()
 
 
 template <>
-constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
+constexpr  bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 {
     return true;
 }
