@@ -267,12 +267,12 @@ public:
      */
     static __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
+        const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
     static __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> calculate_population(
         CUDAPopulation<knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron> &population,
-        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
+        knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
     /**

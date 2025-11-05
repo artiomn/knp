@@ -95,7 +95,12 @@ device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorDa
 //                                             cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
 //                                             std::uint64_t step)
 
-__global__ void calculate_populations_kernel(typename cuda::CUDABackendImpl::PopulationContainer &populations,
+//__global__ void calculate_populations_kernel(typename cuda::CUDABackendImpl::PopulationContainer &populations,
+//                                             std::uint64_t step)
+
+__global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants *populations, size_t num_populations,
+                                             const cuda::MessageVariant *messages, size_t messages_size,
+                                             const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
                                              std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
@@ -112,6 +117,22 @@ __global__ void calculate_populations_kernel(typename cuda::CUDABackendImpl::Pop
                 auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
             },
             population);*/
+
+    size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
+    CUDABackendImpl::PopulationVariants &population = populations[thread_index];
+    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> new_messages(indices_size);
+
+    for (size_t n = 0; n < indices_size; ++n)
+    {
+        uint64_t message_index = indices[thread_index][n];
+        if (message_index >= messages_size) continue;
+        new_messages[n] = messages[message_index];
+    }
+
+    ::cuda::std::visit([&new_messages, step](auto &pop)
+    {
+        CUDABackendImpl::calculate_population(pop, new_messages, step);
+    }, population);
 }
 
 
@@ -119,8 +140,22 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
     // Calculate projections.
+    device_lib::CUDAVector<cuda::UID> population_uids = get_uids(device_populations_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
-    calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_, step);
+
+    device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>> population_messages(device_populations_.size());
+
+    for (size_t i = 0; i < device_populations_.size(); ++i)
+    {
+        const device_lib::CUDAVector<uint64_t> message_ids = device_message_bus_.unload_messages<SynapticImpactMessage>(
+                population_uids.copy_at(i));
+        gpu_insert(message_ids, population_messages.data() + i);
+    }
+    calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_.data(), device_populations_.size(),
+                                                              device_message_bus_.all_messages().data(),
+                                                              device_message_bus_.all_messages().size(),
+                                                              population_messages.data(), population_messages.size(),
+                                                              step);
     cudaDeviceSynchronize();
 }
 
@@ -141,6 +176,7 @@ __global__ void calculate_projections_kernel(CUDABackendImpl::ProjectionVariants
         if (message_index >= messages_size) continue;
         msgs[n] = messages[message_index];
     }
+
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
         CUDABackendImpl::calculate_projection(proj, msgs, step);
@@ -227,9 +263,11 @@ void CUDABackendImpl::_init()
 
 __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABackendImpl::calculate_population(
     CUDAPopulation<knp::neuron_traits::BLIFATNeuron> &population,
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> &messages,
+    const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
     std::uint64_t step_n)
 {
+    constexpr size_t spike_message_index = boost::mp11::mp_find<cuda::MessageVariant, cuda::SynapticImpactMessage>();
+
     // TODO rework
     for (size_t i = 0; i < population.neurons_.size(); ++i)
     {
@@ -262,8 +300,11 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
     }
 
     // process_inputs(population, messages);
-    for (const cuda::SynapticImpactMessage &message : messages)
+    for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
     {
+        if (message_var.index() != spike_message_index) continue;
+        const SynapticImpactMessage &message = ::cuda::std::get<SynapticImpactMessage>(message_var);
+
         for (size_t i = 0; i < message.impacts_.size(); ++i)
         {
             const auto &impact = message.impacts_[i];
