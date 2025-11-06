@@ -77,6 +77,10 @@ struct CUDAPopulation
      * @brief Neurons.
      */
     cuda::device_lib::CUDAVector<NeuronParameters> neurons_;
+    /**
+     * @brief output messages buffer.
+     */
+    cuda::device_lib::CUDAVector<cuda::MessageVariant> messages_;
 };
 
 } // namespace knp::backends::gpu::cuda

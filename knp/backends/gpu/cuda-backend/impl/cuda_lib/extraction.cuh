@@ -10,6 +10,7 @@
  */
 namespace knp::backends::gpu::cuda
 {
+// TODO Add move extraction and insertion
 template<class T>
 __host__ T gpu_extract(const T* gpu_val)
 {

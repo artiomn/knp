@@ -111,6 +111,12 @@ public:
     __host__ __device__ void send_message(const cuda::MessageVariant &message);
 
     /**
+     * @brief Send a batch of messages from a gpu pointer to message vector.
+     * @param vec gpu pointer to message vector.
+     */
+    __host__ void send_message_gpu_batch(const device_lib::CUDAVector<cuda::MessageVariant> &vec);
+
+    /**
      * @brief Delete all messages inside the bus.
      */
     __host__ void clear() { messages_to_route_.clear(); }

@@ -110,20 +110,12 @@ void CUDABackend::_step()
 
     auto step = get_step();
 
-    get_message_bus().route_messages();
-    get_message_endpoint().receive_all_messages();
     // Calculate populations. This is the same as inference.
     impl_->calculate_populations(step);
-
-    // Continue inference.
-    get_message_bus().route_messages();
-    get_message_endpoint().receive_all_messages();
+    // impl_->route_population_messages(step);  // this is a part of calculate_populations
     // Calculate projections.
     impl_->calculate_projections(step);
-
-    get_message_bus().route_messages();
-    get_message_endpoint().receive_all_messages();
-
+    impl_->route_projection_messages(step);
     step = gad_step();
     // Need to suppress "Unused variable" warning.
     (void)step;

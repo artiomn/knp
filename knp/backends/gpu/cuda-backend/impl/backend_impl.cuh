@@ -233,7 +233,7 @@ public:
     /**
      * @brief Stop training by locking all projections.
      */
-    __host__ __device__ void stop_learning()
+    __host__ void stop_learning()
     {
         for (auto &proj : device_projections_) ::cuda::std::visit([](auto &entity) { entity.lock_weights(); }, proj);
     }
@@ -241,7 +241,7 @@ public:
     /**
      * @brief Resume training by unlocking all projections.
      */
-    __host__ __device__ void start_learning()
+    __host__ void start_learning()
     {
         /**
          * @todo Probably only need to use `start_learning` for some of projections: the ones that were locked with
@@ -250,12 +250,16 @@ public:
         for (auto &proj : device_projections_) ::cuda::std::visit([](auto &entity) { entity.unlock_weights(); }, proj);
     }
 
+    // __host__ uint64_t route_population_messages(uint64_t step);
+
+    __host__ uint64_t route_projection_messages(uint64_t step);
+
+
     // [[nodiscard]] DataRanges get_network_data() const { return {}; }
 
 public:
     __host__ void calculate_populations(std::uint64_t step);
     __host__ void calculate_projections(std::uint64_t step);
-
     __host__ knp::backends::gpu::cuda::CUDAMessageBus &get_message_bus() { return device_message_bus_; }
 
 public:

@@ -45,27 +45,31 @@
 
 namespace knp::backends::gpu::cuda
 {
-
 REGISTER_CUDA_VECTOR_TYPE(cuda::MessageVariant);
+
 REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
+
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
 
 // helper type for the visitor.
 template<class... Ts>
-struct overloaded : Ts... { using Ts::operator()...; };
+struct overloaded : Ts ...
+{
+    using Ts::operator()...;
+};
 // explicit deduction guide.
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 
-template <class ProjectionType>
+template<class ProjectionType>
 __host__ __device__ inline bool is_forcing()
 {
     return false;
 }
 
 
-template <>
+template<>
 __host__ __device__ inline bool is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>()
 {
     return true;
@@ -73,7 +77,7 @@ __host__ __device__ inline bool is_forcing<cuda::CUDAProjection<synapse_traits::
 
 
 template<class T>
-__global__ void get_uids_kernel(const T* data, size_t size, cuda::UID *result)
+__global__ void get_uids_kernel(const T *data, size_t size, cuda::UID *result)
 {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= size) return;
@@ -90,35 +94,16 @@ device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorDa
     return result;
 }
 
-//__global__ void calculate_projections_kernel(cuda::ProjectionVariants *projections, size_t num_projections,
-//                                             cuda::MessageVariant *messages, size_t messages_size,
-//                                             cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
-//                                             std::uint64_t step)
-
-//__global__ void calculate_populations_kernel(typename cuda::CUDABackendImpl::PopulationContainer &populations,
-//                                             std::uint64_t step)
 
 __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants *populations, size_t num_populations,
                                              const cuda::MessageVariant *messages, size_t messages_size,
                                              const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
+                                             const cuda::device_lib::CUDAVector<cuda::MessageVariant> *out_messages,
                                              std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
-//                knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
-//                auto arg = ::std::get<CUDAPopulation<knp::neuron_traits::BLIFATNeuron>>(population);
-//                auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
-/*        ::cuda::std::visit(
-            [step](auto &arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-
-                knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::SynapticImpactMessage> messages;
-                // TODO: get those messages or make them a parameter
-                auto message_opt = cuda::CUDABackendImpl::calculate_population(arg, messages, step);
-            },
-            population);*/
-
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (thread_index >= num_populations) return;
     CUDABackendImpl::PopulationVariants &population = populations[thread_index];
     knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> new_messages(indices_size);
 
@@ -129,10 +114,11 @@ __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants
         new_messages[n] = messages[message_index];
     }
 
-    ::cuda::std::visit([&new_messages, step](auto &pop)
+    auto message = ::cuda::std::visit([&new_messages, step](auto &pop)
     {
-        CUDABackendImpl::calculate_population(pop, new_messages, step);
+        return CUDABackendImpl::calculate_population(pop, new_messages, step);
     }, population);
+    if (message) out_messages[i] = message.value();
 }
 
 
@@ -140,6 +126,7 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
     // Calculate projections.
+    using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
     device_lib::CUDAVector<cuda::UID> population_uids = get_uids(device_populations_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
 
@@ -151,20 +138,27 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
                 population_uids.copy_at(i));
         gpu_insert(message_ids, population_messages.data() + i);
     }
+    MessageVector out_messages_cpu(device_populations.size());
+    MessageVector *out_messages_gpu;
+    cudaMalloc(&out_messages_gpu, sizeof(MessageVector));
+    gpu_insert(out_messages_cpu, out_messages_gpu);
     calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_.data(), device_populations_.size(),
                                                               device_message_bus_.all_messages().data(),
                                                               device_message_bus_.all_messages().size(),
                                                               population_messages.data(), population_messages.size(),
-                                                              step);
+                                                              out_messages_gpu, step);
     cudaDeviceSynchronize();
+    out_messages_cpu = gpu_extract(out_messages_gpu);
+    cudaFree(out_messages_gpu);
+    message_bus_.send_message_gpu_batch(out_messages_cpu);
 }
 
 
-__global__ void calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, size_t num_projections,
-                                             const cuda::MessageVariant *messages, size_t messages_size,
-                                             const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
-                                             std::uint64_t step)
-{
+__global__ void
+calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, size_t num_projections,
+                             const cuda::MessageVariant *messages, size_t messages_size,
+                             const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
+                             std::uint64_t step) {
     // Calculate projections.
     // using namespace ::cuda::std::placeholders;
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -176,7 +170,6 @@ __global__ void calculate_projections_kernel(CUDABackendImpl::ProjectionVariants
         if (message_index >= messages_size) continue;
         msgs[n] = messages[message_index];
     }
-
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
         CUDABackendImpl::calculate_projection(proj, msgs, step);
@@ -184,8 +177,8 @@ __global__ void calculate_projections_kernel(CUDABackendImpl::ProjectionVariants
 }
 
 
-void CUDABackendImpl::calculate_projections(std::uint64_t step)
-{
+
+void CUDABackendImpl::calculate_projections(std::uint64_t step) {
     // Calculate projections.
     device_lib::CUDAVector<cuda::UID> projection_uids = get_uids(device_projections_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
@@ -196,17 +189,18 @@ void CUDABackendImpl::calculate_projections(std::uint64_t step)
                 projection_uids.copy_at(i));
         gpu_insert(message_ids, projection_messages.data() + i);
     }
-    calculate_projections_kernel<<<num_blocks, num_threads>>>(device_projections_.data(), device_projections_.size(),
+    calculate_projections_kernel<<<num_blocks, num_threads>>>(device_projections_.data(),
+                                                              device_projections_.size(),
                                                               device_message_bus_.all_messages().data(),
                                                               device_message_bus_.all_messages().size(),
-                                                              projection_messages.data(), projection_messages.size(),
+                                                              projection_messages.data(),
+                                                              projection_messages.size(),
                                                               step);
     cudaDeviceSynchronize();
 }
 
 
-void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::PopulationContainer &populations)
-{
+void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::PopulationContainer &populations) {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
     device_populations_.clear();
@@ -215,21 +209,19 @@ void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::Po
     for (const auto &population : populations)
     {
         ::std::visit(
-            [this](auto &arg)
-            {
-                using CPUPopulationType = std::decay_t<decltype(arg)>;
+                [this](auto &arg) {
+                    using CPUPopulationType = std::decay_t<decltype(arg)>;
 
-                auto pop = CUDAPopulation<typename CPUPopulationType::PopulationNeuronType>(arg);
-                device_populations_.push_back(pop);
-            },
-            population);
+                    auto pop = CUDAPopulation<typename CPUPopulationType::PopulationNeuronType>(arg);
+                    device_populations_.push_back(pop);
+                },
+                population);
     }
     SPDLOG_DEBUG("All populations loaded.");
 }
 
 
-void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::ProjectionContainer &projections)
-{
+void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::ProjectionContainer &projections) {
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
 
     device_projections_.clear();
@@ -238,22 +230,21 @@ void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::Pr
     for (const auto &projection : projections)
     {
         ::std::visit(
-            [this](auto &arg)
-            {
-                using CPUProjectionType = std::decay_t<decltype(arg)>;
-                auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>(arg);
+                [this](auto &arg)
+                {
+                    using CPUProjectionType = std::decay_t<decltype(arg)>;
+                    auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>(arg);
 
-                device_projections_.push_back(proj);
-            },
-            projection);
+                    device_projections_.push_back(proj);
+                },
+                projection);
     }
 
     SPDLOG_DEBUG("All projections loaded.");
 }
 
 
-void CUDABackendImpl::_init()
-{
+void CUDABackendImpl::_init() {
 //    SPDLOG_DEBUG("Initializing CUDABackendImpl backend...");
 
     // knp::backends::cpu::init(projections_, get_message_endpoint());
@@ -266,14 +257,14 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
     const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
     std::uint64_t step_n)
 {
-    constexpr size_t spike_message_index = boost::mp11::mp_find<cuda::MessageVariant, cuda::SynapticImpactMessage>();
+    constexpr
+    size_t spike_message_index = boost::mp11::mp_find<cuda::MessageVariant, cuda::SynapticImpactMessage>();
 
     // TODO rework
     for (size_t i = 0; i < population.neurons_.size(); ++i)
     {
-        neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron> neuron = population.neurons_[i];
+        neuron_traits::neuron_parameters <neuron_traits::BLIFATNeuron> neuron = population.neurons_[i];
         ++neuron.n_time_steps_since_last_firing_;
-
         neuron.dynamic_threshold_ *= neuron.threshold_decay_;
         neuron.postsynaptic_trace_ *= neuron.postsynaptic_trace_decay_;
         neuron.inhibitory_conductance_ *= neuron.inhibitory_conductance_decay_;
@@ -300,17 +291,14 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
     }
 
     // process_inputs(population, messages);
-    for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
+    for (const cuda::SynapticImpactMessage &message : messages)
     {
-        if (message_var.index() != spike_message_index) continue;
-        const SynapticImpactMessage &message = ::cuda::std::get<SynapticImpactMessage>(message_var);
-
         for (size_t i = 0; i < message.impacts_.size(); ++i)
         {
             const auto &impact = message.impacts_[i];
 
-            neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron> neuron =
-                population.neurons_[impact.postsynaptic_neuron_index_];
+            neuron_traits::neuron_parameters <neuron_traits::BLIFATNeuron> neuron =
+                    population.neurons_[impact.postsynaptic_neuron_index_];
 
             // impact_neuron<BlifatLikeNeuron>(neuron, impact.synapse_type_, impact.impact_value_);
             switch (impact.synapse_type_)
@@ -349,7 +337,7 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
     for (size_t index = 0; index < population.neurons_.size(); ++index)
     {
         bool spike = false;
-        neuron_traits::neuron_parameters<neuron_traits::BLIFATNeuron> neuron = population.neurons_[index];
+        neuron_traits::neuron_parameters <neuron_traits::BLIFATNeuron> neuron = population.neurons_[index];
 
         if (neuron.total_blocking_period_ <= 0)
         {
@@ -361,62 +349,138 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
             neuron.total_blocking_period_ += was_negative;
             // If it is now zero, but was negative before, increase it to max, else leave it as is.
             neuron.total_blocking_period_ +=
-                std::numeric_limits<int64_t>::max() * ((neuron.total_blocking_period_ == 0) && was_negative);
+                    std::numeric_limits<int64_t>::max() * ((neuron.total_blocking_period_ == 0) && was_negative);
         }
         else
         {
             neuron.total_blocking_period_ -= 1;
         }
 
-        if (neuron.inhibitory_conductance_ < 1.0)
+        // process_inputs(population, messages);
+        for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
         {
-            neuron.potential_ -=
-                (neuron.potential_ - neuron.reversal_inhibitory_potential_) * neuron.inhibitory_conductance_;
-        }
-        else
-        {
-            neuron.potential_ = neuron.reversal_inhibitory_potential_;
-        }
+            if (message_var.index() != spike_message_index) continue;
+            const SynapticImpactMessage &message = ::cuda::std::get<SynapticImpactMessage>(message_var);
 
-        if ((neuron.n_time_steps_since_last_firing_ > neuron.absolute_refractory_period_) &&
-            (neuron.potential_ >= neuron.activation_threshold_ + neuron.dynamic_threshold_))
-        {
-            // Spike.
-            neuron.dynamic_threshold_ += neuron.threshold_increment_;
-            neuron.postsynaptic_trace_ += neuron.postsynaptic_trace_increment_;
+            for (size_t i = 0; i < message.impacts_.size(); ++i)
+            {
+                const auto &impact = message.impacts_[i];
+                if (neuron.inhibitory_conductance_ < 1.0)
+                {
+                    neuron.potential_ -=
+                            (neuron.potential_ - neuron.reversal_inhibitory_potential_) *
+                            neuron.inhibitory_conductance_;
+                }
+                else
+                {
+                    neuron.potential_ = neuron.reversal_inhibitory_potential_;
+                }
 
-            neuron.potential_ = neuron.potential_reset_value_;
-            neuron.bursting_phase_ = neuron.bursting_period_;
-            neuron.n_time_steps_since_last_firing_ = 0;
-            spike = true;
+                if ((neuron.n_time_steps_since_last_firing_ > neuron.absolute_refractory_period_) &&
+                    (neuron.potential_ >= neuron.activation_threshold_ + neuron.dynamic_threshold_))
+                {
+                    // Spike.
+                    neuron.dynamic_threshold_ += neuron.threshold_increment_;
+                    neuron.postsynaptic_trace_ += neuron.postsynaptic_trace_increment_;
+
+                    neuron.potential_ = neuron.potential_reset_value_;
+                    neuron.bursting_phase_ = neuron.bursting_period_;
+                    neuron.n_time_steps_since_last_firing_ = 0;
+                    spike = true;
+                }
+
+                if (neuron.potential_ < neuron.min_potential_)
+                {
+                    neuron.potential_ = neuron.min_potential_;
+                }
+
+                if (spike)
+                {
+                    neuron_indexes.push_back(index);
+                }
+
+                population.neurons_[index] = neuron;
+            }
+
+            if (!neuron_indexes.empty())
+            {
+                cuda::SpikeMessage res_message
+                        {
+                                .header_ = {.sender_uid_ = population.uid_, step_n},
+                                .neuron_indexes_ = neuron_indexes
+                        };
+
+                // device_message_bus_.send_message(res_message);
+                return res_message;
+            }
+
+            return {};
         }
-
-        if (neuron.potential_ < neuron.min_potential_)
-        {
-            neuron.potential_ = neuron.min_potential_;
-        }
-
-        if (spike)
-        {
-            neuron_indexes.push_back(index);
-        }
-
-        population.neurons_[index] = neuron;
     }
+}
 
-    if (!neuron_indexes.empty())
+
+__device__ int64_t find_projection_messages(const CUDABackendImpl::ProjectionVariants *projection, uint64_t step)
+{
+    ::cuda::std::visit([step](const auto &proj))
     {
-        cuda::SpikeMessage res_message
+        // TODO Parallelize
+        for (uint64_t i = 0; i < projection.messages_.size(); ++i)
         {
-            .header_ = { .sender_uid_ = population.uid_, step_n},
-            .neuron_indexes_ = neuron_indexes
-        };
-
-//        device_message_bus_.send_message(res_message);
-        return res_message;
+            if (projection.messages_[i]->first == future_step) return i;
+        }
     }
+    return -1;
+}
 
-    return {};
+
+__global__ void extract_projection_message(CUDABackendImpl::ProjectionVariants *projection, uint64_t step,
+                                           device_lib::CUDAVector<MessageVariant> *messages_out)
+{
+    new (messages_out) device_lib::CUDAVector<MessageVariant>(0);
+    ::cuda::std::visit([](auto &proj)
+        {
+            for (uint64_t i = 0; i < projection.messages_.size(); ++i)
+            {
+                if (projection.messages_[i]->first == future_step)
+                {
+                    messages_out->push_back(::cuda::std::move(projection.messages_[i]->second));
+                    auto iter = projection.messages_.data() + i;
+                    projection.messages_.erase(iter, iter + 1);
+                }
+            }
+        }, *projection);
+}
+
+
+
+
+//__host__ uint64_t CUDABackendImpl::route_population_messages(uint64_t step)
+//{
+//    using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
+//    MessageVector *messages;
+//    for (size_t i = 0; i < device_projections_.size(); ++i)
+//    {
+//        cudaMalloc(&messages, sizeof(MessageVector));
+//        extract_population_message<<<1, 1>>>(device_populations_.data() + i, step, messages);
+//        MessageVector msg_vec = gpu_extract<MessageVector>(messages);
+//        message_bus_.send_message_gpu_batch(msg_vec);
+//    }
+//}
+
+
+__host__ uint64_t CUDABackendImpl::route_projection_messages(uint64_t step)
+{
+    using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
+    MessageVector *messages;
+    for (size_t i = 0; i < device_projections_.size(); ++i)
+    {
+        cudaMalloc(&messages, sizeof(MessageVector));
+        extract_projection_message<<<1, 1>>>(device_projections_.data() + i, step, messages);
+        MessageVector msg_vec = gpu_extract<MessageVector>(messages);
+        message_bus_.send_message_gpu_batch(msg_vec);
+    }
+    // TODO: extract messages from host bus: find all uids, extract messages from endpoint for each uid
 }
 
 
