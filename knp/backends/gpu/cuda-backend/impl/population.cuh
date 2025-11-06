@@ -26,6 +26,7 @@
 
 #include "cuda_lib/vector.cuh"
 #include "uid.cuh"
+#include "cuda_bus/messaging.cuh"
 
 
 /**

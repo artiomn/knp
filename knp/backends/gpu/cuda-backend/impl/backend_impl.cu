@@ -118,7 +118,8 @@ __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants
     {
         return CUDABackendImpl::calculate_population(pop, new_messages, step);
     }, population);
-    if (message) out_messages[i] = message.value();
+
+    //! if (message) out_messages[step] = message.value();
 }
 
 
@@ -138,7 +139,8 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
                 population_uids.copy_at(i));
         gpu_insert(message_ids, population_messages.data() + i);
     }
-    MessageVector out_messages_cpu(device_populations.size());
+
+    MessageVector out_messages_cpu(device_populations_.size());
     MessageVector *out_messages_gpu;
     cudaMalloc(&out_messages_gpu, sizeof(MessageVector));
     gpu_insert(out_messages_cpu, out_messages_gpu);
@@ -148,9 +150,9 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
                                                               population_messages.data(), population_messages.size(),
                                                               out_messages_gpu, step);
     cudaDeviceSynchronize();
-    out_messages_cpu = gpu_extract(out_messages_gpu);
+    out_messages_cpu = gpu_extract<MessageVector>(out_messages_gpu);
     cudaFree(out_messages_gpu);
-    message_bus_.send_message_gpu_batch(out_messages_cpu);
+    device_message_bus_.send_message_gpu_batch(out_messages_cpu);
 }
 
 
@@ -257,8 +259,8 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
     const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
     std::uint64_t step_n)
 {
-    constexpr
-    size_t spike_message_index = boost::mp11::mp_find<cuda::MessageVariant, cuda::SynapticImpactMessage>();
+    constexpr size_t spike_message_index =
+        boost::mp11::mp_find<cuda::MessageVariant, cuda::SynapticImpactMessage>();
 
     // TODO rework
     for (size_t i = 0; i < population.neurons_.size(); ++i)
@@ -291,8 +293,11 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
     }
 
     // process_inputs(population, messages);
-    for (const cuda::SynapticImpactMessage &message : messages)
+    for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
     {
+        if (message_var.index() != spike_message_index) continue;
+        const SynapticImpactMessage &message = ::cuda::std::get<SynapticImpactMessage>(message_var);
+
         for (size_t i = 0; i < message.impacts_.size(); ++i)
         {
             const auto &impact = message.impacts_[i];
@@ -417,20 +422,25 @@ __device__ ::cuda::std::optional<knp::backends::gpu::cuda::SpikeMessage> CUDABac
             return {};
         }
     }
+
+    return {};
 }
 
 
 __device__ int64_t find_projection_messages(const CUDABackendImpl::ProjectionVariants *projection, uint64_t step)
 {
-    ::cuda::std::visit([step](const auto &proj))
+    auto res = ::cuda::std::visit([step](const auto &proj) -> uint64_t
     {
         // TODO Parallelize
-        for (uint64_t i = 0; i < projection.messages_.size(); ++i)
+        for (uint64_t i = 0; i < proj.messages_.size(); ++i)
         {
-            if (projection.messages_[i]->first == future_step) return i;
+            if (proj.messages_[i].first == step) return i;  //! future_step?
         }
-    }
-    return -1;
+
+        return static_cast<uint64_t>(0u);
+    }, *projection);
+
+    return res;
 }
 
 
@@ -438,15 +448,15 @@ __global__ void extract_projection_message(CUDABackendImpl::ProjectionVariants *
                                            device_lib::CUDAVector<MessageVariant> *messages_out)
 {
     new (messages_out) device_lib::CUDAVector<MessageVariant>(0);
-    ::cuda::std::visit([](auto &proj)
+    ::cuda::std::visit([messages_out, step](auto &proj)
         {
-            for (uint64_t i = 0; i < projection.messages_.size(); ++i)
+            for (uint64_t i = 0; i < proj.messages_.size(); ++i)
             {
-                if (projection.messages_[i]->first == future_step)
+                if (proj.messages_[i].first == step)  //! future_step?
                 {
-                    messages_out->push_back(::cuda::std::move(projection.messages_[i]->second));
-                    auto iter = projection.messages_.data() + i;
-                    projection.messages_.erase(iter, iter + 1);
+                    messages_out->push_back(::cuda::std::move(proj.messages_[i].second));
+                    auto iter = proj.messages_.data() + i;
+                    proj.messages_.erase(iter, iter + 1);
                 }
             }
         }, *projection);
@@ -473,14 +483,17 @@ __host__ uint64_t CUDABackendImpl::route_projection_messages(uint64_t step)
 {
     using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
     MessageVector *messages;
+
     for (size_t i = 0; i < device_projections_.size(); ++i)
     {
         cudaMalloc(&messages, sizeof(MessageVector));
         extract_projection_message<<<1, 1>>>(device_projections_.data() + i, step, messages);
         MessageVector msg_vec = gpu_extract<MessageVector>(messages);
-        message_bus_.send_message_gpu_batch(msg_vec);
+        device_message_bus_.send_message_gpu_batch(msg_vec);
     }
     // TODO: extract messages from host bus: find all uids, extract messages from endpoint for each uid
+
+    return 0;
 }
 
 
