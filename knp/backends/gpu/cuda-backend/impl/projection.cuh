@@ -63,7 +63,7 @@ struct CUDAProjection
 
     __host__ __device__ CUDAProjection()
     #if !defined(__CUDA_ARCH__)
-             :  is_locked_(thrust::device_malloc<bool>(1))
+             :  is_locked_(true)
     #endif
     {}
 
@@ -75,17 +75,23 @@ struct CUDAProjection
         : uid_(to_gpu_uid(projection.get_uid())),
           presynaptic_uid_(to_gpu_uid(projection.get_presynaptic())),
           postsynaptic_uid_(to_gpu_uid(projection.get_postsynaptic())),
-          is_locked_(thrust::device_malloc<bool>(1))
+          is_locked_(true)
     {
-        *is_locked_ = projection.is_locked();
+        is_locked_ = projection.is_locked();
     }
     /**
      * @brief Destructor.
      */
     __host__ __device__ ~CUDAProjection() = default;
 
-    __host__ __device__ void lock_weights() { *is_locked_ = true; }
-    __host__ __device__ void unlock_weights() { *is_locked_ = false; }
+    __host__ __device__ void lock_weights() { is_locked_ = true; }
+    __host__ __device__ void unlock_weights() { is_locked_ = false; }
+
+    __host__ __device__ void actualize()
+    {
+        synapses_.actualize();
+        messages_.actualize();
+    };
 
     /**
      * @brief UID.
@@ -105,7 +111,7 @@ struct CUDAProjection
     /**
      * @brief Return `false` if the weight change for synapses is not locked.
      */
-    thrust::device_ptr<bool> is_locked_;
+    bool is_locked_;
 
     /**
      * @brief Container of synapse parameters.

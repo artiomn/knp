@@ -32,4 +32,12 @@ namespace knp::backends::gpu::cuda::device_lib
 
 __global__ void has_sender_kernel(UID uid, const UID *senders, size_t num_senders, int *result);
 
+
+template <class Variant, class Instance>
+__global__ void make_variant_kernel(Variant *result, Instance *source)
+{
+    new (result) Variant(*source);
+}
+
+
 } // namespace knp::backends::gpu::cuda::device_lib

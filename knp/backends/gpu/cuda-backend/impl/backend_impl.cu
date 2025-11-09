@@ -46,10 +46,10 @@
 namespace knp::backends::gpu::cuda
 {
 REGISTER_CUDA_VECTOR_TYPE(cuda::MessageVariant);
-
 REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
-
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
+REGISTER_CUDA_VECTOR_NO_EXTRACT(CUDABackendImpl::ProjectionVariants);
+REGISTER_CUDA_VECTOR_NO_EXTRACT(CUDABackendImpl::PopulationVariants);
 
 // helper type for the visitor.
 template<class... Ts>
@@ -66,6 +66,165 @@ template<class ProjectionType>
 __host__ __device__ inline bool is_forcing()
 {
     return false;
+}
+
+
+template <>
+CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
+        const CUDABackendImpl::PopulationVariants *message);
+
+template <>
+void gpu_insert<CUDABackendImpl::PopulationVariants>(const CUDABackendImpl::PopulationVariants &cpu_source,
+                                                     CUDABackendImpl::PopulationVariants *gpu_target);
+
+template <>
+CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
+        const CUDABackendImpl::ProjectionVariants *message);
+
+template <>
+void gpu_insert<CUDABackendImpl::ProjectionVariants>(const CUDABackendImpl::ProjectionVariants &cpu_source,
+                                                     CUDABackendImpl::ProjectionVariants *gpu_target);
+
+namespace detail
+{
+    template <class Variant, class Instance>
+    __global__ void make_variant_kernel(Variant *result, Instance *source)
+    {
+        new (result) Variant(*source);
+    }
+}
+
+
+template<class TypeVariant, size_t index>
+TypeVariant extract_by_index(const void *type_ptr)
+{
+    return gpu_extract<boost::mp11::mp_at_c<TypeVariant, index>>(
+            reinterpret_cast<const boost::mp11::mp_at_c<TypeVariant, index> *>(type_ptr));
+}
+
+
+// TODO: Make a template, it's also used for messages.
+
+__global__ void get_population_kernel(const CUDABackendImpl::PopulationVariants *var, int *type, const void **pop) {
+    int type_val = var->index();
+    static_assert(::cuda::std::variant_size<CUDABackendImpl::PopulationVariants>() == 1, "Add a case statement here!");
+    switch (type_val)
+    {
+        case 0:
+            *pop = ::cuda::std::get_if<0>(var);
+            break;
+        default:
+            *pop = nullptr;
+    }
+    *type = type_val;
+}
+
+
+__global__ void get_projection_kernel(const CUDABackendImpl::ProjectionVariants *var, int *type, const void **proj) {
+    int type_val = var->index();
+    static_assert(::cuda::std::variant_size<CUDABackendImpl::ProjectionVariants>() == 1, "Add a case statement here!");
+    switch (type_val)
+    {
+        case 0:
+            *proj = ::cuda::std::get_if<0>(var);
+            break;
+        default:
+            *proj = nullptr;
+    }
+    *type = type_val;
+}
+
+
+template<>
+CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
+        const CUDABackendImpl::PopulationVariants *population)
+{
+    int *type_gpu;
+    const void **pop_gpu; // This is a gpu pointer to gpu pointer to gpu population.
+    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
+    call_and_check(cudaMalloc(&pop_gpu, sizeof(void *)));
+    get_population_kernel<<<1, 1>>>(population, type_gpu, pop_gpu);
+    int type;
+
+    // This is a gpu pointer to gpu population. &pop_ptr is a cpu pointer to gpu pointer to gpu population.
+    const void *pop_ptr;
+    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
+    call_and_check(cudaMemcpy(&pop_ptr, pop_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
+    call_and_check(cudaFree(type_gpu));
+    call_and_check(cudaFree(pop_gpu));
+    // Here we have a type index and a gpu pointer to population.
+    CUDABackendImpl::PopulationVariants result;
+    // TODO: Remove crunchs.
+    static_assert(::cuda::std::variant_size<CUDABackendImpl::PopulationVariants>() == 1,
+            "Add a case statement here!");
+    switch(type)
+    {
+        case 0: result = extract_by_index<CUDABackendImpl::PopulationVariants, 0>(pop_ptr);
+        // case 1: result = extract_by_index<CUDABackendImpl::PopulationVariants, 1>(pop_ptr);
+    }
+    return result;
+}
+
+
+template<>
+CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
+        const CUDABackendImpl::ProjectionVariants *proj)
+{
+    int *type_gpu;
+    const void **proj_gpu; // This is a gpu pointer to gpu pointer to gpu message.
+    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
+    call_and_check(cudaMalloc(&proj_gpu, sizeof(void *)));
+    get_projection_kernel<<<1, 1>>>(proj, type_gpu, proj_gpu);
+    int type;
+
+    // This is a gpu pointer to gpu message. &msg_ptr is a cpu pointer to gpu pointer to gpu message.
+    const void *proj_ptr;
+    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
+    call_and_check(cudaMemcpy(&proj_ptr, proj_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
+    call_and_check(cudaFree(type_gpu));
+    call_and_check(cudaFree(proj_gpu));
+    // Here we have a type index and a gpu pointer to message.
+    CUDABackendImpl::ProjectionVariants result;
+    // TODO: Remove crunchs.
+    switch(type)
+    {
+        case 0: result = extract_by_index<CUDABackendImpl::ProjectionVariants, 0>(proj_ptr);
+//        case 1: result = extract_by_index<CUDABackendImpl::ProjectionVariants, 1>(proj_ptr);
+//        case 2: result = extract_by_index<CUDABackendImpl::ProjectionVariants, 2>(proj_ptr);
+    }
+    return result;
+}
+
+
+template<>
+void gpu_insert<CUDABackendImpl::PopulationVariants>(const CUDABackendImpl::PopulationVariants &cpu_source,
+                                                     CUDABackendImpl::PopulationVariants *gpu_target)
+{
+    ::cuda::std::visit([gpu_target](const auto &val)
+                       {
+                           using ValueType = std::decay_t<decltype(val)>;
+                           ValueType *buffer;
+                           call_and_check(cudaMalloc(&buffer, sizeof(ValueType)));
+                           gpu_insert(val, buffer);
+                           device_lib::make_variant_kernel<<<1, 1>>>(gpu_target, buffer);
+                           call_and_check(cudaFree(buffer));
+                       }, cpu_source);
+}
+
+
+template<>
+void gpu_insert<CUDABackendImpl::ProjectionVariants>(const CUDABackendImpl::ProjectionVariants &cpu_source,
+                                                     CUDABackendImpl::ProjectionVariants *gpu_target)
+{
+    ::cuda::std::visit([gpu_target](const auto &val)
+                       {
+                           using ValueType = std::decay_t<decltype(val)>;
+                           ValueType *buffer;
+                           call_and_check(cudaMalloc(&buffer, sizeof(ValueType)));
+                           gpu_insert(val, buffer);
+                           device_lib::make_variant_kernel<<<1, 1>>>(gpu_target, buffer);
+                           call_and_check(cudaFree(buffer));
+                       }, cpu_source);
 }
 
 
@@ -152,6 +311,7 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
     cudaDeviceSynchronize();
     out_messages_cpu = gpu_extract<MessageVector>(out_messages_gpu);
     cudaFree(out_messages_gpu);
+    device_message_bus_.clear();
     device_message_bus_.send_message_gpu_batch(out_messages_cpu);
 }
 
@@ -483,6 +643,7 @@ __host__ uint64_t CUDABackendImpl::route_projection_messages(uint64_t step)
 {
     using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
     MessageVector *messages;
+    device_message_bus_.clear();
 
     for (size_t i = 0; i < device_projections_.size(); ++i)
     {

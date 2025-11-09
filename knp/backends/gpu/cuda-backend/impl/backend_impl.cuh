@@ -314,4 +314,21 @@ private:
     knp::backends::gpu::cuda::CUDAMessageBus device_message_bus_;
 };
 
+
+template <>
+CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
+        const CUDABackendImpl::PopulationVariants *message);
+
+template <>
+void gpu_insert<CUDABackendImpl::PopulationVariants>(const CUDABackendImpl::PopulationVariants &cpu_source,
+                                                     CUDABackendImpl::PopulationVariants *gpu_target);
+
+template <>
+CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
+        const CUDABackendImpl::ProjectionVariants *message);
+
+template <>
+void gpu_insert<CUDABackendImpl::ProjectionVariants>(const CUDABackendImpl::ProjectionVariants &cpu_source,
+                                                     CUDABackendImpl::ProjectionVariants *gpu_target);
+
 }  // namespace knp::backends::gpu::cuda

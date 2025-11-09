@@ -70,6 +70,8 @@ struct CUDAPopulation
 
     __host__ __device__ ~CUDAPopulation() = default;
 
+    __host__ __device__ void actualize() { neurons_.actualize(); }
+
     /**
      * @brief UID.
      */
@@ -78,10 +80,6 @@ struct CUDAPopulation
      * @brief Neurons.
      */
     cuda::device_lib::CUDAVector<NeuronParameters> neurons_;
-    /**
-     * @brief output messages buffer.
-     */
-    cuda::device_lib::CUDAVector<cuda::MessageVariant> messages_;
 };
 
 } // namespace knp::backends::gpu::cuda

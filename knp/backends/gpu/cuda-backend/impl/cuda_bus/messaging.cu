@@ -4,6 +4,7 @@
 
 
 #include "messaging.cuh"
+#include "../cuda_lib/kernels.cuh"
 #include "subscription.cuh"
 #include "../cuda_lib/extraction.cuh"
 
@@ -47,23 +48,13 @@ MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message)
     // Here we have a type index and a gpu pointer to message.
     MessageVariant result;
     // TODO: Remove crunchs.
+    static_assert(::cuda::std::variant_size<cuda::MessageVariant>() == 2, "Add a case statement here!");
     switch(type)
     {
         case 0: result = extract_message_by_index<0>(msg_ptr);
         case 1: result = extract_message_by_index<1>(msg_ptr);
     }
     return result;
-}
-
-
-
-namespace detail
-{
-    template <class Variant, class Instance>
-    __global__ void make_variant_kernel(Variant *result, Instance *source)
-    {
-        new (result) Variant(*source);
-    }
 }
 
 
@@ -76,7 +67,7 @@ void gpu_insert<MessageVariant>(const MessageVariant &cpu_source, MessageVariant
         ValueType *buffer;
         call_and_check(cudaMalloc(&buffer, sizeof(ValueType)));
         gpu_insert(val, buffer);
-        detail::make_variant_kernel<<<1, 1>>>(gpu_target, buffer);
+        device_lib::make_variant_kernel<<<1, 1>>>(gpu_target, buffer);
         call_and_check(cudaFree(buffer));
     }, cpu_source);
 }

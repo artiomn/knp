@@ -304,6 +304,7 @@ public:
     // Sets size to 0 without reallocation or changing capacity.
     __host__ __device__ void clear()
     {
+        if (!size_) return;
         #ifdef __CUDA_ARCH__
         for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
         #else
@@ -586,4 +587,28 @@ __host__ device_lib::CUDAVector<T, Allocator> gpu_extract<device_lib::CUDAVector
 
     return result;
 }
+
+
+#define REGISTER_CUDA_VECTOR_NO_EXTRACT(data_type) \
+    template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<data_type, \
+    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type *, size_t); \
+    template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<data_type>( \
+    data_type *, size_t, const data_type *); \
+    template __global__ void knp::backends::gpu::cuda::device_lib::copy_kernel<data_type>(     \
+    data_type *, size_t, const data_type *);                                         \
+    template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(       \
+    data_type *, size_t, data_type*);        \
+    template __global__ void knp::backends::gpu::cuda::device_lib::move_construct_kernel<data_type>( \
+    data_type *, size_t, data_type *);                                          \
+    template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,    \
+    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t)
+
+
+#define REGISTER_CUDA_VECTOR_TYPE(data_type) \
+    REGISTER_CUDA_VECTOR_NO_EXTRACT(data_type); \
+    template __host__ data_type knp::backends::gpu::cuda::gpu_extract<data_type>(const data_type* );       \
+    template __host__ void knp::backends::gpu::cuda::gpu_insert<data_type>(const data_type &, data_type *)
+
+
+
 } // namespace knp::backends::gpu::cuda

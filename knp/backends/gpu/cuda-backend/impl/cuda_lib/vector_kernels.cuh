@@ -114,20 +114,4 @@ __global__ void equal_kernel(T *data_1, const T *data_2, size_t size, bool *equa
         *equal = false; // it's only safe if all threads writing to the same location write the same value as it's here.
 };
 
-
-#define REGISTER_CUDA_VECTOR_TYPE(data_type) \
-    template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<data_type, \
-    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type *, size_t); \
-    template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<data_type>( \
-    data_type *, size_t, const data_type *); \
-    template __global__ void knp::backends::gpu::cuda::device_lib::copy_kernel<data_type>(     \
-    data_type *, size_t, const data_type *);                                         \
-    template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(       \
-    data_type *, size_t, data_type*);        \
-    template __global__ void knp::backends::gpu::cuda::device_lib::move_construct_kernel<data_type>( \
-    data_type *, size_t, data_type *);                                          \
-    template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,    \
-    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t);  \
-    template __host__ data_type knp::backends::gpu::cuda::gpu_extract<data_type>(const data_type* );       \
-    template __host__ void knp::backends::gpu::cuda::gpu_insert<data_type>(const data_type &, data_type *)
 } // namespace knp::backends::gpu::cuda::device_lib
