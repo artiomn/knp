@@ -122,7 +122,7 @@ struct CUDAProjection
      * @brief Messages container.
      */
     // cppcheck-suppress unusedStructMember
-    device_lib::CUDAVector<::cuda::std::pair<uint64_t, cuda::SynapticImpactMessage>> messages_;
+    device_lib::CUDAVector<cuda::SynapticImpactMessage> messages_;
 };
 
 } // namespace knp::backends::gpu::cuda

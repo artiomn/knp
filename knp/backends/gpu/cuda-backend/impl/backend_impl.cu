@@ -45,7 +45,6 @@
 
 namespace knp::backends::gpu::cuda
 {
-REGISTER_CUDA_VECTOR_TYPE(cuda::MessageVariant);
 REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
 REGISTER_CUDA_VECTOR_NO_EXTRACT(CUDABackendImpl::ProjectionVariants);
@@ -594,7 +593,7 @@ __device__ int64_t find_projection_messages(const CUDABackendImpl::ProjectionVar
         // TODO Parallelize
         for (uint64_t i = 0; i < proj.messages_.size(); ++i)
         {
-            if (proj.messages_[i].first == step) return i;  //! future_step?
+            if (proj.messages_[i].header_.send_time_ == step) return i;  //! future_step?
         }
 
         return static_cast<uint64_t>(0u);
@@ -612,9 +611,10 @@ __global__ void extract_projection_message(CUDABackendImpl::ProjectionVariants *
         {
             for (uint64_t i = 0; i < proj.messages_.size(); ++i)
             {
-                if (proj.messages_[i].first == step)  //! future_step?
+                if (proj.messages_[i].header_.send_time_ == step)
                 {
-                    messages_out->push_back(::cuda::std::move(proj.messages_[i].second));
+                    // Sending message
+                    messages_out->push_back(::cuda::std::move(proj.messages_[i]));
                     auto iter = proj.messages_.data() + i;
                     proj.messages_.erase(iter, iter + 1);
                 }
@@ -691,14 +691,14 @@ __device__ void CUDABackendImpl::calculate_projection(
                 // TODO: Easy to parallelize
                 for (; iter != projection.messages_.end(); ++iter)
                 {
-                    if (iter->first == future_step) break;
+                    if (iter->header_.send_time_ == future_step)
+                    {
+                        iter->impacts_.push_back(impact);
+                        break;
+                    }
                 }
 
-                if (iter != projection.messages_.end())
-                {
-                    iter->second.impacts_.push_back(impact);
-                }
-                else
+                if (iter == projection.messages_.end())
                 {
                     device_lib::CUDAVector<cuda::SynapticImpact> impacts(1);
                     impacts[0] = impact;
@@ -708,7 +708,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                             projection.postsynaptic_uid_,
                             ::cuda::std::move(impacts)};
                             message_out.is_forcing_ = is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>();
-                            projection.messages_.push_back(::cuda::std::make_pair(future_step, message_out));
+                            projection.messages_.push_back(message_out);
                 }
             }
         }
@@ -775,7 +775,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                         is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>(),
                         {impact}};
 
-                    projection.messages_.push_back(std::make_pair(future_step, message_out));
+                    projection.messages_.push_back(message_out));
 */
 //                }
 //            }

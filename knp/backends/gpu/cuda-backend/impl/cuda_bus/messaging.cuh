@@ -42,7 +42,6 @@ using AllCudaMessages = boost::mp11::mp_list<ALL_CUDA_MESSAGES>;
 
 using MessageVariant = boost::mp11::mp_rename<AllCudaMessages, ::cuda::std::variant>;
 
-
 __global__ void get_message_kernel(const MessageVariant *var, int *type, const void **msg);
 
 template<class MessageType>
