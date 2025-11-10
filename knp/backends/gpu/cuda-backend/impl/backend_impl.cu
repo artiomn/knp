@@ -47,8 +47,8 @@ namespace knp::backends::gpu::cuda
 {
 REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
-REGISTER_CUDA_VECTOR_NO_EXTRACT(CUDABackendImpl::ProjectionVariants);
-REGISTER_CUDA_VECTOR_NO_EXTRACT(CUDABackendImpl::PopulationVariants);
+REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::ProjectionVariants);
+REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::PopulationVariants);
 
 // helper type for the visitor.
 template<class... Ts>
@@ -247,8 +247,11 @@ template<class VectorData>
 device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorData> &entities)
 {
     device_lib::CUDAVector<cuda::UID> result(entities.size());
-    auto [num_blocks, num_threads] = device_lib::get_blocks_config(entities.size());
-    get_uids_kernel<<<num_blocks, num_threads>>>(entities.data(), entities.size(), result.data());
+    if (entities.size() != 0)
+    {
+        auto [num_blocks, num_threads] = device_lib::get_blocks_config(entities.size());
+        get_uids_kernel<<<num_blocks, num_threads>>>(entities.data(), entities.size(), result.data());
+    }
     return result;
 }
 
@@ -286,6 +289,11 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
     // Calculate populations. This is the same as inference.
     // Calculate projections.
     using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
+    if (!device_populations_.size())
+    {
+        device_message_bus_.clear();
+        return;
+    }
     device_lib::CUDAVector<cuda::UID> population_uids = get_uids(device_populations_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
 
@@ -319,7 +327,8 @@ __global__ void
 calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, size_t num_projections,
                              const cuda::MessageVariant *messages, size_t messages_size,
                              const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
-                             std::uint64_t step) {
+                             std::uint64_t step)
+ {
     // Calculate projections.
     // using namespace ::cuda::std::placeholders;
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -339,9 +348,13 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
 
 
 
-void CUDABackendImpl::calculate_projections(std::uint64_t step) {
+void CUDABackendImpl::calculate_projections(std::uint64_t step)
+{
     // Calculate projections.
     device_lib::CUDAVector<cuda::UID> projection_uids = get_uids(device_projections_);
+
+    if (!device_projections_.size()) return;
+
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
     device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>> projection_messages(device_projections_.size());
     for (size_t i = 0; i < device_projections_.size(); ++i)
@@ -361,7 +374,8 @@ void CUDABackendImpl::calculate_projections(std::uint64_t step) {
 }
 
 
-void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::PopulationContainer &populations) {
+void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::PopulationContainer &populations)
+{
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
     device_populations_.clear();
@@ -382,7 +396,8 @@ void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::Po
 }
 
 
-void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::ProjectionContainer &projections) {
+void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::ProjectionContainer &projections)
+{
     SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
 
     device_projections_.clear();
