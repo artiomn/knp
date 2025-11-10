@@ -423,12 +423,28 @@ void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::Pr
 }
 
 
-void CUDABackendImpl::_init()
+void CUDABackendImpl::init()
 {
-//    SPDLOG_DEBUG("Initializing CUDABackendImpl backend...");
+    SPDLOG_DEBUG("Initializing CUDABackendImpl...");
 
     // knp::backends::cpu::init(projections_, get_message_endpoint());
-//    SPDLOG_DEBUG("Initialization finished.");
+    for (const auto &p : device_projections_)
+    {
+        const auto [pre_uid, post_uid, this_uid] = ::cuda::std::visit(
+            [this](const auto &proj)
+            {
+                using T = std::decay_t<decltype(proj)>;
+//                subscribe_stdp_projection<typename T::ProjectionSynapseType>::subscribe(proj, message_endpoint);
+                return std::make_tuple(proj.presynaptic_uid_, proj.postsynaptic_uid_, proj.uid_);
+            }, p);
+
+        if (!cuda::empty_uid(pre_uid)) this->device_message_bus_.subscribe<cuda::SpikeMessage>(this_uid, {pre_uid});
+        if (!cuda::empty_uid(post_uid))
+        {
+            this->device_message_bus_.subscribe<cuda::SynapticImpactMessage>(post_uid, {this_uid});
+        }
+    }
+    SPDLOG_DEBUG("Initialization finished.");
 }
 
 

@@ -98,7 +98,7 @@ constexpr bool is_forcing()
 
 
 template <>
-constexpr  bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
+constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 {
     return true;
 }
@@ -215,9 +215,9 @@ void CUDABackend::select_device(std::unique_ptr<knp::core::Device> &&device)
 
 void CUDABackend::_init()
 {
-    SPDLOG_DEBUG("Initializing CUDABackend backend...");
+    SPDLOG_DEBUG("Initializing CUDABackend...");
 
-    // knp::backends::cpu::init(projections_, get_message_endpoint());
+    impl_->init();
 
     SPDLOG_DEBUG("Initialization finished.");
 }

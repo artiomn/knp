@@ -55,4 +55,15 @@ knp::core::UID to_cpu_uid(const cuda::UID &uid);
 inline cuda::UID new_uid() { return to_gpu_uid(knp::core::UID{}); }
 
 
+inline bool empty_uid(const cuda::UID& uid)
+{
+    for (const auto &uid_digit : uid)
+    {
+        if (uid_digit) return false;
+    }
+
+    return true;
+}
+
+
 } // namespace knp::backends::gpu::cuda

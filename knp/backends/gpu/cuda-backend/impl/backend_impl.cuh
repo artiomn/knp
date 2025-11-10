@@ -300,11 +300,7 @@ public:
         const knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
-protected:
-    /**
-     * @copydoc knp::core::Backend::_init()
-     */
-    void _init();
+    void init();
 
 private:
     // cppcheck-suppress unusedStructMember
