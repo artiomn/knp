@@ -50,6 +50,7 @@ REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
 REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::ProjectionVariants);
 REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::PopulationVariants);
 
+
 // helper type for the visitor.
 template<class... Ts>
 struct overloaded : Ts ...
@@ -104,7 +105,8 @@ TypeVariant extract_by_index(const void *type_ptr)
 
 // TODO: Make a template, it's also used for messages.
 
-__global__ void get_population_kernel(const CUDABackendImpl::PopulationVariants *var, int *type, const void **pop) {
+__global__ void get_population_kernel(const CUDABackendImpl::PopulationVariants *var, int *type, const void **pop)
+{
     int type_val = var->index();
     static_assert(::cuda::std::variant_size<CUDABackendImpl::PopulationVariants>() == 1, "Add a case statement here!");
     switch (type_val)
@@ -119,7 +121,8 @@ __global__ void get_population_kernel(const CUDABackendImpl::PopulationVariants 
 }
 
 
-__global__ void get_projection_kernel(const CUDABackendImpl::ProjectionVariants *var, int *type, const void **proj) {
+__global__ void get_projection_kernel(const CUDABackendImpl::ProjectionVariants *var, int *type, const void **proj)
+{
     int type_val = var->index();
     static_assert(::cuda::std::variant_size<CUDABackendImpl::ProjectionVariants>() == 1, "Add a case statement here!");
     switch (type_val)
@@ -328,7 +331,7 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
                              const cuda::MessageVariant *messages, size_t messages_size,
                              const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
                              std::uint64_t step)
- {
+{
     // Calculate projections.
     // using namespace ::cuda::std::placeholders;
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -420,7 +423,8 @@ void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::Pr
 }
 
 
-void CUDABackendImpl::_init() {
+void CUDABackendImpl::_init()
+{
 //    SPDLOG_DEBUG("Initializing CUDABackendImpl backend...");
 
     // knp::backends::cpu::init(projections_, get_message_endpoint());
