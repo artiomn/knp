@@ -206,11 +206,10 @@ void CUDABackend::select_devices(const std::set<knp::core::UID> &uids)
 
 void CUDABackend::select_device(std::unique_ptr<knp::core::Device> &&device)
 {
-    auto cuda_device_ptr = dynamic_cast<knp::devices::gpu::CUDA*>(device.get());
+    Backend::select_device(std::move(device));
+    auto cuda_device_ptr = dynamic_cast<knp::devices::gpu::CUDA*>(get_devices()[0].get());
 
     cudaSetDevice(cuda_device_ptr->get_socket_number());
-
-    Backend::select_device(std::move(device));
 }
 
 

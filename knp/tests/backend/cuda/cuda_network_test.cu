@@ -55,6 +55,12 @@ TEST(CudaBackendSuite, SmallestNetwork)
         kt::DeltaProjection{knp::core::UID{false}, population.get_uid(), kt::input_projection_gen, 1};
     knp::core::UID input_uid = std::visit([](const auto &proj) { return proj.get_uid(); }, input_projection);
 
+    for (auto &device : backend.get_devices())
+    {
+        backend.select_device(std::move(device));
+        break;
+    }
+
     backend.load_populations({population});
     backend.load_projections({input_projection, loop_projection});
 
