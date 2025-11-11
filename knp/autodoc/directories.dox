@@ -134,6 +134,26 @@
  */
 
 /**
+ * @dir /knp/base-framework/include/knp/framework/data_processing
+ * @brief Directory for data processing headers.
+ */
+
+/**
+ * @dir /knp/base-framework/include/knp/framework/data_processing/classification
+ * @brief Directory for classification model data processing headers.
+ */
+
+/**
+ * @dir /knp/base-framework/include/knp/framework/inference_evaluation
+ * @brief Directory for inference evaluation headers.
+ */
+
+/**
+ * @dir /knp/base-framework/include/knp/framework/inference_evaluation/classification
+ * @brief Directory for classification model inference evaluation headers.
+ */
+
+/**
  * @dir /knp/base-framework/include/knp/framework/io
  * @brief Directory for input and output channel headers.
  */
@@ -161,6 +181,11 @@
 /**
  * @dir /knp/base-framework/include/knp/framework/monitoring
  * @brief Directory for monitoring headers.
+ */
+
+/**
+ * @dir /knp/base-framework/include/knp/framework/normalization
+ * @brief Directory for normalization headers.
  */
 
 /**

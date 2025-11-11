@@ -37,7 +37,7 @@ namespace knp::framework::data_processing::classification::images
 {
 
 /**
- * @brief The `Dataset` class is a definition of an interface to processed dataset of images.
+ * @brief The Dataset class is a definition of an interface to processed dataset of images.
  */
 class KNP_DECLSPEC Dataset final : public classification::Dataset
 {
