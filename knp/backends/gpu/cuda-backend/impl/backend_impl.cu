@@ -47,8 +47,8 @@ namespace knp::backends::gpu::cuda
 {
 REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
-REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::ProjectionVariants);
 REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::PopulationVariants);
+REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::ProjectionVariants);
 
 
 // helper type for the visitor.
@@ -71,19 +71,19 @@ __host__ __device__ inline bool is_forcing()
 
 template <>
 CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
-        const CUDABackendImpl::PopulationVariants *message);
+    const CUDABackendImpl::PopulationVariants *);
 
 template <>
-void gpu_insert<CUDABackendImpl::PopulationVariants>(const CUDABackendImpl::PopulationVariants &cpu_source,
-                                                     CUDABackendImpl::PopulationVariants *gpu_target);
+void gpu_insert<CUDABackendImpl::PopulationVariants>(const CUDABackendImpl::PopulationVariants &,
+                                                     CUDABackendImpl::PopulationVariants *);
 
 template <>
 CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
-        const CUDABackendImpl::ProjectionVariants *message);
+        const CUDABackendImpl::ProjectionVariants *);
 
 template <>
-void gpu_insert<CUDABackendImpl::ProjectionVariants>(const CUDABackendImpl::ProjectionVariants &cpu_source,
-                                                     CUDABackendImpl::ProjectionVariants *gpu_target);
+void gpu_insert<CUDABackendImpl::ProjectionVariants>(const CUDABackendImpl::ProjectionVariants &,
+                                                     CUDABackendImpl::ProjectionVariants *);
 
 namespace detail
 {
@@ -105,96 +105,82 @@ TypeVariant extract_by_index(const void *type_ptr)
 
 // TODO: Make a template, it's also used for messages.
 
-__global__ void get_population_kernel(const CUDABackendImpl::PopulationVariants *var, int *type, const void **pop)
+template<typename T>
+__host__ __device__ void get_kernel(const T *var, int *type, const void **val)
 {
     int type_val = var->index();
-    static_assert(::cuda::std::variant_size<CUDABackendImpl::PopulationVariants>() == 1, "Add a case statement here!");
+    static_assert(::cuda::std::variant_size<T>() == 1, "Incorrect variant size!");
     switch (type_val)
     {
         case 0:
-            *pop = ::cuda::std::get_if<0>(var);
+            *val = ::cuda::std::get_if<0>(var);
             break;
         default:
-            *pop = nullptr;
+            *val = nullptr;
     }
     *type = type_val;
+}
+
+
+__global__ void get_population_kernel(const CUDABackendImpl::PopulationVariants *var, int *type, const void **pop)
+{
+    get_kernel(var, type, pop);
 }
 
 
 __global__ void get_projection_kernel(const CUDABackendImpl::ProjectionVariants *var, int *type, const void **proj)
 {
-    int type_val = var->index();
-    static_assert(::cuda::std::variant_size<CUDABackendImpl::ProjectionVariants>() == 1, "Add a case statement here!");
-    switch (type_val)
-    {
-        case 0:
-            *proj = ::cuda::std::get_if<0>(var);
-            break;
-        default:
-            *proj = nullptr;
-    }
-    *type = type_val;
+    get_kernel(var, type, proj);
 }
+
+
+template<typename T>
+T gpu_extract_container(const T *value)
+{
+    int *type_gpu;
+    const void **val_gpu; // This is a gpu pointer to gpu pointer to gpu population.
+    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
+    call_and_check(cudaMalloc(&val_gpu, sizeof(void *)));
+    get_population_kernel<<<1, 1>>>(value, type_gpu, val_gpu);
+
+    int type;
+    // This is a gpu pointer to gpu population. &pop_ptr is a cpu pointer to gpu pointer to gpu population.
+    const void *val_ptr;
+
+    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
+    call_and_check(cudaMemcpy(&val_ptr, val_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
+    call_and_check(cudaFree(type_gpu));
+    call_and_check(cudaFree(val_gpu));
+
+    // Here we have a type index and a gpu pointer to population.
+    T result;
+    // TODO: Remove crunchs.
+    static_assert(::cuda::std::variant_size<T>() == 1, "Variant size is incorrect!");
+
+    switch(type)
+    {
+        case 0: result = extract_by_index<T, 0>(val_ptr);
+        // case 1: result = extract_by_index<CUDABackendImpl::PopulationVariants, 1>(pop_ptr);
+    }
+
+    return result;
+}
+
 
 
 template<>
 CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
-        const CUDABackendImpl::PopulationVariants *population)
+    const CUDABackendImpl::PopulationVariants *population)
 {
-    int *type_gpu;
-    const void **pop_gpu; // This is a gpu pointer to gpu pointer to gpu population.
-    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
-    call_and_check(cudaMalloc(&pop_gpu, sizeof(void *)));
-    get_population_kernel<<<1, 1>>>(population, type_gpu, pop_gpu);
-    int type;
-
-    // This is a gpu pointer to gpu population. &pop_ptr is a cpu pointer to gpu pointer to gpu population.
-    const void *pop_ptr;
-    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
-    call_and_check(cudaMemcpy(&pop_ptr, pop_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
-    call_and_check(cudaFree(type_gpu));
-    call_and_check(cudaFree(pop_gpu));
-    // Here we have a type index and a gpu pointer to population.
-    CUDABackendImpl::PopulationVariants result;
-    // TODO: Remove crunchs.
-    static_assert(::cuda::std::variant_size<CUDABackendImpl::PopulationVariants>() == 1,
-            "Add a case statement here!");
-    switch(type)
-    {
-        case 0: result = extract_by_index<CUDABackendImpl::PopulationVariants, 0>(pop_ptr);
-        // case 1: result = extract_by_index<CUDABackendImpl::PopulationVariants, 1>(pop_ptr);
-    }
-    return result;
+    return gpu_extract(population);
 }
 
 
 template<>
 CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
-        const CUDABackendImpl::ProjectionVariants *proj)
+        const CUDABackendImpl::ProjectionVariants *projection)
 {
-    int *type_gpu;
-    const void **proj_gpu; // This is a gpu pointer to gpu pointer to gpu message.
-    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
-    call_and_check(cudaMalloc(&proj_gpu, sizeof(void *)));
-    get_projection_kernel<<<1, 1>>>(proj, type_gpu, proj_gpu);
-    int type;
-
-    // This is a gpu pointer to gpu message. &msg_ptr is a cpu pointer to gpu pointer to gpu message.
-    const void *proj_ptr;
-    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
-    call_and_check(cudaMemcpy(&proj_ptr, proj_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
-    call_and_check(cudaFree(type_gpu));
-    call_and_check(cudaFree(proj_gpu));
-    // Here we have a type index and a gpu pointer to message.
-    CUDABackendImpl::ProjectionVariants result;
-    // TODO: Remove crunchs.
-    switch(type)
-    {
-        case 0: result = extract_by_index<CUDABackendImpl::ProjectionVariants, 0>(proj_ptr);
-//        case 1: result = extract_by_index<CUDABackendImpl::ProjectionVariants, 1>(proj_ptr);
-//        case 2: result = extract_by_index<CUDABackendImpl::ProjectionVariants, 2>(proj_ptr);
-    }
-    return result;
+    return gpu_extract(projection);
 }
 
 
@@ -268,6 +254,7 @@ __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants
     // Calculate populations. This is the same as inference.
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
     if (thread_index >= num_populations) return;
+
     CUDABackendImpl::PopulationVariants &population = populations[thread_index];
     knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> new_messages(indices_size);
 
@@ -343,6 +330,7 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
         if (message_index >= messages_size) continue;
         msgs[n] = messages[message_index];
     }
+
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
         CUDABackendImpl::calculate_projection(proj, msgs, step);
@@ -366,6 +354,7 @@ void CUDABackendImpl::calculate_projections(std::uint64_t step)
                 projection_uids.copy_at(i));
         gpu_insert(message_ids, projection_messages.data() + i);
     }
+
     calculate_projections_kernel<<<num_blocks, num_threads>>>(device_projections_.data(),
                                                               device_projections_.size(),
                                                               device_message_bus_.all_messages().data(),
@@ -386,15 +375,15 @@ void CUDABackendImpl::load_populations(const knp::backends::gpu::CUDABackend::Po
 
     for (const auto &population : populations)
     {
-        ::std::visit(
-                [this](auto &arg) {
-                    using CPUPopulationType = std::decay_t<decltype(arg)>;
+        ::std::visit([this](auto &arg)
+        {
+            using CPUPopulationType = std::decay_t<decltype(arg)>;
 
-                    auto pop = CUDAPopulation<typename CPUPopulationType::PopulationNeuronType>(arg);
-                    device_populations_.push_back(pop);
-                },
-                population);
+            auto pop = CUDAPopulation<typename CPUPopulationType::PopulationNeuronType>(arg);
+            device_populations_.push_back(pop);
+        }, population);
     }
+
     SPDLOG_DEBUG("All populations loaded.");
 }
 
@@ -408,15 +397,13 @@ void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::Pr
 
     for (const auto &projection : projections)
     {
-        ::std::visit(
-                [this](auto &arg)
-                {
-                    using CPUProjectionType = std::decay_t<decltype(arg)>;
-                    auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>(arg);
+        ::std::visit([this](auto &arg)
+        {
+            using CPUProjectionType = std::decay_t<decltype(arg)>;
 
-                    device_projections_.push_back(proj);
-                },
-                projection);
+            auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>(arg);
+            device_projections_.push_back(proj);
+        }, projection);
     }
 
     SPDLOG_DEBUG("All projections loaded.");

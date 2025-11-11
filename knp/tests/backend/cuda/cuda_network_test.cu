@@ -62,7 +62,7 @@ TEST(CudaBackendSuite, SmallestNetwork)
     }
 
     backend.load_populations({population});
-    // backend.load_projections({input_projection, loop_projection});
+    backend.load_projections({input_projection, loop_projection});
 
     auto endpoint = backend.get_message_bus().create_endpoint();
 
