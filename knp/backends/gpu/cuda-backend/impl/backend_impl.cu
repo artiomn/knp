@@ -43,14 +43,17 @@
 #include "cuda_bus/messaging.cuh"
 
 
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::device_lib::CUDAVector<uint64_t>);
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpactMessage);
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SpikeMessage);
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::PopulationVariants);
+//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::ProjectionVariants);
+
+
 namespace knp::backends::gpu::cuda
 {
-REGISTER_CUDA_VECTOR_TYPE(device_lib::CUDAVector<uint64_t>);
-REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
-REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::PopulationVariants);
-REGISTER_CUDA_VECTOR_TYPE(CUDABackendImpl::ProjectionVariants);
-
-
 // helper type for the visitor.
 template<class... Ts>
 struct overloaded : Ts ...
@@ -401,7 +404,7 @@ void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::Pr
         {
             using CPUProjectionType = std::decay_t<decltype(arg)>;
 
-            auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>(arg);
+            auto proj = CUDAProjection<typename CPUProjectionType::ProjectionSynapseType>{arg};
             device_projections_.push_back(proj);
         }, projection);
     }

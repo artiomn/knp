@@ -146,15 +146,15 @@ void CUDABackend::load_populations(const std::vector<PopulationVariants> &popula
 }
 
 
-void CUDABackend::load_projections(const std::vector<ProjectionVariants> &projections)
-{
-    SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
-
-//    projections_ = projections;
-    impl_->load_projections(projections);
-
-    SPDLOG_DEBUG("All projections loaded.");
-}
+//void CUDABackend::load_projections(const std::vector<ProjectionVariants> &projections)
+//{
+//    SPDLOG_DEBUG("Loading projections [{}]...", projections.size());
+//
+////    projections_ = projections;
+//    impl_->load_projections(projections);
+//
+//    SPDLOG_DEBUG("All projections loaded.");
+//}
 
 
 void CUDABackend::load_all_projections(const std::vector<knp::core::AllProjectionsVariant> &projections)
