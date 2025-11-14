@@ -33,13 +33,14 @@
 
 #include <knp/backends/gpu-cuda/backend.h>
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/backend_impl.cuh"
 
 
 
 using Population = knp::backends::gpu::CUDABackend::PopulationVariants;
 using Projection = knp::backends::gpu::CUDABackend::ProjectionVariants;
-REGISTER_CUDA_VECTOR_TYPE(Population);
-REGISTER_CUDA_VECTOR_TYPE(Projection);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::PopulationVariants);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::ProjectionVariants);
 
 
 namespace knp::testing
