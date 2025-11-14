@@ -20,7 +20,7 @@ You can use the C++ and Python languages to accomplish these tasks. The platform
 
 The API reference for Kaspersky Neuromorphic Platform is intended for specialists engaged in the C++ development of secure solutions based on the platform and in the development of the Kaspersky Neuromorphic Platform code base.
 
-For information on the platform concepts and architecture, installation instructions and platform use cases, see <a href="https://click.kaspersky.com/?hl=en-US&version=1.0&pid=KNP&link=online_help">Kaspersky Neuromorphic Platform Help</a>.
+For information on the platform concepts and architecture, installation instructions and platform use cases, see <a href="https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help">Kaspersky Neuromorphic Platform Help</a>.
 
 @section thirdparty Information about Third-Party Code
 
