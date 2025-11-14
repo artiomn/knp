@@ -177,6 +177,16 @@ struct default_values<BLIFATNeuron>
      * @brief The parameter defines a dopamine value used to sum up all incoming dopamine synapse impacts.
      */
     constexpr static double dopamine_value_ = 0.0;
+
+    /**
+     * @brief The parameter defines stochastic stimulation - random number added to the potential every tick.
+     */
+    constexpr static double stochastic_stimulation_ = 0.0;
+
+    /**
+     * @brief The random number generator is used for stochastic stimulation.
+     */
+    constexpr static unsigned random_number_generator_state_ = 0;
 };
 
 
@@ -302,6 +312,14 @@ struct neuron_parameters<BLIFATNeuron>
      * @brief The parameter defines a dopamine value used to sum up all incoming dopamine synapse impacts.
      */
     double dopamine_value_ = default_values<BLIFATNeuron>::dopamine_value_;
+    /**
+     * @brief The parameter defines stochastic stimulation - random namber added to the potential every tick.
+     */
+    double stochastic_stimulation_ = 0.0;
+    /**
+     * @brief The random number generator is used for stochastic stimulation.
+     */
+    unsigned random_number_generator_state_ = 0;
 };
 
 }  // namespace knp::neuron_traits

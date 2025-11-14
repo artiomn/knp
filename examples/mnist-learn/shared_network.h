@@ -34,8 +34,8 @@ constexpr int neuron_dopamine_period = 10;
 constexpr int synapse_dopamine_period = 10;
 constexpr float l_neuron_potential_decay = 1.0 - 1.0 / 3.0;
 constexpr float dopamine_parameter = 0.042F;
-constexpr float dopamine_value = dopamine_parameter;
-constexpr float threshold_weight_coeff = 0.023817F;
+constexpr float hebbian_plasticity = -0.177;
+constexpr float threshold_weight_coeff = 0.218F;
 
 //
 // Network geometry.

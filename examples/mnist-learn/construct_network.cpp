@@ -77,11 +77,14 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
     ResourceNeuronData default_neuron{{}};
     default_neuron.activation_threshold_ = default_threshold;
     ResourceNeuronData l_neuron = default_neuron;
-    l_neuron.potential_decay_ = l_neuron_potential_decay;
-    l_neuron.d_h_ = -dopamine_value;
+    l_neuron.potential_decay_ = l_neuron_potential_decay;   // Corresponds to L characteristicv time 3
+    l_neuron.d_h_ = hebbian_plasticity;
     l_neuron.dopamine_plasticity_time_ = neuron_dopamine_period;
     l_neuron.synapse_sum_threshold_coefficient_ = threshold_weight_coeff;
     l_neuron.isi_max_ = 10;
+    l_neuron.min_potential_ = 0;
+    l_neuron.stability_change_parameter_ = 0.05F;
+    l_neuron.resource_drain_coefficient_ = 27;
 
     struct PopulationRole
     {
@@ -155,7 +158,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         result.data_.wta_data_[i].second.push_back(projection_2.get_uid());
 
         // 3. Dopamine projection, it goes from dopamine population to input population.
-        const DeltaSynapseData default_dopamine_synapse{dopamine_value, 1, knp::synapse_traits::OutputType::DOPAMINE};
+        const DeltaSynapseData default_dopamine_synapse{1, 1, knp::synapse_traits::OutputType::DOPAMINE};
         DeltaProjection projection_3 = knp::framework::projection::creators::aligned<knp::synapse_traits::DeltaSynapse>(
             population_uids[DOPAMINE], population_uids[INPUT], pop_data[DOPAMINE].pd_.size_, pop_data[INPUT].pd_.size_,
             [&default_dopamine_synapse](size_t, size_t) { return default_dopamine_synapse; });
