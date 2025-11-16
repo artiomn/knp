@@ -166,8 +166,9 @@ void calculate_single_neuron_state(typename knp::core::Population<BlifatLikeNeur
     }
     if (neuron.stochastic_stimulation_)
     {
-        neuron.random_number_generator_state_ = neuron.random_number_generator_state_ * 16644525LLU + 1013904223LLU;   // magic way to generate new random number
-        neuron.potential_ += reinterpret_cast<unsigned short &>(neuron.random_number_generator_state_) * neuron.stochastic_stimulation_ / 0x10000;
+        // Magic way to generate new random number.
+        neuron.random_number_generator_state_ = neuron.random_number_generator_state_ * 16644525LLU + 1013904223LLU;
+        neuron.potential_ += static_cast<unsigned short>(neuron.random_number_generator_state_) * neuron.stochastic_stimulation_ / 0x10000;
     }
     neuron.pre_impact_potential_ = neuron.potential_;
 }
