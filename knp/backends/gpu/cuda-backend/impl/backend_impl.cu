@@ -316,30 +316,49 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
 }
 
 
+/**
+ * Calculate a step for all projections in a network.
+ * @param projections vector of projection variants.
+ * @param num_projections number of projections.
+ * @param messages a vector of all messages in the GPU bus.
+ * @param messages_size number of all messages in the GPU bus.
+ * @param indices indices of messages directed at each projection.
+ * @param step current network step.
+ * @note make sure number of valid indices is equal to num_projections.
+ */
 __global__ void
 calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, size_t num_projections,
                              const cuda::MessageVariant *messages, size_t messages_size,
-                             const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
+                             const cuda::device_lib::CUDAVector<uint64_t> *indices,
                              std::uint64_t step)
 {
     // Calculate projections.
     // using namespace ::cuda::std::placeholders;
+    printf("1\n");
+    printf("prjs: %lu %p\n msgs: %lu %p\n inds: %p\n", num_projections, projections, messages_size, messages,
+           indices);
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (thread_index > num_projections) return;
+
     CUDABackendImpl::ProjectionVariants &projection = projections[thread_index];
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> msgs(indices_size); // almost always 1
-    for (size_t n = 0; n < indices_size; ++n)
+    printf("%lu:2\n", thread_index);
+
+    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> msgs(indices[thread_index].size());
+    printf("%lu:3\n", thread_index);
+    for (size_t n = 0; n < indices[thread_index].size(); ++n)  // Almost always 1 or 0 iterations.
     {
+        printf("%lu:4\n", thread_index);
         uint64_t message_index = indices[thread_index][n];
         if (message_index >= messages_size) continue;
         msgs[n] = messages[message_index];
     }
-
+    printf("%lu:5\n", thread_index);
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
         CUDABackendImpl::calculate_projection(proj, msgs, step);
     }, projection);
+    printf("%lu:6\n", thread_index);
 }
-
 
 
 void CUDABackendImpl::calculate_projections(std::uint64_t step)
@@ -349,7 +368,6 @@ void CUDABackendImpl::calculate_projections(std::uint64_t step)
 
     if (!device_projections_.size()) return;
 
-    auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
     device_lib::CUDAVector<device_lib::CUDAVector<uint64_t>> projection_messages(device_projections_.size());
     for (size_t i = 0; i < device_projections_.size(); ++i)
     {
@@ -358,12 +376,13 @@ void CUDABackendImpl::calculate_projections(std::uint64_t step)
         gpu_insert(message_ids, projection_messages.data() + i);
     }
 
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_projections_.size());
+    assert(device_projections_.size() == projection_messages.size());
     calculate_projections_kernel<<<num_blocks, num_threads>>>(device_projections_.data(),
                                                               device_projections_.size(),
                                                               device_message_bus_.all_messages().data(),
                                                               device_message_bus_.all_messages().size(),
                                                               projection_messages.data(),
-                                                              projection_messages.size(),
                                                               step);
     cudaDeviceSynchronize();
 }
