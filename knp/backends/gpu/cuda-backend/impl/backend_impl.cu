@@ -282,11 +282,8 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
     // Calculate populations. This is the same as inference.
     // Calculate projections.
     using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
-    if (!device_populations_.size())
-    {
-        device_message_bus_.clear();
-        return;
-    }
+    if (!device_populations_.size()) return;
+
     device_lib::CUDAVector<cuda::UID> population_uids = get_uids(device_populations_);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(device_populations_.size());
 
@@ -311,7 +308,6 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
     cudaDeviceSynchronize();
     out_messages_cpu = gpu_extract<MessageVector>(out_messages_gpu);
     cudaFree(out_messages_gpu);
-    device_message_bus_.clear();
     device_message_bus_.send_message_gpu_batch(out_messages_cpu);
 }
 

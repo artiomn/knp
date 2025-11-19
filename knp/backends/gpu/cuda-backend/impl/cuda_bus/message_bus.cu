@@ -145,6 +145,7 @@ __host__ void CUDAMessageBus::send_message_gpu_batch(const device_lib::CUDAVecto
 {
     size_t msg_size = messages_to_route_.size();
     messages_to_route_.resize(msg_size + vec.size());
+    if (!vec.size()) return;
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(vec.size());
     device_lib::copy_kernel<<<num_blocks, num_threads>>>(messages_to_route_.data() + msg_size, vec.size(), vec.data());
     cudaDeviceSynchronize();
