@@ -74,4 +74,53 @@ void gpu_insert<MessageVariant>(const MessageVariant &cpu_source, MessageVariant
     }, cpu_source);
 }
 
+
+cuda::SpikeMessage make_gpu_message(const knp::core::messaging::SpikeMessage &host_message)
+{
+    cuda::SpikeMessage result;
+    result.header_ = detail::make_gpu_message_header(host_message.header_);
+    size_t data_n = host_message.neuron_indexes_.size();
+    static_assert(std::is_same_v<cuda::SpikeIndex, knp::core::messaging::SpikeIndex>);
+    if (data_n != 0)
+    {
+        result.neuron_indexes_.resize(data_n);
+        call_and_check(cudaMemcpy(result.neuron_indexes_.data(), host_message.neuron_indexes_.data(),
+                                  data_n * sizeof(cuda::SpikeIndex), cudaMemcpyHostToDevice));
+    }
+    return result;
+}
+
+
+__global__ void copy_impact_kernel(cuda::SynapticImpact *impacts_to, knp::core::messaging::SynapticImpact *impacts_from,
+                                   size_t num_impacts)
+{
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_impacts) return;
+    *(impacts_to + i) = detail::make_gpu_impact(*(impacts_from + i));
+}
+
+
+cuda::SynapticImpactMessage make_gpu_message(const knp::core::messaging::SynapticImpactMessage &host_message)
+{
+    cuda::SynapticImpactMessage result;
+    // Copy necessary fields.
+    result.header_ = detail::make_gpu_message_header(host_message.header_);
+    result.presynaptic_population_uid_ = to_gpu_uid(host_message.presynaptic_population_uid_);
+    result.postsynaptic_population_uid_ = to_gpu_uid(host_message.postsynaptic_population_uid_);
+    result.is_forcing_ = host_message.is_forcing_;
+    size_t data_n = host_message.impacts_.size();
+
+    if (data_n == 0) return result;
+    // Copy data if it exists.
+    size_t data_size = data_n * sizeof(knp::core::messaging::SynapticImpact);
+    knp::core::messaging::SynapticImpact *in_data;
+    call_and_check(cudaMalloc(&in_data, data_size));
+    call_and_check(cudaMemcpy(in_data, host_message.impacts_.data(), data_size, cudaMemcpyHostToDevice));
+    result.impacts_.resize(data_n);
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(data_n);
+    copy_impact_kernel<<<num_blocks, num_threads>>>(result.impacts_.data(), in_data, data_n);
+    call_and_check(cudaFree(in_data));
+    return result;
+}
+
 } // namespace knp::backends::gpu::cuda

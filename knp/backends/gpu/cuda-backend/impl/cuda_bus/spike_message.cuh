@@ -21,11 +21,14 @@
 
 #pragma once
 
+#include <knp/core/messaging/messaging.h>
+
 // #include <thrust/device_vector.h>
 #include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/extraction.cuh"
 #include "message_header.cuh"
 #include "../uid.cuh"
+
 
 
 /**
@@ -81,5 +84,10 @@ public:
         return !(*this == other);
      }
 };
+
+namespace detail
+{
+cuda::SpikeMessage make_gpu_message(const knp::core::messaging::SpikeMessage &host_message);
+}  // namespace detail
 
 }  // namespace knp::backends::gpu::cuda

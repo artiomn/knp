@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <knp/core/messaging/messaging.h>
 #include <boost/mp11.hpp>
 #include <cuda/std/variant>
 

@@ -20,7 +20,7 @@
  */
 
 #pragma once
-
+#include <knp/core/messaging/synaptic_impact_message.h>
 #include <knp/synapse-traits/output_types.h>
 
 #include <iostream>
@@ -144,4 +144,18 @@ public:
  */
 bool operator==(const SynapticImpactMessage &sm1, const SynapticImpactMessage &sm2);
 
-} // namespace knp::backends::gpu::cuda
+
+namespace detail
+{
+inline __host__ __device__ cuda::SynapticImpact make_gpu_impact(const knp::core::messaging::SynapticImpact &host_impact)
+{
+    return {.connection_index_ = host_impact.connection_index_,
+            .impact_value_ = host_impact.impact_value_,
+            .synapse_type_ = host_impact.synapse_type_,
+            .presynaptic_neuron_index_ = host_impact.presynaptic_neuron_index_,
+            .postsynaptic_neuron_index_ = host_impact.postsynaptic_neuron_index_ };
+}
+
+cuda::SynapticImpactMessage make_gpu_message(const knp::core::messaging::SynapticImpact &host_message);
+}  // namespace detail
+}  // namespace knp::backends::gpu::cuda
