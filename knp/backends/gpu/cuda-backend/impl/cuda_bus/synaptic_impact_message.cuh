@@ -156,6 +156,25 @@ inline __host__ __device__ cuda::SynapticImpact make_gpu_impact(const knp::core:
             .postsynaptic_neuron_index_ = host_impact.postsynaptic_neuron_index_ };
 }
 
-cuda::SynapticImpactMessage make_gpu_message(const knp::core::messaging::SynapticImpact &host_message);
+inline __host__ __device__  knp::core::messaging::SynapticImpact make_host_impact(
+        const cuda::SynapticImpact &device_impact)
+{
+    return {.connection_index_ = device_impact.connection_index_,
+            .impact_value_ = device_impact.impact_value_,
+            .synapse_type_ = device_impact.synapse_type_,
+            .presynaptic_neuron_index_ = device_impact.presynaptic_neuron_index_,
+            .postsynaptic_neuron_index_ = device_impact.postsynaptic_neuron_index_ };
+}
+
+
+cuda::SynapticImpactMessage make_gpu_message(const knp::core::messaging::SynapticImpactMessage &host_message);
+
+/**
+ * @brief make host message from a GPU pointer to GPU message.
+ * @param gpu_message GPU pointer to GPU message.
+ * @return host message with the same data.
+ */
+knp::core::messaging::SynapticImpactMessage make_host_message(const cuda::SynapticImpactMessage *gpu_message);
+
 }  // namespace detail
 }  // namespace knp::backends::gpu::cuda

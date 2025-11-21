@@ -91,12 +91,40 @@ cuda::SpikeMessage make_gpu_message(const knp::core::messaging::SpikeMessage &ho
 }
 
 
-__global__ void copy_impact_kernel(cuda::SynapticImpact *impacts_to, knp::core::messaging::SynapticImpact *impacts_from,
-                                   size_t num_impacts)
+knp::core::messaging::SpikeMessage make_host_message(const cuda::SpikeMessage &gpu_message)
+{
+    knp::core::messaging::SpikeMessage result;
+    result.header_ = detail::make_host_message_header(gpu_message.header_);
+    size_t data_n = gpu_message.neuron_indexes_.size();
+    static_assert(std::is_same_v<cuda::SpikeIndex, knp::core::messaging::SpikeIndex>);
+    if (data_n != 0)
+    {
+        result.neuron_indexes_.resize(data_n);
+        call_and_check(cudaMemcpy(result.neuron_indexes_.data(), gpu_message.neuron_indexes_.data(),
+                                  data_n * sizeof(cuda::SpikeIndex), cudaMemcpyDeviceToHost));
+    }
+    return result;
+}
+
+
+
+__global__ void copy_host_impact_kernel(cuda::SynapticImpact *impacts_to,
+                                        const knp::core::messaging::SynapticImpact *impacts_from,
+                                        size_t num_impacts)
 {
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_impacts) return;
     *(impacts_to + i) = detail::make_gpu_impact(*(impacts_from + i));
+}
+
+
+__global__ void copy_gpu_impact_kernel(knp::core::messaging::SynapticImpact *impacts_to,
+                                       const cuda::SynapticImpact *impacts_from,
+                                       size_t num_impacts)
+{
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_impacts) return;
+    *(impacts_to + i) = detail::make_host_impact(*(impacts_from + i));
 }
 
 
@@ -118,7 +146,35 @@ cuda::SynapticImpactMessage make_gpu_message(const knp::core::messaging::Synapti
     call_and_check(cudaMemcpy(in_data, host_message.impacts_.data(), data_size, cudaMemcpyHostToDevice));
     result.impacts_.resize(data_n);
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(data_n);
-    copy_impact_kernel<<<num_blocks, num_threads>>>(result.impacts_.data(), in_data, data_n);
+    copy_host_impact_kernel<<<num_blocks, num_threads>>>(result.impacts_.data(), in_data, data_n);
+    call_and_check(cudaFree(in_data));
+    return result;
+}
+
+
+knp::core::messaging::SynapticImpactMessage make_host_message(const cuda::SynapticImpactMessage &gpu_message)
+{
+    knp::core::messaging::SynapticImpactMessage result;
+    // Copy necessary fields.
+    result.header_ = detail::make_host_message_header(gpu_message.header_);
+    result.presynaptic_population_uid_ = to_cpu_uid(gpu_message.presynaptic_population_uid_);
+    result.postsynaptic_population_uid_ = to_cpu_uid(gpu_message.postsynaptic_population_uid_);
+    result.is_forcing_ = gpu_message.is_forcing_;
+    size_t data_n = gpu_message.impacts_.size();
+
+    if (data_n == 0) return result;
+
+    // Copy data if it exists.
+    size_t data_size = data_n * sizeof(knp::core::messaging::SynapticImpact);
+    knp::core::messaging::SynapticImpact *in_data;
+    call_and_check(cudaMalloc(&in_data, data_size));
+
+    result.impacts_.resize(data_n);
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(data_n);
+    copy_gpu_impact_kernel<<<num_blocks, num_threads>>>(in_data, gpu_message.impacts_.data(), data_n);
+
+    result.impacts_.resize(data_n);
+    call_and_check(cudaMemcpy(result.impacts_.data(), in_data, data_size, cudaMemcpyDeviceToHost));
     call_and_check(cudaFree(in_data));
     return result;
 }

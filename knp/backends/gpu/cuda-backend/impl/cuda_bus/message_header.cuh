@@ -55,9 +55,14 @@ public:
 
 namespace detail
 {
-inline MessageHeader make_gpu_message_header(const knp::core::messaging::MessageHeader &host_header)
+inline cuda::MessageHeader make_gpu_message_header(const knp::core::messaging::MessageHeader &host_header)
 {
     return {.sender_uid_ = to_gpu_uid(host_header.sender_uid_), .send_time_ = host_header.send_time_};
+}
+
+inline knp::core::messaging::MessageHeader make_host_message_header(const cuda::MessageHeader &gpu_header)
+{
+    return {.sender_uid_ = to_cpu_uid(gpu_header.sender_uid_), .send_time_ = gpu_header.send_time_};
 }
 } // namespace detail
 }  // namespace knp::backends::gpu::cuda
