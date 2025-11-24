@@ -279,6 +279,7 @@ public:
         knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> &messages,
         std::uint64_t step_n);
 
+
     /**
      * @brief Calculate projection of delta synapses.
      * @note Projection will be changed during calculation.

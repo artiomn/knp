@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <knp/core/messaging/messaging.h>
+#include <knp/core/messaging/message_envelope.h>
 #include <boost/mp11.hpp>
 #include <cuda/std/variant>
 
@@ -53,5 +53,10 @@ MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message);
 
 template <>
 void gpu_insert<MessageVariant>(const MessageVariant &cpu_source, MessageVariant *gpu_target);
+
+cuda::MessageVariant make_gpu_message(const knp::core::messaging::MessageVariant &host_message);
+
+knp::core::messaging::MessageVariant make_host_message(const cuda::MessageVariant &gpu_message);
+
 
 }  // namespace knp::backends::gpu::cuda

@@ -107,7 +107,8 @@ constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 void CUDABackend::_step()
 {
     SPDLOG_DEBUG("Starting step #{}...", get_step());
-
+    impl_->get_message_bus().send_messages_to_host();
+    impl_->get_message_bus().receive_messages_from_host();
     auto step = get_step();
 
     // Calculate populations. This is the same as inference.
@@ -115,7 +116,9 @@ void CUDABackend::_step()
     // impl_->route_population_messages(step);  // this is a part of calculate_populations
     // Calculate projections.
     impl_->calculate_projections(step);
+    impl_->get_message_bus().send_messages_to_host();
     impl_->route_projection_messages(step);
+
     step = gad_step();
     // Need to suppress "Unused variable" warning.
     (void)step;

@@ -68,7 +68,7 @@ public:
      * @tparam MessageType type of messages to which the receiver subscribes via the subscription.
      * @param receiver receiver UID.
      * @param senders vector of sender UIDs.
-     * @return number of senders added to the subscription.
+     * @return true if a new subscription was created.
      */
     template <typename MessageType>
     __host__ bool subscribe(const cuda::UID &receiver, const std::vector<cuda::UID> &senders)
@@ -77,17 +77,26 @@ public:
         size_t sub_index = find_subscription<MessageType>(receiver);
         if (sub_index != subscriptions_.size())
         {
-            // TODO If subscription exists need to add all new senders. As of now, recreate subscription.
+            Subscription sub_upd = subscriptions_.copy_at(sub_index);
+            for (size_t i = 0; i < senders.size(); ++i)
+            {
+                sub_upd.add_sender(senders[i]);
+            }
+            subscriptions_.set(sub_index, sub_upd);
             return false;
         }
         SPDLOG_DEBUG("Adding new subscription");
         constexpr auto type_index = boost::mp11::mp_find<MessageVariant, MessageType>();
+        subscribe_cpu(receiver, senders, type_index);
         subscriptions_.push_back(Subscription(receiver, senders, type_index));
         SPDLOG_DEBUG("Done adding new subscription");
         return true;
     }
 
-    [[nodiscard]] __host__ const device_lib::CUDAVector<MessageVariant> & all_messages() const { return messages_to_route_; }
+    [[nodiscard]] __host__ const device_lib::CUDAVector<MessageVariant> & all_messages() const
+    {
+        return messages_to_route_;
+    }
 
     /**
      * @brief Unsubscribe from messages of a specified type.
@@ -126,6 +135,16 @@ public:
      * @param num_messages number of messages.
      */
     __host__ void reserve_message_buffer(uint64_t num_messages) { messages_to_route_.reserve(num_messages); }
+
+    /**
+     * @brief Receive messages from host.
+     */
+    __host__ void receive_messages_from_host();
+
+    /**
+     * @brief Send messages to host.
+     */
+    __host__ void send_messages_to_host();
 
     /**
      * @brief Send messages of the specified type to a bus.
@@ -172,6 +191,8 @@ private:
      */
     __host__ int synchronize();
 
+    __host__ void subscribe_cpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_id);
+
     template <typename MessageType>
     __host__ size_t find_subscription(const cuda::UID &receiver);
 
@@ -187,9 +208,5 @@ private:
 
     knp::core::MessageEndpoint cpu_endpoint_;
 };
-
-
-
-
 
 }  // namespace knp::backends::gpu::cuda

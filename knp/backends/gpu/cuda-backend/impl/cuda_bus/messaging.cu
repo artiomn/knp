@@ -179,4 +179,22 @@ knp::core::messaging::SynapticImpactMessage make_host_message(const cuda::Synapt
     return result;
 }
 
+
+knp::core::messaging::MessageVariant make_host_message(const cuda::MessageVariant &gpu_message)
+{
+    return ::cuda::std::visit([](const auto &msg)
+    {
+        return knp::core::messaging::MessageVariant{make_host_message(msg)};
+    }, gpu_message);
+}
+
+
+cuda::MessageVariant make_gpu_message(const knp::core::messaging::MessageVariant &host_message)
+{
+    return std::visit([](const auto &msg)
+    {
+        return cuda::MessageVariant{make_gpu_message(msg)};
+    }, host_message);
+}
+
 } // namespace knp::backends::gpu::cuda

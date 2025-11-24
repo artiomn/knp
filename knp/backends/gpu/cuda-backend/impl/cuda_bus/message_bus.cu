@@ -232,6 +232,104 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
 }
 
 
+__host__ void CUDAMessageBus::subscribe_cpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders,
+                                            size_t type_id)
+{
+    knp::core::UID host_receiver = to_cpu_uid(receiver);
+    std::vector <knp::core::UID> host_senders;
+    host_senders.reserve(senders.size());
+    for (const cuda::UID &cuda_uid : senders)
+    {
+        host_senders.push_back(to_cpu_uid(cuda_uid));
+    }
+    // TODO: Do it in a normal way maybe.
+    switch (type_id)
+    {
+        case 0:
+            cpu_endpoint_.subscribe < boost::mp11::mp_at_c < knp::core::messaging::MessageVariant, 0 >> (
+                    host_receiver, host_senders);
+            break;
+        case 1:
+            cpu_endpoint_.subscribe < boost::mp11::mp_at_c < knp::core::messaging::MessageVariant, 1 >> (
+                    host_receiver, host_senders);
+            break;
+    }
+}
+
+
+__host__ void CUDAMessageBus::send_messages_to_host()
+{
+    for (size_t i = 0; i < messages_to_route_.size(); ++i)
+    {
+        cuda::MessageVariant msg = messages_to_route_.copy_at(i);
+        cpu_endpoint_.send_message(make_host_message(msg));
+    }
+}
+
+
+// We need to check that the messages we get from host were not previously sent there by GPU.
+__global__ void same_sender_kernel(cuda::UID uid, cuda::Subscription *subscriptions, size_t sub_size, bool *result)
+{
+    uint64_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= sub_size) return;
+    if (subscriptions[i].get_receiver_uid() == uid) *result = true;
+}
+
+
+__host__ bool same_sender(const knp::core::messaging::MessageVariant &message,
+                          CUDAMessageBus::SubscriptionContainer &subs)
+{
+    if (subs.size() == 0) return false;
+
+    knp::core::UID sender_uid = std::visit([](const auto &msg)
+    {
+        return msg.header_.sender_uid_;
+    }, message);
+
+    cuda::UID gpu_uid = to_gpu_uid(sender_uid);
+    bool result = false;
+    bool *result_ptr;
+
+    call_and_check(cudaMalloc(&result_ptr, sizeof(bool)));
+    call_and_check(cudaMemcpy(result_ptr, &result, sizeof(bool), cudaMemcpyHostToDevice));
+    auto [num_blocks, num_threads] = device_lib::get_blocks_config(subs.size());
+    same_sender_kernel<<<num_blocks, num_threads>>>(gpu_uid, subs.data(), subs.size(), result_ptr);
+    call_and_check(cudaMemcpy(&result, result_ptr, sizeof(bool), cudaMemcpyDeviceToHost));
+    call_and_check(cudaFree(result_ptr));
+    return result;
+}
+
+
+// TODO: Maybe template this or something.
+__host__ void CUDAMessageBus::receive_messages_from_host()
+{
+    cpu_endpoint_.receive_all_messages();
+    for (size_t i = 0; i < subscriptions_.size(); ++i)
+    {
+        auto sub = subscriptions_.copy_at(i);
+        auto receiver_uid = to_cpu_uid(sub.get_receiver_uid());
+        size_t type = sub.type();
+        // TODO: do it in a proper way or rather just rework the whole mechanic.
+        if (type == 0)
+        {
+            using MessageType = boost::mp11::mp_at_c<knp::core::messaging::MessageVariant, 0>;
+            std::vector <knp::core::messaging::SpikeMessage> message_buf
+                    = cpu_endpoint_.unload_messages<knp::core::messaging::SpikeMessage>(receiver_uid);
+            for (auto &msg : message_buf)
+                messages_to_route_.push_back(make_gpu_message(knp::core::messaging::MessageVariant{msg}));
+        }
+        else if (type == 1)
+        {
+            using MessageType = boost::mp11::mp_at_c<knp::core::messaging::MessageVariant, 1>;
+            std::vector<MessageType> message_buf
+                    = cpu_endpoint_.unload_messages<MessageType>(receiver_uid);
+            for (auto &msg : message_buf)
+                messages_to_route_.push_back(make_gpu_message(knp::core::messaging::MessageVariant{msg}));
+        }
+    }
+}
+
+
 namespace cm = knp::backends::gpu::cuda;
 
 template
