@@ -57,6 +57,7 @@ std::vector<knp::core::messaging::SpikeMessage> run_mnist_inference(
     // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=243539
     knp::core::UID o_channel_uid;
     // Passes the created output channel ID (o_channel_uid) and the population IDs to the model object.
+    // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=276672
     knp::framework::ModelLoader::InputChannelMap channel_map;
     // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=244944
     knp::core::UID input_image_channel_uid;
