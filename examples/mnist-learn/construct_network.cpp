@@ -42,6 +42,7 @@ template <class Neuron>
 struct PopulationData
 {
     size_t size_;
+    // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=235859
     knp::neuron_traits::neuron_parameters<Neuron> neuron_;
 };
 
@@ -72,8 +73,10 @@ float resource_from_weight(float weight, float min_weight, float max_weight)
 // Add populations to the network.
 auto add_subnetwork_populations(AnnotatedNetwork &result)
 {
+    // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=301132
     result.data_.wta_data_.push_back({});
     // Parameters for a default neuron.
+    // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=235859
     ResourceNeuronData default_neuron{{}};
     default_neuron.activation_threshold_ = default_threshold;
     ResourceNeuronData l_neuron = default_neuron;
@@ -100,6 +103,7 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
         {{num_possible_labels, default_neuron}, false, false, "GATE"}};
 
     // Creating a population. It's usually very simple as all neurons are usually the same.
+    // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=235842
     std::vector<knp::core::UID> population_uids;
     for (auto &pop_init_data : pop_data)
     {
@@ -119,6 +123,7 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
 }
 
 // Create network for MNIST.
+// Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=235801
 AnnotatedNetwork create_example_network(int num_compound_networks)
 {
     AnnotatedNetwork result;
@@ -129,6 +134,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         // Now that we added all the populations we need, we have to connect them with projections.
         // Creating a projection is more tricky, as all the connection logic should be described in a generator.
         // Create a default synapse.
+        // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=235860
         ResourceSynapseParams default_synapse;
         auto afferent_synapse = default_synapse;
         afferent_synapse.rule_.synaptic_resource_ =
@@ -137,6 +143,7 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         afferent_synapse.rule_.w_min_ = min_synaptic_weight;
         afferent_synapse.rule_.w_max_ = max_synaptic_weight;
 
+        // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=235844
         // 1. Trainable input projection.
         ResourceDeltaProjection input_projection = knp::framework::projection::creators::all_to_all<ResourceSynapse>(
             knp::core::UID{false}, population_uids[INPUT], input_size, num_input_neurons,
