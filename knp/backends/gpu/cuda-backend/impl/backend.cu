@@ -38,7 +38,7 @@
 namespace knp::backends::gpu
 {
 
-CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>(get_message_bus()))
+CUDABackend::CUDABackend() : impl_(std::make_unique<cuda::CUDABackendImpl>(get_message_endpoint()))
 {
     SPDLOG_INFO("CUDA backend instance created.");
 }

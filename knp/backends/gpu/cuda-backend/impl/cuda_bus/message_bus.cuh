@@ -56,8 +56,8 @@ public:
      * @brief Construct GPU message bus.
      * @param external_endpoint message endpoint used for message exchange with host.
      */
-    explicit CUDAMessageBus(knp::core::MessageEndpoint &&external_endpoint) :
-        cpu_endpoint_{std::move(external_endpoint)}
+    explicit CUDAMessageBus(knp::core::MessageEndpoint &external_endpoint) :
+        cpu_endpoint_{external_endpoint}
     {}
 
 public:
@@ -206,7 +206,7 @@ private:
 
     MessageBuffer messages_to_route_;
 
-    knp::core::MessageEndpoint cpu_endpoint_;
+    knp::core::MessageEndpoint &cpu_endpoint_;
 };
 
 }  // namespace knp::backends::gpu::cuda

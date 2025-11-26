@@ -53,9 +53,13 @@ namespace knp::testing
 
 struct MessageBusTandem
 {
-    MessageBusTandem() : cpu_(std::move(*knp::core::MessageBus::construct_bus())), gpu_(cpu_.create_endpoint())
+    MessageBusTandem() :
+            cpu_(std::move(*knp::core::MessageBus::construct_bus())),
+            endpoint_(cpu_.create_endpoint()),
+            gpu_(endpoint_)
     {}
     knp::core::MessageBus cpu_;
+    knp::core::MessageEndpoint endpoint_;
     knp::backends::gpu::cuda::CUDAMessageBus gpu_;
 };
 

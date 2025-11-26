@@ -117,6 +117,7 @@ public:
      * @brief Type of population container.
      */
     using PopulationContainer = device_lib::CUDAVector<PopulationVariants>;
+
     /**
      * @brief Type of projection container.
      */
@@ -136,6 +137,7 @@ public:
      * @brief Types of constant population iterators.
      */
     using PopulationConstIterator = typename PopulationContainer::const_iterator;
+
     /**
      * @brief Types of constant projection iterators.
      */
@@ -146,8 +148,8 @@ public:
      * @brief Constructor.
      * @param cpu_bus Bus to exchange backend with external world.
      */
-    __host__ explicit CUDABackendImpl(knp::core::MessageBus &cpu_bus) :
-        device_message_bus_{cpu_bus.create_endpoint()} {}
+    __host__ explicit CUDABackendImpl(knp::core::MessageEndpoint &message_endpoint) :
+        device_message_bus_{message_endpoint} {}
 
     /**
      * @brief Destructor for  backend.
