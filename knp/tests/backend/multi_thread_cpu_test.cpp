@@ -84,9 +84,10 @@ TEST(MultiThreadCpuSuite, SmallestNetwork)
     for (knp::core::Step step = 0; step < 20; ++step)
     {
         // Send inputs on steps 0, 5, 10, 15.
-        ::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
+        knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        if (::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint)) results.push_back(step);
+        auto out = knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint);
+        if (!out.empty()) results.push_back(step);
     }
 
     // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).
@@ -127,9 +128,10 @@ TEST(MultiThreadCpuSuite, SmallestResourceNetwork)
     for (knp::core::Step step = 0; step < 20; ++step)
     {
         // Send inputs on steps 0, 5, 10, 15.
-        ::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
+        knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        if (::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint)) results.push_back(step);
+        auto out = knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint);
+        if (!out.empty()) results.push_back(step);
     }
 
     // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).
