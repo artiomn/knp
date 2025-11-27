@@ -82,7 +82,8 @@ TEST(SingleThreadCpuSuite, SmallestNetwork)
         // Send inputs on steps 0, 5, 10, 15.
         knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint);
+        auto output = std::move(knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint));
+        if (!output.empty()) results.push_back(step);
     }
 
     // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).

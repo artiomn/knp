@@ -28,7 +28,7 @@
 #include <vector>
 
 
-namespace testing::internal
+namespace knp::testing::internal
 {
 
 template <class Endpoint>
@@ -45,12 +45,14 @@ bool send_messages_smallest_network(const knp::core::UID &in_channel_uid, Endpoi
 
 
 template <class Endpoint>
-bool receive_messages_smallest_network(const knp::core::UID &out_channel_uid, Endpoint &endpoint)
+auto receive_messages_smallest_network(const knp::core::UID &out_channel_uid, Endpoint &endpoint)
 {
-    endpoint.receive_all_messages();
-    // Write the steps on which the network sends a spike.
-    if (!endpoint.template unload_messages<knp::core::messaging::SpikeMessage>(out_channel_uid).empty()) return true;
-    return false;
+    size_t msg_count = endpoint.receive_all_messages();
+    SPDLOG_DEBUG("Received {} messages.", msg_count);
+    auto output = endpoint.template unload_messages<knp::core::messaging::SpikeMessage>(out_channel_uid);
+    SPDLOG_DEBUG("Unloaded {} messages.", output.size());
+
+    return output;
 }
 
-}  //namespace testing::internal
+}  //namespace knp::testing::internal
