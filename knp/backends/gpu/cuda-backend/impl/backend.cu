@@ -108,15 +108,19 @@ void CUDABackend::_step()
 {
     SPDLOG_DEBUG("Starting step #{}...", get_step());
     impl_->get_message_bus().send_messages_to_host();
+    get_message_bus().route_messages();
     impl_->get_message_bus().receive_messages_from_host();
     auto step = get_step();
 
     // Calculate populations. This is the same as inference.
     impl_->calculate_populations(step);
     // impl_->route_population_messages(step);  // this is a part of calculate_populations
+    get_message_bus().route_messages();
+    //
     // Calculate projections.
     impl_->calculate_projections(step);
     impl_->get_message_bus().send_messages_to_host();
+    get_message_bus().route_messages();
     impl_->route_projection_messages(step);
 
     step = gad_step();
