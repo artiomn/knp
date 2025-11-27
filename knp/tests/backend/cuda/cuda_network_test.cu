@@ -71,10 +71,11 @@ TEST(CudaBackendSuite, SmallestNetwork)
     backend.load_populations({population});
     backend.load_projections({input_projection, loop_projection});
 
+//    backend._init();
+
     auto endpoint = backend.get_message_bus().create_endpoint();
 
-    knp::core::UID in_channel_uid;
-    knp::core::UID out_channel_uid;
+    const knp::core::UID in_channel_uid, out_channel_uid;
 
     // Create input and output.
     backend.subscribe<knp::core::messaging::SpikeMessage>(input_uid, {in_channel_uid});
@@ -82,14 +83,12 @@ TEST(CudaBackendSuite, SmallestNetwork)
 
     std::vector<knp::core::Step> results;
 
-//    backend._init();
-
     for (knp::core::Step step = 0; step < 20; ++step)
     {
         // Send inputs on steps 0, 5, 10, 15.
-        internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
+        knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        auto out = std::move(internal::receive_messages_smallest_network(out_channel_uid, endpoint));
+        auto out = std::move(knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint));
         if (!out.empty()) results.push_back(step);
     }
 
