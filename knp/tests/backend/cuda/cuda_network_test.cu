@@ -48,12 +48,18 @@ REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::device_lib::CUDAVector<uint6
 namespace knp::testing
 {
 
+class TestedCUDABackend : public backends::gpu::CUDABackend
+{
+public:
+    void _init() override { backends::gpu::CUDABackend::_init(); }
+};
+
+
 TEST(CudaBackendSuite, SmallestNetwork)
 {
     // Create a single-neuron neural network: input -> input_projection -> population <=> loop_projection.
-
     namespace kt = knp::testing;
-    backends::gpu::CUDABackend backend;
+    TestedCUDABackend backend;
 
     kt::BLIFATPopulation population{kt::neuron_generator, 1};
     Projection loop_projection =
@@ -71,7 +77,7 @@ TEST(CudaBackendSuite, SmallestNetwork)
     backend.load_populations({population});
     backend.load_projections({input_projection, loop_projection});
 
-//    backend._init();
+    backend._init();
 
     auto endpoint = backend.get_message_bus().create_endpoint();
 
