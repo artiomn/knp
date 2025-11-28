@@ -429,6 +429,7 @@ public:
         #endif
     }
 
+
     __host__ __device__ iterator begin() { return data_; }
     __host__ __device__ const iterator begin() const { return data_; }
     __host__ __device__ const_iterator cbegin() const { return data_; }

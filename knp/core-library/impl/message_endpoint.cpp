@@ -171,7 +171,9 @@ bool MessageEndpoint::receive_message()
                     SPDLOG_TRACE("Subscription has sender with UID {}.", std::string(sender_uid));
                     subscription.add_message(
                         std::get<typename std::decay_t<decltype(subscription)>::MessageType>(message));
-                    SPDLOG_TRACE("Message was added to the subscription {}.", std::string(sender_uid));
+                    SPDLOG_TRACE(
+                        "Message was added to the subscription with receiver {}.",
+                        std::string(get_receiver_uid(subscription)));
                 }
             },
             sub_variant);

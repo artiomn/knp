@@ -170,21 +170,23 @@ T gpu_extract_container(const T *value)
 }
 
 
-
-template<>
-CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
-    const CUDABackendImpl::PopulationVariants *population)
-{
-    return gpu_extract(population);
-}
-
-
-template<>
-CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
-        const CUDABackendImpl::ProjectionVariants *projection)
-{
-    return gpu_extract(projection);
-}
+//
+//template<>
+//CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
+//    const CUDABackendImpl::PopulationVariants *population)
+//{
+//    static_assert(false, "Not implemented, see gpu_extract of MessageVariant");
+//    return {};
+//}
+//
+//
+//template<>
+//CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
+//        const CUDABackendImpl::ProjectionVariants *projection)
+//{
+//    static_assert(false, "Not implemented, see gpu_extract of MessageVariant");
+//    return {};
+//}
 
 
 template<>
@@ -428,21 +430,49 @@ void CUDABackendImpl::load_projections(const knp::backends::gpu::CUDABackend::Pr
 }
 
 
+__global__ void get_projection_uids_kernel(const CUDABackendImpl::ProjectionVariants *projection,
+                                           cuda::UID *pre_uid,
+                                           cuda::UID *post_uid,
+                                           cuda::UID *self_uid)
+{
+    ::cuda::std::visit([pre_uid, post_uid, self_uid](const auto &proj)
+        {
+            *pre_uid = proj.presynaptic_uid_;
+            *post_uid = proj.postsynaptic_uid_;
+            *self_uid = proj.uid_;
+        }, *projection);
+}
+
+
+auto get_projection_uids(const CUDABackendImpl::ProjectionVariants *proj)
+{
+    cuda::UID *pre_uid_gpu;
+    cuda::UID *post_uid_gpu;
+    cuda::UID *self_uid_gpu;
+    cuda::UID pre_uid, post_uid, self_uid;
+    call_and_check(cudaMalloc(&pre_uid_gpu, sizeof(cuda::UID)));
+    call_and_check(cudaMalloc(&post_uid_gpu, sizeof(cuda::UID)));
+    call_and_check(cudaMalloc(&self_uid_gpu, sizeof(cuda::UID)));
+    get_projection_uids_kernel<<<1, 1>>>(proj, pre_uid_gpu, post_uid_gpu, self_uid_gpu);
+    call_and_check(cudaMemcpy(&pre_uid, pre_uid_gpu, sizeof(cuda::UID), cudaMemcpyDeviceToHost));
+    call_and_check(cudaMemcpy(&post_uid, post_uid_gpu, sizeof(cuda::UID), cudaMemcpyDeviceToHost));
+    call_and_check(cudaMemcpy(&self_uid, self_uid_gpu, sizeof(cuda::UID), cudaMemcpyDeviceToHost));
+    call_and_check(cudaFree(pre_uid_gpu));
+    call_and_check(cudaFree(post_uid_gpu));
+    call_and_check(cudaFree(self_uid_gpu));
+    return std::make_tuple(pre_uid, post_uid, self_uid);
+}
+
+
 void CUDABackendImpl::init()
 {
     SPDLOG_DEBUG("Initializing CUDABackendImpl...");
 
     // knp::backends::cpu::init(projections_, get_message_endpoint());
-    for (const auto &p : device_projections_)
+    // for (const auto &p : device_projections_)
+    for (size_t i = 0; i < device_projections_.size(); ++i)
     {
-        const auto [pre_uid, post_uid, this_uid] = ::cuda::std::visit(
-            [this](const auto &proj)
-            {
-                using T = std::decay_t<decltype(proj)>;
-//                subscribe_stdp_projection<typename T::ProjectionSynapseType>::subscribe(proj, message_endpoint);
-                return std::make_tuple(proj.presynaptic_uid_, proj.postsynaptic_uid_, proj.uid_);
-            }, p);
-
+        const auto [pre_uid, post_uid, this_uid] = get_projection_uids(device_projections_.data() + i);
         if (!cuda::empty_uid(pre_uid)) this->device_message_bus_.subscribe<cuda::SpikeMessage>(this_uid, {pre_uid});
         if (!cuda::empty_uid(post_uid))
         {
