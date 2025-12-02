@@ -101,7 +101,15 @@ public:
      * will contain 100 records and the inference set will contain 25 records (100 / 0.8 - 100), regardless of the actual
      * size of the dataset.
      */
-    virtual void split(float split_percent);
+    void split(float split_percent);
+
+    /**
+     * @brief Split dataset into training and inference based on given requirements.
+     * @pre Sum of given parameters should be less or equal to size of whole dataset.
+     * @param frames_for_training Amount of frames for training.
+     * @param frames_for_inference Amount of frames for inference.
+     */
+    void split(size_t frames_for_training, size_t frames_for_inference);
 
     /**
      * @brief Get training data, consisting of pairs of labels and frames.
