@@ -87,8 +87,8 @@ public:
 
 namespace detail
 {
-cuda::SpikeMessage make_gpu_message(const knp::core::messaging::SpikeMessage &host_message);
-knp::core::messaging::SpikeMessage make_host_message(const cuda::SpikeMessage *gpu_message);
+// cuda::SpikeMessage make_gpu_message(const knp::core::messaging::SpikeMessage &host_message);
+// knp::core::messaging::SpikeMessage make_host_message(const cuda::SpikeMessage *gpu_message);
 }  // namespace detail
 
 }  // namespace knp::backends::gpu::cuda

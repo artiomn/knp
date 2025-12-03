@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <knp/core/message_endpoint.h>
 
 #include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/safe_call.cuh"
@@ -69,6 +70,8 @@ public:
         for (size_t i = 0; i < senders.size(); ++i) add_sender(senders[i]);
         SPDLOG_TRACE("Created a subscription with {} senders.", senders_.size());
     }
+
+    __host__ Subscription(const knp::core::MessageEndpoint::SubscriptionVariant &cpu_subscription);
 
 
     __device__ Subscription(const cuda::UID &receiver,

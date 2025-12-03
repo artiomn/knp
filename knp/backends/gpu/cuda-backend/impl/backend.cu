@@ -107,6 +107,7 @@ constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 void CUDABackend::_step()
 {
     SPDLOG_DEBUG("Starting step #{}...", get_step());
+    if(!get_step()) impl_->get_message_bus().sync_with_host();
     impl_->get_message_bus().send_messages_to_host();
     get_message_bus().route_messages();
     impl_->get_message_bus().receive_messages_from_host();

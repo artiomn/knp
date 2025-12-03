@@ -479,6 +479,7 @@ void CUDABackendImpl::init()
             this->device_message_bus_.subscribe<cuda::SynapticImpactMessage>(post_uid, {this_uid});
         }
     }
+
     SPDLOG_DEBUG("Initialization finished.");
 }
 

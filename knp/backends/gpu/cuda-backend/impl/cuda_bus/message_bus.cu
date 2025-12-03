@@ -44,7 +44,7 @@
 // таким образом, конкретного step-а у нас попросту не образуется. Степ состоит из clear(),
 // for(...) if(get_num_messages > 0) send_message(get_stored_messages) и sync().
 // Все эти функции вызываются из бэкенда чем-то вроде do_message_exchange().
-
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
 
 namespace knp::backends::gpu::cuda
 {
@@ -89,6 +89,13 @@ __global__ void find_subscription_by_receiver(const Subscription *subscriptions,
 template <typename MessageType>
 __host__ size_t CUDAMessageBus::find_subscription(const cuda::UID &receiver)
 {
+    constexpr size_t type_index = boost::mp11::mp_find<MessageVariant, MessageType>::value;
+    return find_subscription(receiver, type_index);
+}
+
+
+__host__ size_t CUDAMessageBus::find_subscription(const cuda::UID &receiver, size_t type_index)
+{
     if (!subscriptions_.size()) return 0;
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(subscriptions_.size());
 
@@ -96,7 +103,6 @@ __host__ size_t CUDAMessageBus::find_subscription(const cuda::UID &receiver)
     cudaMalloc(&index_out, sizeof(size_t));
     size_t subscriptions_size = subscriptions_.size();
     cudaMemcpy(index_out, &subscriptions_size, sizeof(size_t), cudaMemcpyHostToDevice);
-    constexpr size_t type_index = boost::mp11::mp_find<MessageVariant, MessageType>::value;
 
     find_subscription_by_receiver<<<num_blocks, num_threads>>>(subscriptions_.data(), subscriptions_.size(), receiver,
                                                                type_index, index_out);
@@ -219,6 +225,7 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
     switch (type_val)
     {
         // TODO : Add more after adding new messages
+        static_assert(::cuda::std::variant_size<cuda::MessageVariant>() == 2, "Add a case statement here!");
         case 0:
             *msg = ::cuda::std::get_if<0>(var);
             break;
@@ -243,6 +250,7 @@ __host__ void CUDAMessageBus::subscribe_cpu(const cuda::UID &receiver, const std
         host_senders.push_back(to_cpu_uid(cuda_uid));
     }
     // TODO: Do it in a normal way maybe.
+    static_assert(::cuda::std::variant_size<cuda::MessageVariant>() == 2, "Add a case statement here!");
     switch (type_id)
     {
         case 0:
@@ -300,6 +308,23 @@ __host__ bool same_sender(const knp::core::messaging::MessageVariant &message,
 }
 
 
+/**
+ * @brief Copy host subscriptions here.
+ */
+__host__ void CUDAMessageBus::sync_with_host()
+{
+    for (const auto &cpu_subscription : cpu_endpoint_.get_endpoint_subscriptions())
+    {
+        cuda::Subscription gpu_sub{cpu_subscription.second};
+        std::vector<cuda::UID> senders;
+        const auto &gpu_senders = gpu_sub.get_senders();
+        senders.resize(gpu_senders.size());
+        cudaMemcpy(senders.data(), gpu_senders.data(), sizeof(cuda::UID) * gpu_senders.size(), cudaMemcpyDeviceToHost);
+        subscribe(gpu_sub.get_receiver_uid(), senders, gpu_sub.type());
+    }
+}
+
+
 // TODO: Maybe template this or something.
 __host__ void CUDAMessageBus::receive_messages_from_host()
 {
@@ -316,7 +341,11 @@ __host__ void CUDAMessageBus::receive_messages_from_host()
             std::vector <knp::core::messaging::SpikeMessage> message_buf
                     = cpu_endpoint_.unload_messages<knp::core::messaging::SpikeMessage>(receiver_uid);
             for (auto &msg : message_buf)
-                messages_to_route_.push_back(make_gpu_message(knp::core::messaging::MessageVariant{msg}));
+            {
+                auto cpu_msg_var = knp::core::messaging::MessageVariant{msg};
+                cuda::MessageVariant gpu_msg = make_gpu_message(cpu_msg_var);
+                messages_to_route_.push_back(gpu_msg);
+            }
         }
         else if (type == 1)
         {
@@ -324,7 +353,11 @@ __host__ void CUDAMessageBus::receive_messages_from_host()
             std::vector<MessageType> message_buf
                     = cpu_endpoint_.unload_messages<MessageType>(receiver_uid);
             for (auto &msg : message_buf)
-                messages_to_route_.push_back(make_gpu_message(knp::core::messaging::MessageVariant{msg}));
+            {
+                auto cpu_msg_var = knp::core::messaging::MessageVariant{msg};
+                cuda::MessageVariant gpu_msg = make_gpu_message(cpu_msg_var);
+                messages_to_route_.push_back(gpu_msg);
+            }
         }
     }
 }

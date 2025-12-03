@@ -25,6 +25,7 @@
 
 #include <knp/core/uid.h>
 #include <knp/core/message_endpoint.h>
+#include <knp/core/subscription.h>
 #include <cub/config.cuh>
 
 #include <cuda/std/variant>
@@ -73,25 +74,10 @@ public:
     template <typename MessageType>
     __host__ bool subscribe(const cuda::UID &receiver, const std::vector<cuda::UID> &senders)
     {
-        SPDLOG_DEBUG("Looking for existing subscriptions");
-        size_t sub_index = find_subscription<MessageType>(receiver);
-        if (sub_index != subscriptions_.size())
-        {
-            Subscription sub_upd = subscriptions_.copy_at(sub_index);
-            for (size_t i = 0; i < senders.size(); ++i)
-            {
-                sub_upd.add_sender(senders[i]);
-            }
-            subscriptions_.set(sub_index, sub_upd);
-            return false;
-        }
-        SPDLOG_DEBUG("Adding new subscription");
         constexpr auto type_index = boost::mp11::mp_find<MessageVariant, MessageType>();
-        subscribe_cpu(receiver, senders, type_index);
-        subscriptions_.push_back(Subscription(receiver, senders, type_index));
-        SPDLOG_DEBUG("Done adding new subscription");
-        return true;
+        return subscribe(receiver, senders, type_index);
     }
+
 
     [[nodiscard]] __host__ const device_lib::CUDAVector<MessageVariant> & all_messages() const
     {
@@ -135,6 +121,11 @@ public:
      * @param num_messages number of messages.
      */
     __host__ void reserve_message_buffer(uint64_t num_messages) { messages_to_route_.reserve(num_messages); }
+
+    /**
+     * @brief Copy host subscriptions here.
+     */
+    __host__ void sync_with_host();
 
     /**
      * @brief Receive messages from host.
@@ -193,11 +184,35 @@ private:
 
     __host__ void subscribe_cpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_id);
 
+    __host__ bool subscribe(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_index)
+    {
+        SPDLOG_DEBUG("Looking for existing subscriptions");
+        size_t sub_index = find_subscription(receiver, type_index);
+        if (sub_index != subscriptions_.size())
+        {
+            Subscription sub_upd = subscriptions_.copy_at(sub_index);
+            for (size_t i = 0; i < senders.size(); ++i)
+            {
+                sub_upd.add_sender(senders[i]);
+            }
+            subscriptions_.set(sub_index, sub_upd);
+            return false;
+        }
+        SPDLOG_DEBUG("Adding new subscription");
+        subscribe_cpu(receiver, senders, type_index);
+        subscriptions_.push_back(Subscription(receiver, senders, type_index));
+        SPDLOG_DEBUG("Done adding new subscription");
+        return true;
+    }
+
     template <typename MessageType>
     __host__ size_t find_subscription(const cuda::UID &receiver);
 
+    __host__ size_t find_subscription(const cuda::UID &receiver, size_t type_id);
+
     template <typename MessageType>
     __host__ __device__ ::cuda::std::vector<uint64_t> find_messages(const Subscription &subscription);
+
 
     /**
      * @brief Container that stores all the subscriptions for the current endpoint.
