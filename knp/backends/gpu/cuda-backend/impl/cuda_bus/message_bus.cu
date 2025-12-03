@@ -344,7 +344,8 @@ __host__ void CUDAMessageBus::receive_messages_from_host()
             {
                 auto cpu_msg_var = knp::core::messaging::MessageVariant{msg};
                 cuda::MessageVariant gpu_msg = make_gpu_message(cpu_msg_var);
-                messages_to_route_.push_back(gpu_msg);
+
+                send_message(gpu_msg);
             }
         }
         else if (type == 1)
@@ -356,7 +357,7 @@ __host__ void CUDAMessageBus::receive_messages_from_host()
             {
                 auto cpu_msg_var = knp::core::messaging::MessageVariant{msg};
                 cuda::MessageVariant gpu_msg = make_gpu_message(cpu_msg_var);
-                messages_to_route_.push_back(gpu_msg);
+                send_message(gpu_msg);
             }
         }
     }

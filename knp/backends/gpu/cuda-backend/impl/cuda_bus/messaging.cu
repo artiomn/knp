@@ -53,8 +53,8 @@ MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message)
     static_assert(::cuda::std::variant_size<cuda::MessageVariant>() == 2, "Add a case statement here!");
     switch(type)
     {
-        case 0: result = extract_message_by_index<0>(msg_ptr);
-        case 1: result = extract_message_by_index<1>(msg_ptr);
+        case 0: result = extract_message_by_index<0>(msg_ptr); break;
+        case 1: result = extract_message_by_index<1>(msg_ptr); break;
     }
     return result;
 }
