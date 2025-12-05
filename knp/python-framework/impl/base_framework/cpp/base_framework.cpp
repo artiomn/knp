@@ -26,8 +26,9 @@
 #include "exports.h"
 
 
-static std::shared_ptr<knp::core::Backend> load_backend(
-    cpp_framework::BackendLoader& loader, const py::object& backend_path)
+// Anonymous namespace is necessary: without it DLL loading error under Windows is happened.
+inline std::shared_ptr<knp::core::Backend> load_backend(
+    knp::framework::BackendLoader &loader, const py::object &backend_path)
 {
     return loader.load(py::extract<std::string>(backend_path)());
 }
@@ -39,7 +40,7 @@ void register_direct_converter()
     // Need to register converter.
     // Without this extract from the different module can't convert Python object to C++ object.
     py::converter::registry::insert(
-        [](PyObject* p) { return static_cast<void*>(p); }, py::type_id<T>(),
+        [](PyObject *p) { return static_cast<void *>(p); }, py::type_id<T>(),
         &py::converter::registered_pytype_direct<T>::get_pytype);
 }
 
