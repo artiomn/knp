@@ -1,5 +1,6 @@
 /**
  * @file altai_lif_population.h
+ * @brief Common templates for LIF population.
  * @kaspersky_support Vartenkov A.
  * @date 01.04.2025
  * @license Apache 2.0
