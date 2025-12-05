@@ -1,10 +1,10 @@
 /**
- * @file network_io.cpp
- * @brief Python bindings for saving and loading network.
- * @kaspersky_support Vartenkov A.
- * @date 05.06.2024
+ * @file exports.h
+ * @brief Export function prototypes for Python bindings.
+ * @kaspersky_support Artiom N.
+ * @date 05.12.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "common.h"
 
+#pragma once
 
-void export_network_io()
-{
-    py::def("save_network", &knp::framework::sonata::save_network, "Save network to disk.");
-    py::def("load_network", &knp::framework::sonata::load_network, "Load network from disk.");
-}
+void export_input_channel();
+void export_model();
+void export_model_executor();
+void export_model_loader();
+void export_network();
+void export_network_io();
+void export_observers();
+void export_output_channel();
