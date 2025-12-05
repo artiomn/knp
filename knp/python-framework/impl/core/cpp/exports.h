@@ -1,10 +1,10 @@
 /**
- * @file message_header.cpp
- * @brief Python bindings for message header.
+ * @file exports.h
+ * @brief Export function prototypes for Python bindings.
  * @kaspersky_support Artiom N.
- * @date 01.02.2024
+ * @date 05.12.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "common.h"
 
+#pragma once
 
-void export_message_header()
-{
-    py::class_<core::messaging::MessageHeader>("MessageHeader", "Common header for messages.")
-        .def_readwrite(
-            "sender_uid", &core::messaging::MessageHeader::sender_uid_, "UID of the object that sent the message.")
-        .def_readwrite("send_time", &core::messaging::MessageHeader::send_time_, "Index of the network execution step.")
-        .def(py::self_ns::str(py::self));
-}
+void export_backend();
+void export_device();
+void export_message_bus();
+void export_message_endpoint();
+void export_message_header();
+void export_population();
+void export_projection();
+void export_spike_message();
+void export_subscription();
+void export_synaptic_impact();
+void export_uid();

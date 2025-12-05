@@ -32,6 +32,9 @@
 #include <knp/core/projection.h>
 #include <knp/core/subscription.h>
 #include <knp/core/uid.h>
+#include <knp/framework/backend_loader.h>
+
+#include "exports.h"
 
 #if defined(__GNUC__) && (__GNUC__ >= 14)
 #    pragma GCC diagnostic push
@@ -137,3 +140,10 @@ boost::python::object adapt_unique(std::unique_ptr<T> (C::*fn)(Args...))
 }
 
 std::string get_py_class_name(const py::object &obj_class);
+
+// Anonymous namespace is necessary: without it DLL loading error under Windows is happened.
+inline std::shared_ptr<knp::core::Backend> load_backend(
+    knp::framework::BackendLoader &loader, const py::object &backend_path)
+{
+    return loader.load(py::extract<std::string>(backend_path)());
+}

@@ -18,13 +18,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#if defined(KNP_IN_CORE)
 
-py::enum_<core::DeviceType>("DeviceType")
-    .value("CPU", core::DeviceType::CPU)
-    .value("GPU", core::DeviceType::GPU)
-    .value("NPU", core::DeviceType::NPU);
+#include "common.h"
 
-//py::class_<core::Device>("Device", "The Device class is the base class for devices supported by the device library.");
+void export_device()
+{
+    py::enum_<core::DeviceType>("DeviceType")
+        .value("CPU", core::DeviceType::CPU)
+        .value("GPU", core::DeviceType::GPU)
+        .value("NPU", core::DeviceType::NPU);
 
-#endif
+    //py::class_<core::Device>("Device", "The Device class is the base class for devices supported by the device
+    //library.");
+}

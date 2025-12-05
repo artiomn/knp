@@ -29,9 +29,7 @@
 #include "optional_converter.h"
 #include "population.h"
 #include "projection.h"
-#include "spike_message.h"
 #include "tuple_converter.h"
-#include "uid_utilities.h"
 
 // knp::neuron_traits::neuron_parameters<knp::neuron_traits::BLIFATNeuron>
 
@@ -69,6 +67,7 @@ BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
     py::class_<core::BaseData>("BaseData", "Common parameters for several different entities.");
 
     py::implicitly_convertible<core::UID, boost::uuids::uuid>();
+    py::implicitly_convertible<std::string, std::filesystem::path>();
 
     // py::to_python_converter<std::optional<int>, to_python_optional<int>>();
     //    Py_Initialize();
@@ -79,17 +78,15 @@ BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
     //
     //    boost::python::import("libknp_python_framework_neuron_traits");
 
-#define KNP_IN_CORE
-#include "backend.cpp"                  // NOLINT
-#include "device.cpp"                   // NOLINT
-#include "message_bus.cpp"              // NOLINT
-#include "message_endpoint.cpp"         // NOLINT
-#include "message_header.cpp"           // NOLINT
-#include "population.cpp"               // NOLINT
-#include "projection.cpp"               // NOLINT
-#include "spike_message.cpp"            // NOLINT
-#include "subscription.cpp"             // NOLINT
-#include "synaptic_impact_message.cpp"  // NOLINT
-#include "uid.cpp"                      // NOLINT
-#undef KNP_IN_CORE
+    export_backend();
+    export_device();
+    export_message_bus();
+    export_message_endpoint();
+    export_message_header();
+    export_population();
+    export_projection();
+    export_spike_message();
+    export_subscription();
+    export_synaptic_impact();
+    export_uid();
 }

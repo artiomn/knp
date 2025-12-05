@@ -290,6 +290,7 @@ public:
     class BaseValueIterator
     {
     public:
+        BaseValueIterator() = default;
         /**
          * @brief Iterator tag.
          */
@@ -331,7 +332,6 @@ public:
          */
         virtual ~BaseValueIterator() = default;
     };
-
 
     /**
      * @brief Structure used to access population and projection data.

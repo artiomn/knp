@@ -24,15 +24,13 @@
 //"Construct a projection by running a synapse generator a given number of times."
 //py::arg("presynaptic_uid"), py::arg("postsynaptic_uid"))
 
-#if defined(KNP_IN_CORE)
+#include "projection.h"
 
-#    include "projection.h"
+#include <tuple>
+#include <vector>
 
-#    include <tuple>
-#    include <vector>
-
-#    include "common.h"
-#    include "tuple_converter.h"
+#include "common.h"
+#include "tuple_converter.h"
 
 
 namespace st = knp::synapse_traits;
@@ -73,50 +71,48 @@ py::class_<core::Synapse>(
 // py::class_<typename core::Projection<st::synapse_type>::Synapse>(
 //    BOOST_PP_STRINGIZE(BOOST_PP_CAT(synapse_type, Parameters)));
 
-#    define INSTANCE_PY_PROJECTIONS(n, template_for_instance, synapse_type)                                            \
-        detail::register_direct_converter<st::synapse_parameters<knp::synapse_traits::synapse_type>>();                \
-        py::implicitly_convertible<core::Projection<st::synapse_type>, core::AllProjectionsVariant>();                 \
-        py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();                                    \
+#define INSTANCE_PY_PROJECTIONS(n, template_for_instance, synapse_type)                                                \
+    detail::register_direct_converter<st::synapse_parameters<knp::synapse_traits::synapse_type>>();                    \
+    py::implicitly_convertible<core::Projection<st::synapse_type>, core::AllProjectionsVariant>();                     \
+    py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();                                        \
                                                                                                                        \
-        py::class_<core::Projection<st::synapse_type>>(                                                                \
-            BOOST_PP_STRINGIZE(                                                                                        \
-                BOOST_PP_CAT(synapse_type, Projection)),                                                               \
-                "The Projection class is a definition of similar connections between the neurons of two populations.", \
-                py::no_init)                                                                                           \
-                .def(py::init<core::UID, core::UID>())                                                                 \
-                .def(py::init<core::UID, core::UID, core::UID>())                                                      \
-                .def(                                                                                                  \
-                    "__init__",                                                                                        \
-                    py::make_constructor(static_cast<std::shared_ptr<core::Projection<st::synapse_type>> (*)(          \
-                                             core::UID, core::UID, core::UID, const py::object &, size_t)>(            \
-                        &projection_constructor_wrapper<st::synapse_type>)),                                           \
-                    "Construct a projection by running a synapse generator a given number of times.")                  \
-                .def(                                                                                                  \
-                    "__init__",                                                                                        \
-                    py::make_constructor(static_cast<std::shared_ptr<core::Projection<st::synapse_type>> (*)(          \
-                                             core::UID, core::UID, const py::object &, size_t)>(                       \
-                        &projection_constructor_wrapper<st::synapse_type>)),                                           \
-                    "Construct a projection by running a synapse generator a given number of times.")                  \
-                .def(                                                                                                  \
-                    "add_synapses", &projection_synapses_add_wrapper<st::synapse_type>,                                \
-                    "Append connections to the existing projection.")                                                  \
-                .add_property(                                                                                         \
-                    "uid", make_handler([](core::Projection<st::synapse_type> &proj) { return proj.get_uid(); }),      \
-                    "Get projection UID.")                                                                             \
-                .def(                                                                                                  \
-                    "__iter__", py::iterator<core::Projection<st::synapse_type>>(),                                    \
-                    "Get an iterator of the projection.")                                                              \
-                .def(                                                                                                  \
-                    "__len__", &core::Projection<st::synapse_type>::size,                                              \
-                    "Count number of synapses in the projection.")                                                     \
-                .def(                                                                                                  \
-                    "__getitem__",                                                                                     \
-                    static_cast<core::Projection<st::synapse_type>::Synapse &(                                         \
-                        core::Projection<st::synapse_type>::*)(size_t)>(                                               \
-                        &core::Projection<st::synapse_type>::operator[]),                                              \
-                    py::return_internal_reference<>(),                                                                 \
-                    "Get parameter values of a synapse with the given index.");  // NOLINT
+    py::class_<core::Projection<st::synapse_type>>(                                                                    \
+        BOOST_PP_STRINGIZE(                                                                                        \
+                BOOST_PP_CAT(synapse_type, Projection)),                                                                   \
+            "The Projection class is a definition of similar connections between the neurons of two populations.",     \
+            py::no_init)                                                                                               \
+            .def(py::init<core::UID, core::UID>())                                                                     \
+            .def(py::init<core::UID, core::UID, core::UID>())                                                          \
+            .def(                                                                                                      \
+                "__init__",                                                                                            \
+                py::make_constructor(static_cast<std::shared_ptr<core::Projection<st::synapse_type>> (*)(              \
+                                         core::UID, core::UID, core::UID, const py::object &, size_t)>(                \
+                    &projection_constructor_wrapper<st::synapse_type>)),                                               \
+                "Construct a projection by running a synapse generator a given number of times.")                      \
+            .def(                                                                                                      \
+                "__init__",                                                                                            \
+                py::make_constructor(static_cast<std::shared_ptr<core::Projection<st::synapse_type>> (*)(              \
+                                         core::UID, core::UID, const py::object &, size_t)>(                           \
+                    &projection_constructor_wrapper<st::synapse_type>)),                                               \
+                "Construct a projection by running a synapse generator a given number of times.")                      \
+            .def(                                                                                                      \
+                "add_synapses", &projection_synapses_add_wrapper<st::synapse_type>,                                    \
+                "Append connections to the existing projection.")                                                      \
+            .add_property(                                                                                             \
+                "uid", make_handler([](core::Projection<st::synapse_type> &proj) { return proj.get_uid(); }),          \
+                "Get projection UID.")                                                                                 \
+            .def("__iter__", py::iterator<core::Projection<st::synapse_type>>(), "Get an iterator of the projection.") \
+            .def("__len__", &core::Projection<st::synapse_type>::size, "Count number of synapses in the projection.")  \
+            .def(                                                                                                      \
+                "__getitem__",                                                                                         \
+                static_cast<core::Projection<st::synapse_type>::Synapse &(                                             \
+                    core::Projection<st::synapse_type>::*)(size_t)>(&core::Projection<st::synapse_type>::operator[]),  \
+                py::return_internal_reference<>(),                                                                     \
+                "Get parameter values of a synapse with the given index.");  // NOLINT
 
-BOOST_PP_SEQ_FOR_EACH(INSTANCE_PY_PROJECTIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_SYNAPSES))  //!OCLINT(Parameters used)
 
-#endif
+void export_projection()
+{
+    BOOST_PP_SEQ_FOR_EACH(
+        INSTANCE_PY_PROJECTIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_SYNAPSES))  //!OCLINT(Parameters used)
+}

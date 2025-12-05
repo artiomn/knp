@@ -58,7 +58,7 @@ struct uid_from_python
 };
 
 
-auto get_py_hash(const knp::core::UID& uid)
+inline auto get_py_hash(const knp::core::UID& uid)
 {
     const knp::core::uid_hash hash;
     return hash(uid);
