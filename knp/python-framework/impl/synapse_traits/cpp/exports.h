@@ -1,10 +1,10 @@
 /**
- * @file synapse_traits.cpp
- * @brief Python bindings for synapse traits.
+ * @file exports.h
+ * @brief Export function prototypes for Python bindings.
  * @kaspersky_support Artiom N.
- * @date 21.02.24
+ * @date 05.12.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,7 @@
  * limitations under the License.
  */
 
-#include "common.h"
-#include "exports.h"
+#pragma once
 
-
-BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
-{
-    export_delta();
-    export_resource_stdp_delta();
-}
+void export_delta();
+void export_resource_stdp_delta();
