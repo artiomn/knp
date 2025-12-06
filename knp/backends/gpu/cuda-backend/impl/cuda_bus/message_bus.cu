@@ -190,12 +190,13 @@ __global__ void find_messages_kernel(const MessageVariant *messages, size_t mess
 template <class MessageType>
 device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const cuda::UID &receiver_uid)
 {
+    SPDLOG_DEBUG("Unloading messages from GPU message bus for receiver {}.", std::string(to_cpu_uid(receiver_uid)));
     size_t sub_index = find_subscription<MessageType>(receiver_uid);
     if (sub_index >= subscriptions_.size()) return device_lib::CUDAVector<uint64_t>{};
     if (!messages_to_route_.size()) return device_lib::CUDAVector<uint64_t>{};
-
     Subscription subscription = subscriptions_.copy_at(sub_index);
     constexpr size_t message_type = boost::mp11::mp_find<MessageVariant, MessageType>();
+    SPDLOG_TRACE("There is an associated type-{} subscription and the bus is non-empty.", message_type);
     if (subscription.type() != message_type) return device_lib::CUDAVector<uint64_t>{};
 
     auto [num_blocks, num_threads] = device_lib::get_blocks_config(messages_to_route_.size());
@@ -212,9 +213,13 @@ device_lib::CUDAVector<uint64_t> CUDAMessageBus::unload_messages(const cuda::UID
     size_t cpu_counter;
     cudaMemcpy(&cpu_counter, counter, sizeof(cpu_counter), cudaMemcpyDeviceToHost);
     cudaFree(counter);
+    SPDLOG_TRACE("Found {} incoming messages.", cpu_counter);
     device_lib::CUDAVector<uint64_t> result(cpu_counter);
-    auto [num_blocks_copy, num_threads_copy] = device_lib::get_blocks_config(cpu_counter);
-    device_lib::copy_kernel<<<num_blocks_copy, num_threads_copy>>>(result.data(), cpu_counter, indices);
+    if (cpu_counter != 0)
+    {
+        auto [num_blocks_copy, num_threads_copy] = device_lib::get_blocks_config(cpu_counter);
+        device_lib::copy_kernel<<<num_blocks_copy, num_threads_copy>>>(result.data(), cpu_counter, indices);
+    }
     cudaFree(indices);
     return result;
 }

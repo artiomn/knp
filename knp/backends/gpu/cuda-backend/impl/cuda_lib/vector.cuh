@@ -258,9 +258,7 @@ public:
 
     __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
-#ifndef __CUDA_ARCH__
         SPDLOG_TRACE("Construct from std vector with size {}", vec.size());
-#endif
         clear();
         reserve(vec.size());
         if constexpr (std::is_trivially_copyable_v<value_type>)
@@ -272,6 +270,7 @@ public:
             auto [num_blocks, num_threads] = get_blocks_config(size_);
             copy_construct_kernel<<<num_blocks, num_threads>>>(data_, size_, vec.data());
         }
+        size_ = vec.size();
         return *this;
     }
 
@@ -363,6 +362,7 @@ public:
         if (size_ == capacity_) reserve((size_ + 1) * 2);
     #ifdef __CUDA_ARCH__
         Allocator::construct(data_ + size_, value);
+        ++size_;
     #else
         std::cout << "Constructing at " << data_ + size_ << " with capacity of " << capacity_ << std::endl;
         resize(size_ + 1);

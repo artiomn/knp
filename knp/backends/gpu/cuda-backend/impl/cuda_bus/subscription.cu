@@ -35,6 +35,17 @@ __host__ Subscription::Subscription(const knp::core::MessageEndpoint::Subscripti
 
     const knp::core::MessageEndpoint::SubscriptionVariant &sub = cpu_subscription;
     size_t type_index = sub.index();
+    // TODO TEMP
+    std::visit([](const auto &sub)
+           {
+                std::cout << "Subscription: receiver " << std::string(sub.get_receiver_uid()) << "\nSenders: \n";
+                for (const auto &snd: sub.get_senders())
+                {
+                    std::cout << std::string(snd) << "\n";
+                }
+                std::cout << std::endl;
+           }, cpu_subscription);
+    // TODO END TEMP
     cuda::UID receiver_uid = std::visit([](const auto &sub)
         {
             return cuda::to_gpu_uid(sub.get_receiver_uid());

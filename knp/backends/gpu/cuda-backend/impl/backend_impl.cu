@@ -43,15 +43,6 @@
 #include "cuda_bus/messaging.cuh"
 
 
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::device_lib::CUDAVector<uint64_t>);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpact);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpactMessage);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SpikeMessage);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::PopulationVariants);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::ProjectionVariants);
-
-
 namespace knp::backends::gpu::cuda
 {
 // helper type for the visitor.
@@ -339,23 +330,31 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
     if (thread_index > num_projections) return;
 
     CUDABackendImpl::ProjectionVariants &projection = projections[thread_index];
-    printf("%lu:2\n", thread_index);
+    printf("Indices:\n");
+    for (size_t i = 0; i < num_projections; ++i)
+    {
+        for (size_t j = 0; j < indices[i].size(); ++i)
+        {
+            printf("%lu ", indices[i][j]);
+        }
+        printf("\n");
+    }
 
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> msgs(indices[thread_index].size());
-    printf("%lu:3\n", thread_index);
+    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> msgs; // (indices[thread_index].size());
     for (size_t n = 0; n < indices[thread_index].size(); ++n)  // Almost always 1 or 0 iterations.
     {
-        printf("%lu:4\n", thread_index);
         uint64_t message_index = indices[thread_index][n];
         if (message_index >= messages_size) continue;
-        msgs[n] = messages[message_index];
+        printf("size %lu message_index %lu, n %lu\n", msgs.size(), message_index, n);
+        // printf("%lu", msgs[n].index());
+        msgs.push_back(messages[message_index]);
+        printf("Msgs after adding: %lu\n", msgs.size());
+        // msgs[n] = messages[message_index];
     }
-    printf("%lu:5\n", thread_index);
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
         CUDABackendImpl::calculate_projection(proj, msgs, step);
     }, projection);
-    printf("%lu:6\n", thread_index);
 }
 
 
@@ -720,10 +719,10 @@ __host__ uint64_t CUDABackendImpl::route_projection_messages(uint64_t step)
     {
         cudaMalloc(&messages, sizeof(MessageVector));
         extract_projection_message<<<1, 1>>>(device_projections_.data() + i, step, messages);
+        cudaDeviceSynchronize();
         MessageVector msg_vec = gpu_extract<MessageVector>(messages);
         device_message_bus_.send_message_gpu_batch(msg_vec);
     }
-    // TODO: extract messages from host bus: find all uids, extract messages from endpoint for each uid
 
     return 0;
 }
@@ -735,14 +734,18 @@ __device__ void CUDABackendImpl::calculate_projection(
     std::uint64_t step_n)
 {
     constexpr size_t spike_message_index = boost::mp11::mp_find<cuda::MessageVariant, cuda::SpikeMessage>();
+    printf("Messages size: %lu\n", messages.size());
     for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
     {
         if (message_var.index() != spike_message_index) continue;
         const SpikeMessage &message = ::cuda::std::get<SpikeMessage>(message_var);
+        printf("Processing message\n");
         const auto &message_data = message.neuron_indexes_;
         for (size_t i = 0; i < message_data.size(); ++i)
         {
+            printf("Processing message data: index %lu, value %u\n", i, message_data[i]);
             const auto &spiked_neuron_index = message_data[i];
+            printf("Projection size: %lu\n", projection.synapses_.size());
             for (size_t synapse_index = 0; synapse_index < projection.synapses_.size(); ++synapse_index)
             {
                 CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse synapse =
@@ -752,23 +755,25 @@ __device__ void CUDABackendImpl::calculate_projection(
 
                 // The message is sent on step N - 1, received on step N. Step 0 delay 1 means the message is sent on 0.
                 size_t future_step = synapse_params.delay_ + step_n - 1;
+                printf("Future step: %lu\n", future_step);
                 knp::backends::gpu::cuda::SynapticImpact impact{
                         synapse_index, synapse_params.weight_, synapse_params.output_type_,
                         static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
                         static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
-
-                // ::cuda::std::find_if() is not implemented yet.
+                printf("Impact from neuron_%u to neuron_%u\n",
+                       impact.presynaptic_neuron_index_,
+                       impact.postsynaptic_neuron_index_);
                 auto iter = projection.messages_.begin();
                 // TODO: Easy to parallelize
                 for (; iter != projection.messages_.end(); ++iter)
                 {
                     if (iter->header_.send_time_ == future_step)
                     {
+                        printf("Adding impact to existing message at future_step %lu\n", future_step);
                         iter->impacts_.push_back(impact);
                         break;
                     }
                 }
-
                 if (iter == projection.messages_.end())
                 {
                     device_lib::CUDAVector<cuda::SynapticImpact> impacts(1);
@@ -778,8 +783,10 @@ __device__ void CUDABackendImpl::calculate_projection(
                             projection.presynaptic_uid_,
                             projection.postsynaptic_uid_,
                             ::cuda::std::move(impacts)};
-                            message_out.is_forcing_ = is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>();
-                            projection.messages_.push_back(message_out);
+
+                    message_out.is_forcing_ = is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>();
+                    printf("Adding new_message to messages_ at step %lu\n", future_step);
+                    projection.messages_.push_back(message_out);
                 }
             }
         }
