@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <tuple>
 #include <utility>
 
 #include <knp/core/projection.h>
@@ -59,7 +60,7 @@ struct CUDAProjection
     /**
      * @brief Synapse description structure that contains synapse parameters and indexes of the associated neurons.
      */
-    using Synapse = thrust::tuple<SynapseParameters, uint32_t, uint32_t>;
+    using Synapse = ::cuda::std::tuple<SynapseParameters, uint32_t, uint32_t>;
 
     __host__ __device__ CUDAProjection()
     #if !defined(__CUDA_ARCH__)
@@ -75,9 +76,14 @@ struct CUDAProjection
         : uid_(to_gpu_uid(projection.get_uid())),
           presynaptic_uid_(to_gpu_uid(projection.get_presynaptic())),
           postsynaptic_uid_(to_gpu_uid(projection.get_postsynaptic())),
-          is_locked_(true)
+          is_locked_(projection.is_locked())
     {
-        is_locked_ = projection.is_locked();
+        synapses_.reserve(projection.size());
+        for (auto &synapse : projection)
+        {
+            Synapse out_synapse{std::get<0>(synapse), std::get<1>(synapse), std::get<2>(synapse)};
+            synapses_.push_back(out_synapse);
+        }
     }
     /**
      * @brief Destructor.

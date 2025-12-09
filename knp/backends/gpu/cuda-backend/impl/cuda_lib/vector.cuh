@@ -63,10 +63,10 @@ public:
 
 public:
     __host__ CUDAVector(const std::initializer_list<value_type> &init_list)
+        : capacity_(init_list.size()), size_(init_list.size())
     {
-        clear();
-        reserve(init_list.size());
-
+        if (!size_) return;
+        data_ = allocator_.allocate(capacity_);
         if constexpr (std::is_trivially_copyable<value_type>::value)
         {
             call_and_check(cudaMemcpy(data_, std::data(init_list), init_list.size() * sizeof(value_type),
@@ -81,11 +81,10 @@ public:
         }
     }
 
-    __host__ explicit CUDAVector(const std::vector<value_type> &vec)
+    __host__ explicit CUDAVector(const std::vector<value_type> &vec) : capacity_(vec.size()), size_(vec.size())
     {
-        clear();
-        reserve(vec.size());
         if (!vec.size()) return;
+        data_ = allocator_.allocate(capacity_);
 
         if constexpr (std::is_trivially_copyable<value_type>::value)
         {
@@ -102,19 +101,16 @@ public:
 
     // TODO: Make a cheap move from gpu to cpu and back.
 
-    __host__ __device__ explicit CUDAVector(size_type size = 0) : capacity_(size), size_(size), data_(nullptr)
+    __host__ __device__ explicit CUDAVector(size_type size = 0) : capacity_(size), size_(size)
     {
+        if (!size_) return;
+        data_ = allocator_.allocate(capacity_);
         #ifdef __CUDA_ARCH__
-        data_ = allocator_.allocate(size_);
         for (size_type i = 0; i < size_; ++i) Allocator::construct(data_ + i);
         #else
-        if (size_)
-        {
-            auto [num_blocks, num_threads] = get_blocks_config(size_);
-            data_ = allocator_.allocate(capacity_);
-            construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
-            cudaDeviceSynchronize();
-        }
+        auto [num_blocks, num_threads] = get_blocks_config(size_);
+        construct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
+        cudaDeviceSynchronize();
         #endif
     }
 
@@ -122,8 +118,8 @@ public:
     __host__ __device__ CUDAVector(const value_type *vec, size_type size)
     {
         reserve(size);
-        #ifdef __CUDA_ARCH__
         size_ = size;
+        #ifdef __CUDA_ARCH__
         for (size_type i = 0; i < size_; ++i) allocator_.construct(data_ + i, *(vec + i));
         #else
         if constexpr (std::is_trivially_copyable_v<value_type>)
@@ -137,22 +133,22 @@ public:
                 gpu_insert(vec[i], data_ + i); // TODO Parallelize
             }
         }
-        size_ = size;
         #endif
     }
 
-    static __host__ __device__ CUDAVector<T, Allocator> from_gpu_pointer(T *data_pointer, size_t data_size)
-    {
-        CUDAVector<T, Allocator> result;
-        result.reserve(data_size);
-    }
+//    static __host__ __device__ CUDAVector<T, Allocator> from_gpu_pointer(T *data_pointer, size_t data_size)
+//    {
+//        CUDAVector<T, Allocator> result;
+//        result.reserve(data_size);
+//
+//    }
 
     __host__ __device__ ~CUDAVector()
     {
         if (!data_ || !capacity_) return;
         #ifdef __CUDA_ARCH__
         for (size_type i = 0; i < size_; ++i) Allocator::destroy(data_ + i);
-        allocator_.deallocate(data_, size_);
+        allocator_.deallocate(data_);
         #else
         if (size_)
         {
@@ -161,7 +157,7 @@ public:
             cudaDeviceSynchronize();
         }
         SPDLOG_TRACE("Deallocating memory for {} elements at {}.", capacity_, reinterpret_cast<void*>(data_));
-        if (capacity_) allocator_.deallocate(data_, capacity_);
+        if (capacity_) allocator_.deallocate(data_);
         #endif
     }
 
@@ -212,31 +208,25 @@ public:
     }
 
     // Copy assignment operator.
-    __device__ CUDAVector& operator=(const CUDAVector& other)
+    __host__ __device__ CUDAVector& operator=(const CUDAVector& other)
     {
-        if (this != &other)
+        if (this == &other) return *this;
+        decltype(data_) data_new = allocator_.allocate(other.size());
+        #ifdef __CUDA_ARCH__
+        for (size_type i = 0; i < other.size_; ++i)
         {
-#ifndef __CUDA_ARCH__
-            SPDLOG_TRACE("Copying cuda vector of size {}", other.size_);
-#endif
-            decltype(data_) data_new = allocator_.allocate(capacity_);
-            for (size_type i = 0; i < other.size_; ++i)
-            {
-                allocator_.construct(data_ + i);
-                data_new[i] = other.data_[i];
-            }
-#ifndef __CUDA_ARCH__
-            SPDLOG_TRACE("Copied data to a buffer, now exchanging the pointer and the buffer");
-#endif
-            for (size_type i = 0; i < size_; ++i) allocator_.destroy(data_ + i);
-            allocator_.deallocate(data_);
-            capacity_ = other.capacity_;
-            size_ = other.size_;
-            data_ = data_new;
-#ifndef __CUDA_ARCH__
-            SPDLOG_TRACE("Done copying cuda vector");
-#endif
+            allocator_.construct(data_new + i);
+            data_new[i] = other.data_[i];
         }
+        #else
+        auto [num_blocks, num_threads] = get_blocks_config(other.size());
+        copy_construct_kernel<<<num_blocks, num_threads>>>(data_new, other.size(), other.data());
+        #endif
+        clear();
+        if (capacity_) allocator_.deallocate(data_);
+        capacity_ = other.size_;
+        size_ = other.size_;
+        data_ = data_new;
         return *this;
     }
 
@@ -244,9 +234,9 @@ public:
     __host__ __device__ CUDAVector& operator=(CUDAVector&& other) noexcept
     {
         if (this == &other) return *this;
+        clear();
         capacity_ = other.capacity_;
         other.capacity_ = 0;
-
         size_ = other.size_;
         other.size_ = 0;
         allocator_.deallocate(data_);
@@ -255,6 +245,7 @@ public:
 
         return *this;
     }
+
 
     __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
@@ -461,7 +452,7 @@ public:
 #ifdef __CUDA_ARCH__
         for (size_t i = 0; i < tail_length; ++i)
         {
-            *(begin_iter + i) = ::cuda::std::move(*(begin_iter + i + num_destruct));
+            *(begin_iter + i) = ::cuda::std::move(*(begin_iter + i + num_to_remove));
         }
         resize(size_ - num_destruct + tail_length);
 #else
@@ -479,9 +470,9 @@ public:
         // Clean up buffer
         destruct_kernel<T, Allocator><<<num_blocks_mv, num_threads_mv>>>(data_buf, tail_length);
         allocator_.deallocate(data_buf);
-
 #endif
     }
+
     __host__ T copy_at(size_t index) const
     {
         if constexpr (std::is_trivially_copyable<T>::value)
@@ -544,18 +535,15 @@ private:
     {
         if (new_size < size_)
         {
-            for (size_type i = new_size; i < size_ - new_size; ++i)
+            for (size_type i = new_size; i < size_; ++i)
             {
                 Allocator::destroy(data_ + i);
             }
-
-            dev_reserve(new_size);
         }
         else if (new_size > size_)
         {
             dev_reserve(new_size);
-
-            for (size_type i = size_ - 1; i < new_size - size_; ++i)
+            for (size_type i = size_; i < new_size; ++i)
             {
                 Allocator::construct(data_ + i);
             }

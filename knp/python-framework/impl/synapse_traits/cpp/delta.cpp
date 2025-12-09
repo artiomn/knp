@@ -40,7 +40,6 @@ using ds_params = knp::synapse_traits::synapse_parameters<knp::synapse_traits::D
 
 py::class_<ds_params>("DeltaSynapseParameters", "Structure for Delta synapse parameters.")
     .def(py::init<>())
-    .def(py::init<float, uint32_t, knp::synapse_traits::OutputType>())
     .add_property("weight", &ds_params::weight_, "Synaptic weight.")
     .add_property(
         "delay", &ds_params::delay_,

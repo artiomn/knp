@@ -330,7 +330,7 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
     if (thread_index > num_projections) return;
 
     CUDABackendImpl::ProjectionVariants &projection = projections[thread_index];
-    printf("Indices:\n");
+    printf("Indices %lu:\n", projection.index());
     for (size_t i = 0; i < num_projections; ++i)
     {
         for (size_t j = 0; j < indices[i].size(); ++i)
@@ -349,7 +349,6 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
         // printf("%lu", msgs[n].index());
         msgs.push_back(messages[message_index]);
         printf("Msgs after adding: %lu\n", msgs.size());
-        // msgs[n] = messages[message_index];
     }
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
@@ -750,16 +749,17 @@ __device__ void CUDABackendImpl::calculate_projection(
             {
                 CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse synapse =
                         projection.synapses_[synapse_index];
-                if (thrust::get<core::source_neuron_id>(synapse) != spiked_neuron_index) continue;
-                const auto &synapse_params = thrust::get<core::synapse_data>(synapse);
+                if (::cuda::std::get<core::source_neuron_id>(synapse) != spiked_neuron_index) continue;
+                const auto &synapse_params = ::cuda::std::get<core::synapse_data>(synapse);
 
                 // The message is sent on step N - 1, received on step N. Step 0 delay 1 means the message is sent on 0.
                 size_t future_step = synapse_params.delay_ + step_n - 1;
-                printf("Future step: %lu\n", future_step);
+                printf("Future step: %lu, delay: %u, weight: %f\n", future_step, synapse_params.delay_,
+                       synapse_params.weight_);
                 knp::backends::gpu::cuda::SynapticImpact impact{
                         synapse_index, synapse_params.weight_, synapse_params.output_type_,
-                        static_cast<uint32_t>(thrust::get<core::source_neuron_id>(synapse)),
-                        static_cast<uint32_t>(thrust::get<core::target_neuron_id>(synapse))};
+                        static_cast<uint32_t>(::cuda::std::get<core::source_neuron_id>(synapse)),
+                        static_cast<uint32_t>(::cuda::std::get<core::target_neuron_id>(synapse))};
                 printf("Impact from neuron_%u to neuron_%u\n",
                        impact.presynaptic_neuron_index_,
                        impact.postsynaptic_neuron_index_);

@@ -43,6 +43,7 @@ REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::PopulationV
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::ProjectionVariants);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::device_lib::CUDAVector<uint64_t>);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse);
 
 
 namespace knp::testing
@@ -62,10 +63,11 @@ TEST(CudaBackendSuite, SmallestNetwork)
     TestedCUDABackend backend;
 
     kt::BLIFATPopulation population{kt::neuron_generator, 1};
-    Projection loop_projection =
-        kt::DeltaProjection{population.get_uid(), population.get_uid(), kt::synapse_generator, 1};
-    Projection input_projection =
-        kt::DeltaProjection{knp::core::UID{false}, population.get_uid(), kt::input_projection_gen, 1};
+    kt::DeltaProjection proj_host_loop{population.get_uid(), population.get_uid(), kt::synapse_generator, 1};
+    Projection loop_projection = proj_host_loop;
+
+    kt::DeltaProjection proj_host_input{knp::core::UID{false}, population.get_uid(), kt::input_projection_gen, 1};
+    Projection input_projection = proj_host_input;
     knp::core::UID input_uid = std::visit([](const auto &proj) { return proj.get_uid(); }, input_projection);
 
     for (auto &device : backend.get_devices())

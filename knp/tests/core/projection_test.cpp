@@ -75,7 +75,8 @@ TEST(ProjectionSuite, Generation)  // cppcheck-suppress syntaxError
         const uint32_t id_from = iter / postsynaptic_size;
         const uint32_t id_to = iter % postsynaptic_size;
         float weight = weight_constant * static_cast<float>(iter);
-        const SynapseParameters params(weight, iter / 100 + 1, knp::synapse_traits::OutputType::EXCITATORY);
+        const SynapseParameters params{
+            weight, static_cast<uint32_t>(iter / 100 + 1), knp::synapse_traits::OutputType::EXCITATORY};
         return std::optional(Synapse{params, id_from, id_to});
     };
 
