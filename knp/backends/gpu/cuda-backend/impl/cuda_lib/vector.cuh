@@ -179,8 +179,7 @@ public:
         if (num_threads > 0)
         {
             SPDLOG_TRACE("Call copy construct kernel with {} blocks and {} threads", num_blocks, num_threads);
-            copy_construct_kernel<<<num_blocks, num_threads>>>(reinterpret_cast<void*>(data_), size_,
-                                                               reinterpret_cast<const void*>(other.data_));
+            copy_construct_kernel<<<num_blocks, num_threads>>>(data_, size_, other.data_);
             cudaDeviceSynchronize();
         }
         #endif
