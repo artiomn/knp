@@ -83,6 +83,14 @@ struct CUDAProjection
         {
             Synapse out_synapse{std::get<0>(synapse), std::get<1>(synapse), std::get<2>(synapse)};
             synapses_.push_back(out_synapse);
+            // TODO TEMP
+//            SPDLOG_TRACE("Synapse: weight {} delay {}", ::cuda::std::get<0>(synapses_.copy_at(0).weight_,
+//                                                                            synapses_.copy_at(0).delay_));
+            SPDLOG_TRACE("Synapse: weight {} delay {}", ::cuda::std::get<0>(out_synapse).weight_,
+                         ::cuda::std::get<0>(out_synapse).delay_);
+            Synapse syn_copy = synapses_.copy_at(synapses_.size() - 1);
+            SPDLOG_TRACE("Synapse2: weight {} delay {}", ::cuda::std::get<0>(syn_copy).weight_,
+                         ::cuda::std::get<0>(syn_copy).delay_);
         }
     }
     /**

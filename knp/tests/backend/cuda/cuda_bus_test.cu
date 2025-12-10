@@ -37,15 +37,22 @@
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/messaging.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/projection.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/population.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/backend_impl.cuh"
 
 
 REGISTER_CUDA_VECTOR_TYPE(uint64_t);
 REGISTER_CUDA_VECTOR_TYPE(unsigned int);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::UID);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::Subscription);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SpikeMessage);
-//REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpactMessage);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::PopulationVariants);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDABackendImpl::ProjectionVariants);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SpikeMessage);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::SynapticImpactMessage);
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
+REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse);
+
 
 
 namespace knp::testing
