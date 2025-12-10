@@ -1,6 +1,6 @@
 """
 @file test_single_thread_cpu.py
-@brief Kaspersky Neuromorphic Platform single-thread CPU backend tests.
+@brief Kaspersky Neuromorphic Platform single-threaded CPU backend tests.
 
 @kaspersky_support Artiom N.
 @license Apache 2.0 License.

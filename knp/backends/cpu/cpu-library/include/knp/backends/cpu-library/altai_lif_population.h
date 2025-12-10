@@ -1,9 +1,10 @@
 /**
  * @file altai_lif_population.h
+ * @brief Common templates for LIF population.
  * @kaspersky_support Vartenkov A.
  * @date 01.04.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

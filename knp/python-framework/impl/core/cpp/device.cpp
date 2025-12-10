@@ -26,7 +26,7 @@ py::enum_<core::DeviceType>("DeviceType")
     .value("GPU", DeviceType::1)
     .value("AltAI1_NPU", DeviceType::2);
 
-py::class_<core::Device>("Device", "The Device class is the base class for devices supported by the device library.");
+py::class_<core::Device>("Device", "The Device class is the base class for supported devices.");
 
 */
 

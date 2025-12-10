@@ -41,7 +41,7 @@ py::class_<rds_rule>(
         "True if the synapse was updated during the current spike sequence.")
     .add_property(
         "had_contributed", &rds_rule::has_contributed_,
-        "True if a postsynaptic neuron had a spike recently after this synapse got one.");
+        "True if a postsynaptic neuron generated a spike after this synapse got one from presynaptic neuron.");
 
 
 py::class_<rds_params, py::bases<ds_params>>(
