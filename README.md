@@ -32,6 +32,7 @@ For Kaspersky Neuromorphic Platform operation, the computer must meet the follow
 Minimum hardware requirements:
 
 - CPU: Intel Core i5 or higher compatible processor
+- GPU with CUDA support: NVIDIA GPU using Pascal or higher
 - Neuromorphic processing unit (if needed): AltAI-1
 - 8 GB of RAM
 - Available hard drive space:
@@ -47,50 +48,15 @@ Supported operating systems:
 
 You can use the device running any other operating system from the Linux family, if the operating system distribution kit contains the Boost library version 1.81 or later.
 
-To work with the platform, the following software must be installed on the device:
+For information on the required software, see <a href="https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=232788">Kaspersky Neuromorphic Platform Help</a>.
 
-- Visual Studio 2022
+## Installation
 
-  This software must be installed for building the platform or application solution in Windows.
+You can install Kaspersky Neuromorphic Platform in one of the following ways:
 
-- Boost 1.81 or later
-
-  When working in Windows, it is recommended to install the library <a href="https://archives.boost.io/release/1.81.0/binaries/">precompiled</a> for Visual Studio 2022 (compiler version: 14.3).
-
-- CMake 3.25 or later
-
-- Before installing platform component deb packages for an `AltAI ANN2SNN` backend, make sure that the device has the following software:
-
-  - TensorFlow 2.4.1 or later
-
-  - Keras 2.3.1 or later
-
-  - NumPy 2.4.1 or later
-
-    The NumPy library version must match the TensorFlow library version.
-
-- Before installing a whl or deb package containing a Python framework for an `AltAI SNN` backend, make sure that the device has Python 3.10 or later.
-
-- Before installing a whl package containing a Python framework for an `AltAI ANN2SNN` backend, make sure that the device has the following software:
-
-  - NumPy 1.24.3
-  - TensorFlow 2.13.1
-  - Loguru 0.7.2
-  - PyYAML 6.0.1
-  - NetworkX 3.1
-  - Matplotlib 3.6.3
-  - tqdm 4.66.5
-
-- Before installing a deb package containing a Python framework for an `AltAI ANN2SNN` backend, make sure that the device has the following software:
-
-  - python3-pip
-  - python3-numpy
-  - python3-yaml
-  - python3-networkx
-  - python3-matplotlib
-  - python3-loguru
-  - python3-tqdm
-  - TensorFlow 2.13.1
+- <a href="https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=273773">Install deb packages</a>
+- <a href="https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=273774">Install Python development packages</a>
+- <a href="https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=283082">Build a platform project</a>
 
 ## Trademark notices
 
@@ -103,6 +69,7 @@ TensorFlow and any associated designations are trademarks of Google LLC.\
 Intel and Core are trademarks of Intel Corporation in the U.S. and/or other countries.\
 Linux is the registered trademark of Linus Torvalds in the U.S. and other countries.\
 Microsoft, Visual Studio and Windows are trademarks of the Microsoft group of companies.\
+Nvidia is a registered trademark of NVIDIA Corporation.\
 JavaScript is a registered trademark of Oracle and/or its affiliates.\
 Python is a trademark or registered trademark of the Python Software Foundation.\
 Debian is a registered trademark of Software in the Public Interest, Inc.
