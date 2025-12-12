@@ -77,7 +77,7 @@ auto add_subnetwork_populations(AnnotatedNetwork &result)
     ResourceNeuronData default_neuron{{}};
     default_neuron.activation_threshold_ = default_threshold;
     ResourceNeuronData l_neuron = default_neuron;
-    // Corresponds to L characteristicv time 3.
+    // Corresponds to L characteristic time 3.
     l_neuron.potential_decay_ = l_neuron_potential_decay;
     l_neuron.d_h_ = hebbian_plasticity;
     l_neuron.dopamine_plasticity_time_ = neuron_dopamine_period;
@@ -191,13 +191,13 @@ AnnotatedNetwork create_example_network(int num_compound_networks)
         auto inhibitory_synapse = default_synapse;
         inhibitory_synapse.weight_ = -30;
         inhibitory_synapse.delay_ = 4;
-        DeltaProjection projection_7 = knp::framework::projection::creators::all_to_all<knp::synapse_traits::DeltaSynapse>(
-            knp::core::UID{false}, population_uids[INPUT], num_possible_labels, num_input_neurons,
-            [&inhibitory_synapse](size_t, size_t) { return inhibitory_synapse; });
+        DeltaProjection projection_7 =
+            knp::framework::projection::creators::all_to_all<knp::synapse_traits::DeltaSynapse>(
+                knp::core::UID{false}, population_uids[INPUT], num_possible_labels, num_input_neurons,
+                [&inhibitory_synapse](size_t, size_t) { return inhibitory_synapse; });
         result.network_.add_projection(projection_7);
         result.data_.inference_internal_projection_.insert(projection_7.get_uid());
         result.data_.projections_from_classes_.push_back(projection_7.get_uid());
-
     }
 
     // Return created network.
