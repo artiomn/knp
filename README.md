@@ -69,7 +69,7 @@ TensorFlow and any associated designations are trademarks of Google LLC.\
 Intel and Core are trademarks of Intel Corporation in the U.S. and/or other countries.\
 Linux is the registered trademark of Linus Torvalds in the U.S. and other countries.\
 Microsoft, Visual Studio and Windows are trademarks of the Microsoft group of companies.\
-Nvidia is a registered trademark of NVIDIA Corporation.\
+NVIDIA is a registered trademark of NVIDIA Corporation.\
 JavaScript is a registered trademark of Oracle and/or its affiliates.\
 Python is a trademark or registered trademark of the Python Software Foundation.\
 Debian is a registered trademark of Software in the Public Interest, Inc.
