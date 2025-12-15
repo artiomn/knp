@@ -123,11 +123,11 @@ void CUDABackend::_step()
     impl_->get_message_bus().send_messages_to_host();
     get_message_bus().route_messages();
     impl_->route_projection_messages(step);
+    SPDLOG_DEBUG("Step finished #{}.", get_step());
 
     step = gad_step();
     // Need to suppress "Unused variable" warning.
     (void)step;
-    SPDLOG_DEBUG("Step finished #{}.", step);
 }
 
 
@@ -147,8 +147,7 @@ void CUDABackend::load_populations(const std::vector<PopulationVariants> &popula
 {
     SPDLOG_DEBUG("Loading populations [{}]...", populations.size());
 
-//    populations_ = populations;
-    impl_->load_populations(populations_);
+    impl_->load_populations(populations);
 
     SPDLOG_DEBUG("All populations loaded.");
 }

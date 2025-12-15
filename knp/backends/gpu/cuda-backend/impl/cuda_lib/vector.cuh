@@ -99,6 +99,26 @@ public:
         }
     }
 
+    __host__ std::vector<value_type> to_std() const
+    {
+        std::vector<value_type> res;
+        if (!size_) return res;
+        if constexpr (std::is_trivially_copyable<value_type>::value)
+        {
+            res.resize(size_);
+            call_and_check(cudaMemcpy(res.data(), data_, size_ * sizeof(value_type), cudaMemcpyDeviceToHost));
+        }
+        else
+        {
+            res.reserve(size_);
+            for (size_t i = 0; i < size_; ++i)
+            {
+                res.push_back(gpu_extract(data_ + i));
+            }
+        }
+        return res;
+    }
+
     // TODO: Make a cheap move from gpu to cpu and back.
 
     __host__ __device__ explicit CUDAVector(size_type size = 0) : capacity_(size), size_(size)

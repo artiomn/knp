@@ -1,5 +1,5 @@
 /**
- * @file backend.cu
+ * @file backend_impl.cu
  * @brief CUDABackendImpl backend class implementation.
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
@@ -128,39 +128,6 @@ __global__ void get_projection_kernel(const CUDABackendImpl::ProjectionVariants 
 }
 
 
-template<typename T>
-T gpu_extract_container(const T *value)
-{
-    int *type_gpu;
-    const void **val_gpu; // This is a gpu pointer to gpu pointer to gpu population.
-    call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
-    call_and_check(cudaMalloc(&val_gpu, sizeof(void *)));
-    get_population_kernel<<<1, 1>>>(value, type_gpu, val_gpu);
-
-    int type;
-    // This is a gpu pointer to gpu population. &pop_ptr is a cpu pointer to gpu pointer to gpu population.
-    const void *val_ptr;
-
-    call_and_check(cudaMemcpy(&type, type_gpu, sizeof(int), cudaMemcpyDeviceToHost));
-    call_and_check(cudaMemcpy(&val_ptr, val_gpu, sizeof(void *), cudaMemcpyDeviceToHost));
-    call_and_check(cudaFree(type_gpu));
-    call_and_check(cudaFree(val_gpu));
-
-    // Here we have a type index and a gpu pointer to population.
-    T result;
-    // TODO: Remove crunchs.
-    static_assert(::cuda::std::variant_size<T>() == 1, "Variant size is incorrect!");
-
-    switch(type)
-    {
-        case 0: result = extract_by_index<T, 0>(val_ptr);
-        // case 1: result = extract_by_index<CUDABackendImpl::PopulationVariants, 1>(pop_ptr);
-    }
-
-    return result;
-}
-
-
 //
 //template<>
 //CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
@@ -241,24 +208,27 @@ device_lib::CUDAVector<cuda::UID> get_uids(const device_lib::CUDAVector<VectorDa
 }
 
 
+/// @note: out_messages_data should be of size to contain at least num_populations messages.
 __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants *populations, size_t num_populations,
                                              const cuda::MessageVariant *messages, size_t messages_size,
                                              const cuda::device_lib::CUDAVector<uint64_t> *indices, size_t indices_size,
-                                             const cuda::device_lib::CUDAVector<cuda::MessageVariant> *out_messages,
-                                             std::uint64_t step)
+                                             cuda::MessageVariant *out_messages_data, std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
     if (thread_index >= num_populations) return;
 
     CUDABackendImpl::PopulationVariants &population = populations[thread_index];
-    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> new_messages(indices_size);
+    knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> new_messages;
+    printf("Population index: %lu\n", population.index());
 
-    for (size_t n = 0; n < indices_size; ++n)
+    size_t num_messages = indices[thread_index].size();
+    for (size_t n = 0; n < num_messages; ++n)
     {
         uint64_t message_index = indices[thread_index][n];
         if (message_index >= messages_size) continue;
-        new_messages[n] = messages[message_index];
+        printf("Messages size: %lu, message index: %lu\n", messages_size, message_index);
+        new_messages.push_back(messages[message_index]);
     }
 
     auto message = ::cuda::std::visit([&new_messages, step](auto &pop)
@@ -266,7 +236,7 @@ __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants
         return CUDABackendImpl::calculate_population(pop, new_messages, step);
     }, population);
 
-    //! if (message) out_messages[step] = message.value();
+    if (message) out_messages_data[thread_index] = cuda::MessageVariant{message.value()};
 }
 
 
@@ -289,19 +259,20 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
         gpu_insert(message_ids, population_messages.data() + i);
     }
 
-    MessageVector out_messages_cpu(device_populations_.size());
-    MessageVector *out_messages_gpu;
-    cudaMalloc(&out_messages_gpu, sizeof(MessageVector));
-    gpu_insert(out_messages_cpu, out_messages_gpu);
+    MessageVector out_messages(device_populations_.size());
+    assert(device_populations_.size() == population_messages.size());
+    std::cout << "Device populations: " << device_populations_.size() << " Message bus: "
+              << device_message_bus_.all_messages().size() << " messages" << "\n Population messages: "
+              << population_messages.size() << " Step: " << step << std::endl;
+    auto indices = population_messages.to_std();
+    auto indices2 = indices[0].to_std();
     calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_.data(), device_populations_.size(),
                                                               device_message_bus_.all_messages().data(),
                                                               device_message_bus_.all_messages().size(),
                                                               population_messages.data(), population_messages.size(),
-                                                              out_messages_gpu, step);
+                                                              out_messages.data(), step);
     cudaDeviceSynchronize();
-    out_messages_cpu = gpu_extract<MessageVector>(out_messages_gpu);
-    cudaFree(out_messages_gpu);
-    device_message_bus_.send_message_gpu_batch(out_messages_cpu);
+    device_message_bus_.send_message_gpu_batch(out_messages);
 }
 
 
@@ -327,19 +298,9 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
     printf("prjs: %lu %p\n msgs: %lu %p\n inds: %p\n", num_projections, projections, messages_size, messages,
            indices);
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (thread_index > num_projections) return;
+    if (thread_index >= num_projections) return;
 
     CUDABackendImpl::ProjectionVariants &projection = projections[thread_index];
-    printf("Indices %lu:\n", projection.index());
-    for (size_t i = 0; i < num_projections; ++i)
-    {
-        for (size_t j = 0; j < indices[i].size(); ++i)
-        {
-            printf("%lu ", indices[i][j]);
-        }
-        printf("\n");
-    }
-
     knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> msgs; // (indices[thread_index].size());
     for (size_t n = 0; n < indices[thread_index].size(); ++n)  // Almost always 1 or 0 iterations.
     {
