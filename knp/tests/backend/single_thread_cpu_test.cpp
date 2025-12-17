@@ -29,6 +29,7 @@
 #include <generators.h>
 #include <spdlog/spdlog.h>
 #include <tests_common.h>
+#include <tests_messaging_common.h>
 
 #include <vector>
 
@@ -79,18 +80,10 @@ TEST(SingleThreadCpuSuite, SmallestNetwork)
     for (knp::core::Step step = 0; step < 20; ++step)
     {
         // Send inputs on steps 0, 5, 10, 15.
-        if (step % 5 == 0)
-        {
-            knp::core::messaging::SpikeMessage message{{in_channel_uid, step}, {0}};
-            endpoint.send_message(message);
-        }
+        knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        endpoint.receive_all_messages();
-        // Write the steps on which the network sends a spike.
-        if (!endpoint.unload_messages<knp::core::messaging::SpikeMessage>(out_channel_uid).empty())
-        {
-            results.push_back(step);
-        }
+        auto output = std::move(knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint));
+        if (!output.empty()) results.push_back(step);
     }
 
     // Spikes on steps "5n + 1" (input) and on "previous_spike_n + 6" (positive feedback loop).
@@ -147,14 +140,9 @@ TEST(SingleThreadCpuSuite, AdditiveSTDPNetwork)
     for (knp::core::Step step = 0; step < 20; ++step)
     {
         // Send inputs on steps 0, 5, 10, 15.
-        if (step % 5 == 0)
-        {
-            knp::core::messaging::SpikeMessage message{{in_channel_uid, 0}, {0}};
-            endpoint.send_message(message);
-        }
+        knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        endpoint.receive_all_messages();
-        auto output = endpoint.unload_messages<knp::core::messaging::SpikeMessage>(out_channel_uid);
+        auto output = std::move(knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint));
         // Write the steps on which the network sends a spike.
         if (!output.empty()) results.push_back(step);
     }
@@ -243,16 +231,9 @@ TEST(SingleThreadCpuSuite, ResourceSTDPNetwork)
     for (knp::core::Step step = 0; step < 20; ++step)
     {
         // Send inputs on steps 0, 5, 10, 15.
-        if (step % 5 == 0)
-        {
-            knp::core::messaging::SpikeMessage message{{in_channel_uid, step}, {0}};
-            endpoint.send_message(message);
-        }
+        knp::testing::internal::send_messages_smallest_network(in_channel_uid, endpoint, step);
         backend._step();
-        size_t msg_count = endpoint.receive_all_messages();
-        SPDLOG_DEBUG("Received {} messages.", msg_count);
-        auto output = endpoint.unload_messages<knp::core::messaging::SpikeMessage>(out_channel_uid);
-        SPDLOG_DEBUG("Unloaded {} messages.", output.size());
+        auto output = std::move(knp::testing::internal::receive_messages_smallest_network(out_channel_uid, endpoint));
         // Write the steps on which the network sends a spike.
         if (!output.empty()) results.push_back(step);
     }

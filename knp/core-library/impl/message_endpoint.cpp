@@ -191,6 +191,9 @@ bool MessageEndpoint::receive_message()
                 else
                 {
                     SPDLOG_TRACE("Subscription has not sender UID: {}.", std::string(sender_uid));
+                    SPDLOG_TRACE(
+                        "Message was added to the subscription with receiver {}.",
+                        std::string(get_receiver_uid(subscription)));
                 }
             },
             sub_variant);
