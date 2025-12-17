@@ -141,7 +141,7 @@ public:  // NOLINT
 
     /**
      * @brief Set parameters for all neurons in the population.
-     * @param parameters vector of neuron parameters
+     * @param parameters vector of neuron parameters.
      * @note Move method.
      */
     void set_neurons_parameters(std::vector<NeuronParameters> &&parameters) { neurons_ = std::move(parameters); }
