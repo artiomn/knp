@@ -106,23 +106,34 @@ constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 
 void CUDABackend::_step()
 {
-    SPDLOG_DEBUG("Starting step #{}...", get_step());
-    if(!get_step()) impl_->get_message_bus().sync_with_host();
-    impl_->get_message_bus().send_messages_to_host();
-    get_message_bus().route_messages();
-    impl_->get_message_bus().receive_messages_from_host();
     auto step = get_step();
+    SPDLOG_DEBUG("Starting step #{}...", step);
+    if(!get_step()) impl_->get_message_bus().sync_with_host();
+    SPDLOG_DEBUG("Message bus 1 {}", impl_->get_message_bus().get_num_messages());
+    impl_->get_message_bus().send_messages_to_host(step);
+    SPDLOG_DEBUG("Message bus 2 {}", impl_->get_message_bus().get_num_messages());
+    get_message_bus().route_messages();
+    SPDLOG_DEBUG("Message bus 3 {}", impl_->get_message_bus().get_num_messages());
+    impl_->get_message_bus().receive_messages_from_host();
+    SPDLOG_DEBUG("Message bus 4 {}", impl_->get_message_bus().get_num_messages());
+
 
     // Calculate populations. This is the same as inference.
     impl_->calculate_populations(step);
+    SPDLOG_DEBUG("Message bus 5 {}", impl_->get_message_bus().get_num_messages());
     // impl_->route_population_messages(step);  // this is a part of calculate_populations
     get_message_bus().route_messages();
+    SPDLOG_DEBUG("Message bus 6 {}", impl_->get_message_bus().get_num_messages());
     //
     // Calculate projections.
     impl_->calculate_projections(step);
-    impl_->get_message_bus().send_messages_to_host();
+    SPDLOG_DEBUG("Message bus 7 {}", impl_->get_message_bus().get_num_messages());
+    impl_->get_message_bus().send_messages_to_host(step);
+    SPDLOG_DEBUG("Message bus 8 {}", impl_->get_message_bus().get_num_messages());
     get_message_bus().route_messages();
+    SPDLOG_DEBUG("Message bus 9 {}", impl_->get_message_bus().get_num_messages());
     impl_->route_projection_messages(step);
+    SPDLOG_DEBUG("Message bus 10 {}", impl_->get_message_bus().get_num_messages());
     SPDLOG_DEBUG("Step finished #{}.", get_step());
 
     step = gad_step();

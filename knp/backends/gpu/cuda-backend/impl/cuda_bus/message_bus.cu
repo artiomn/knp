@@ -149,6 +149,7 @@ __host__ __device__ void CUDAMessageBus::send_message(const cuda::MessageVariant
 
 __host__ void CUDAMessageBus::send_message_gpu_batch(const device_lib::CUDAVector<cuda::MessageVariant> &vec)
 {
+    SPDLOG_DEBUG("Sending {} GPU messages", vec.size());
     size_t msg_size = messages_to_route_.size();
     messages_to_route_.resize(msg_size + vec.size());
     if (!vec.size()) return;
@@ -244,8 +245,8 @@ __global__ void get_message_kernel(const MessageVariant *var, int *type, const v
 }
 
 
-__host__ void CUDAMessageBus::subscribe_cpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders,
-                                            size_t type_id)
+__host__ void CUDAMessageBus::subscribe_host(const cuda::UID &receiver, const std::vector<cuda::UID> &senders,
+                                             size_t type_id)
 {
     knp::core::UID host_receiver = to_cpu_uid(receiver);
     std::vector <knp::core::UID> host_senders;
@@ -270,12 +271,18 @@ __host__ void CUDAMessageBus::subscribe_cpu(const cuda::UID &receiver, const std
 }
 
 
-__host__ void CUDAMessageBus::send_messages_to_host()
+__host__ void CUDAMessageBus::send_messages_to_host(size_t step)
 {
     for (size_t i = 0; i < messages_to_route_.size(); ++i)
     {
         cuda::MessageVariant msg = messages_to_route_.copy_at(i);
-        cpu_endpoint_.send_message(make_host_message(msg));
+        cuda::MessageHeader header = ::cuda::std::visit(
+                [](const auto &msg) -> cuda::MessageHeader
+                { return msg.header_; },
+            msg);
+        if (header.send_time_ != step - 1 && header.send_time_ != step || header.is_external_) continue;
+        auto host_message = make_host_message(msg);
+        cpu_endpoint_.send_message(host_message);
     }
 }
 
@@ -325,7 +332,7 @@ __host__ void CUDAMessageBus::sync_with_host()
         const auto &gpu_senders = gpu_sub.get_senders();
         senders.resize(gpu_senders.size());
         cudaMemcpy(senders.data(), gpu_senders.data(), sizeof(cuda::UID) * gpu_senders.size(), cudaMemcpyDeviceToHost);
-        subscribe(gpu_sub.get_receiver_uid(), senders, gpu_sub.type());
+        subscribe_both(gpu_sub.get_receiver_uid(), senders, gpu_sub.type());
     }
 }
 
@@ -334,6 +341,7 @@ __host__ void CUDAMessageBus::sync_with_host()
 __host__ void CUDAMessageBus::receive_messages_from_host()
 {
     cpu_endpoint_.receive_all_messages();
+    SPDLOG_DEBUG("CPU subscriptions: {}", cpu_endpoint_.get_endpoint_subscriptions().size());
     for (size_t i = 0; i < subscriptions_.size(); ++i)
     {
         auto sub = subscriptions_.copy_at(i);
@@ -372,10 +380,14 @@ __host__ void CUDAMessageBus::receive_messages_from_host()
 namespace cm = knp::backends::gpu::cuda;
 
 template
-__host__ bool cm::CUDAMessageBus::subscribe<SpikeMessage>(const cm::UID&, const std::vector<cuda::UID>&);
+__host__ bool cm::CUDAMessageBus::subscribe_gpu<SpikeMessage>(const cm::UID&, const std::vector<cuda::UID>&);
+template
+__host__ bool cm::CUDAMessageBus::subscribe_gpu<SynapticImpactMessage>(const cm::UID&, const std::vector<cuda::UID>&);
 
 template
-__host__ bool cm::CUDAMessageBus::subscribe<SynapticImpactMessage>(const cm::UID&, const std::vector<cuda::UID>&);
+__host__ bool cm::CUDAMessageBus::subscribe_both<SpikeMessage>(const cm::UID&, const std::vector<cuda::UID>&);
+template
+__host__ bool cm::CUDAMessageBus::subscribe_both<SynapticImpactMessage>(const cm::UID&, const std::vector<cuda::UID>&);
 
 template
 __host__ cm::device_lib::CUDAVector<uint64_t> cm::CUDAMessageBus::unload_messages<SpikeMessage>(

@@ -432,10 +432,10 @@ void CUDABackendImpl::init()
     for (size_t i = 0; i < device_projections_.size(); ++i)
     {
         const auto [pre_uid, post_uid, this_uid] = get_projection_uids(device_projections_.data() + i);
-        if (!cuda::empty_uid(pre_uid)) this->device_message_bus_.subscribe<cuda::SpikeMessage>(this_uid, {pre_uid});
+        if (!cuda::empty_uid(pre_uid)) this->device_message_bus_.subscribe_gpu<cuda::SpikeMessage>(this_uid, {pre_uid});
         if (!cuda::empty_uid(post_uid))
         {
-            this->device_message_bus_.subscribe<cuda::SynapticImpactMessage>(post_uid, {this_uid});
+            this->device_message_bus_.subscribe_gpu<cuda::SynapticImpactMessage>(post_uid, {this_uid});
         }
     }
 

@@ -72,10 +72,17 @@ public:
      * @return true if a new subscription was created.
      */
     template <typename MessageType>
-    __host__ bool subscribe(const cuda::UID &receiver, const std::vector<cuda::UID> &senders)
+    __host__ bool subscribe_both(const cuda::UID &receiver, const std::vector<cuda::UID> &senders)
     {
         constexpr auto type_index = boost::mp11::mp_find<MessageVariant, MessageType>();
-        return subscribe(receiver, senders, type_index);
+        return subscribe_both(receiver, senders, type_index);
+    }
+
+    template <typename MessageType>
+    __host__ bool subscribe_gpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders)
+    {
+        constexpr auto type_index = boost::mp11::mp_find<MessageVariant, MessageType>();
+        return subscribe_gpu(receiver, senders, type_index);
     }
 
 
@@ -135,7 +142,7 @@ public:
     /**
      * @brief Send messages to host.
      */
-    __host__ void send_messages_to_host();
+    __host__ void send_messages_to_host(size_t step);
 
     /**
      * @brief Send messages of the specified type to a bus.
@@ -161,6 +168,8 @@ public:
     template <class MessageType>
     __host__ device_lib::CUDAVector<uint64_t> unload_messages(const cuda::UID &receiver_uid);
 
+    __host__ size_t get_num_messages() { return messages_to_route_.size(); }
+
 
 public:
     /**
@@ -182,9 +191,9 @@ private:
      */
     __host__ int synchronize();
 
-    __host__ void subscribe_cpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_id);
+    __host__ void subscribe_host(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_id);
 
-    __host__ bool subscribe(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_index)
+    __host__ bool subscribe_gpu(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_index)
     {
         SPDLOG_DEBUG("Looking for existing subscriptions");
         size_t sub_index = find_subscription(receiver, type_index);
@@ -198,10 +207,17 @@ private:
             subscriptions_.set(sub_index, sub_upd);
             return false;
         }
-        SPDLOG_DEBUG("Adding new subscription");
-        subscribe_cpu(receiver, senders, type_index);
+        SPDLOG_DEBUG("Adding new gpu subscription");
         subscriptions_.push_back(Subscription(receiver, senders, type_index));
-        SPDLOG_DEBUG("Done adding new subscription");
+        SPDLOG_DEBUG("Done adding new gpu subscription");
+        return true;
+    }
+
+    __host__ bool subscribe_both(const cuda::UID &receiver, const std::vector<cuda::UID> &senders, size_t type_index)
+    {
+        subscribe_gpu(receiver, senders, type_index);
+        subscribe_host(receiver, senders, type_index);
+        SPDLOG_DEBUG("Done adding new host subscription");
         return true;
     }
 
@@ -218,6 +234,10 @@ private:
      * @brief Container that stores all the subscriptions for the current endpoint.
      */
     SubscriptionContainer subscriptions_;
+
+    device_lib::CUDAVector<cuda::UID> gpu_senders_;
+
+    device_lib::CUDAVector<cuda::UID> host_senders_;
 
     MessageBuffer messages_to_route_;
 

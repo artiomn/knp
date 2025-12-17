@@ -111,19 +111,19 @@ TEST(CudaBackendSuite, BusSubscriptionsTest)
 
     std::vector<knp_cuda::UID> uid_vec1{uid_2, uid_3};
 
-    message_buses.gpu_.subscribe<knp_cuda::SpikeMessage>(uid_1, uid_vec1);
+    message_buses.gpu_.subscribe_gpu<knp_cuda::SpikeMessage>(uid_1, uid_vec1);
     ASSERT_EQ(message_buses.gpu_.get_subscriptions().size(), 1);
     std::cout << "Number of subscriptions is 1" << std::endl;
 
     std::vector<knp_cuda::UID> uid_vec2{uid_3, uid_4};
-    message_buses.gpu_.subscribe<knp_cuda::SpikeMessage>(uid_2, uid_vec2);
+    message_buses.gpu_.subscribe_gpu<knp_cuda::SpikeMessage>(uid_2, uid_vec2);
     std::cout << "Added subscription" << std::endl;
     ASSERT_EQ(message_buses.gpu_.get_subscriptions().size(), 2);
     std::cout << "Number of subscriptions is 2" << std::endl;
 
     std::vector<knp_cuda::UID> uid_vec3{uid_1};
 
-    message_buses.gpu_.subscribe<knp_cuda::SpikeMessage>(uid_1, uid_vec3);
+    message_buses.gpu_.subscribe_gpu<knp_cuda::SpikeMessage>(uid_1, uid_vec3);
     // TODO check corresponding subscription size, should become 3.
     ASSERT_EQ(message_buses.gpu_.get_subscriptions().size(), 2);
     std::cout << "Number of subscriptions is still 2" << std::endl;
@@ -146,7 +146,7 @@ TEST(CUDAMessagingSuite, AddReceiveBusMessage)
     SpikeMessage msg{{knp_cuda::new_uid()}, {1, 2, 3, 4, 5}};
     knp_cuda::UID receiver_uid = knp_cuda::new_uid();
     std::vector<knp_cuda::UID> senders{msg.header_.sender_uid_};
-    message_buses.gpu_.subscribe<SpikeMessage>(receiver_uid, {msg.header_.sender_uid_});
+    message_buses.gpu_.subscribe_gpu<SpikeMessage>(receiver_uid, {msg.header_.sender_uid_});
     EXPECT_EQ(message_buses.gpu_.unload_messages<SpikeMessage>(receiver_uid).size(), 0);
     message_buses.gpu_.send_message(msg);
     EXPECT_EQ(message_buses.gpu_.unload_messages<SpikeMessage>(receiver_uid).size(), 1);

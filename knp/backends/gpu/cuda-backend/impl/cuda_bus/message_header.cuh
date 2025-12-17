@@ -46,6 +46,11 @@ public:
      */
     std::uint64_t send_time_;
 
+    /**
+     * @brief True if the message is converted from host message type.
+     */
+    bool is_external_ = false;
+
     __host__ __device__ bool operator==(const MessageHeader &other) const
     {
         return sender_uid_ == other.sender_uid_ && send_time_ == other.send_time_;
@@ -57,7 +62,8 @@ namespace detail
 {
 inline cuda::MessageHeader make_gpu_message_header(const knp::core::messaging::MessageHeader &host_header)
 {
-    return {.sender_uid_ = to_gpu_uid(host_header.sender_uid_), .send_time_ = host_header.send_time_};
+    return {.sender_uid_ = to_gpu_uid(host_header.sender_uid_), .send_time_ = host_header.send_time_,
+            .is_external_ = true};
 }
 
 inline knp::core::messaging::MessageHeader make_host_message_header(const cuda::MessageHeader &gpu_header)
