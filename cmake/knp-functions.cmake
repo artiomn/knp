@@ -232,6 +232,7 @@ function(knp_add_python_module name)
     target_include_directories("${LIB_NAME}" PRIVATE ${Python3_INCLUDE_DIRS})
     message(TRACE "Linking ${LIB_NAME} with Boost::python${PARSED_ARGS_PY_VER}...")
     target_link_libraries("${LIB_NAME}" PRIVATE Boost::disable_autolinking Boost::headers Boost::python${PARSED_ARGS_PY_VER} ${PARSED_ARGS_LINK_LIBRARIES})
+    target_compile_options("${LIB_NAME}" PRIVATE $<$<CONFIG:Debug>:-DBOOST_PYTHON_DEBUG>)
 
     # if (MSVC) # AND ($<COMPILE_LANGUAGE> STREQUAL CXX OR $<COMPILE_LANGUAGE> STREQUAL C))
     #    # Dynamic MSVC runtime.
