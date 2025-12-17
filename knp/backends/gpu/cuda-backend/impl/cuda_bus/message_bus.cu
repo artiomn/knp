@@ -31,48 +31,13 @@
 #include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/get_blocks_config.cuh"
 
-// Как у нас работает бэк:
-// 0. Мы индексируем index_messages() сообщения нужных нам типов (или всех типов?) и сохраняем вектор индексов.
-// 1. каждая популяция получает входные сообщения и формирует, но не отправляет выходное сообщение.
-//  1.1. Входные сообщения выдаются в виде "указатель на все сообщения + индексы интересующих"
-// 2. когда все популяции отработали, мы:
-//  2.1. чистим шину clean()
-//  2.2. получаем сообщения receive_message() от популяций (в цикле)
-//  2.3. отправляем сообщения в эндпойнт и получаем сообщения из эндпойнта (synchronize)
-// потом мы проходим по проекциям (параллельно или нет), и они формируют сообщения
-// мы чистим шину от спайковых сообщений (clean), получаем сообщения от проекций (в цикле) и отправляем их в эндпойнт.
-// таким образом, конкретного step-а у нас попросту не образуется. Степ состоит из clear(),
-// for(...) if(get_num_messages > 0) send_message(get_stored_messages) и sync().
-// Все эти функции вызываются из бэкенда чем-то вроде do_message_exchange().
+
 REGISTER_CUDA_VECTOR_TYPE(knp::backends::gpu::cuda::MessageVariant);
 
 namespace knp::backends::gpu::cuda
 {
 template <class T>
 using DevVec = device_lib::CUDAVector<T>;
-
-/**
- * @brief Find messages with a given sender.
- * @param senders vector of senders, we select one based on thread
- */
-//__global__ void find_by_sender(
-//    const thrust::device_vector<cuda::UID> &senders,
-//    const CUDAMessageBus::MessageBuffer &messages,
-//    thrust::device_ptr<DevVec<uint64_t>> sub_message_indices,
-//    int type_index)
-//{
-//    int sender_index = blockIdx.x + threadIdx.x;
-//    if (sender_index >= senders.size()) return;
-//    cuda::UID uid = senders[sender_index];
-//    for (uint64_t i = 0; i < messages.size(); ++i)
-//    {
-//        const cuda::MessageVariant &msg = messages[i];
-//        if (msg.index() != type_index) continue;
-//        cuda::UID msg_uid = ::cuda::std::visit([](const auto &msg) { return msg.header_.sender_uid_; }, msg);
-//        // if (msg_uid == uid) sub_message_indices[sender_index].push_back(msg_uid);
-////        if (msg_uid == uid) (sub_message_indices + sender_index)->push_back(i);
-//    }
-//}
 
 
 __global__ void find_subscription_by_receiver(const Subscription *subscriptions, size_t size, const UID receiver,
@@ -157,13 +122,6 @@ __host__ void CUDAMessageBus::send_message_gpu_batch(const device_lib::CUDAVecto
     device_lib::copy_kernel<<<num_blocks, num_threads>>>(messages_to_route_.data() + msg_size, vec.size(), vec.data());
     cudaDeviceSynchronize();
 }
-
-
-// first we collect all messages and put it into common buffer. Then for each subscription we check if it is their
-// message, this is index_messages(). Then we extract a message by receiver. Or do we need it? What if extracting is
-// done by asking a subscription and using a kernel? Then we don't need a subscription as a template, but it just has
-// a type index. We say "receiver" and "type", the Bus finds a subscription by a kernel, and uses subscription to find
-// messages by a second kernel, no indexing required. Yeah, let's do it like this. A subscription is never reused.
 
 
 /**

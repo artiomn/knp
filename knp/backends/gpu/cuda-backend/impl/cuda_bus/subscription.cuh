@@ -48,7 +48,8 @@ namespace knp::backends::gpu::cuda
  * @brief The Subscription class is used for message exchange between the network entities.
  * @tparam MessageT type of messages that are exchanged via the subscription.
  */
-class Subscription final {
+class Subscription final
+{
 public:
     /**
      * @brief Internal container for UIDs.
@@ -72,7 +73,6 @@ public:
     }
 
     __host__ Subscription(const knp::core::MessageEndpoint::SubscriptionVariant &cpu_subscription);
-
 
     __device__ Subscription(const cuda::UID &receiver,
                             const device_lib::CUDAVector<cuda::UID> &senders,
@@ -103,7 +103,6 @@ public:
      * @return senders UIDs.
      */
     [[nodiscard]] __device__ __host__ const UidSet &get_senders() const { return senders_; }
-
 
     /**
      * @brief get message type for subscription.
@@ -144,14 +143,8 @@ public:
      */
     __host__ __device__ bool add_sender(const cuda::UID &uid)
     {
-#ifndef __CUDA_ARCH__
-        std::cout << "Adding sender" << std::endl;
-#endif
         if (has_sender(uid)) return false;
         senders_.push_back(uid);
-#ifndef __CUDA_ARCH__
-        std::cout << "Added sender" << std::endl;
-#endif
         return true;
     }
 
@@ -194,11 +187,7 @@ public:
         int *d_result = nullptr;
         cudaMalloc(&d_result, sizeof(int));
         cudaMemset(d_result, 0, sizeof(int));
-        std::cout << "Num senders " << senders_.size() << std::endl;
         auto [num_blocks, num_threads] = device_lib::get_blocks_config(senders_.size());
-        std::cout
-                << "Running has_sender kernel: "
-                << num_blocks << "blocks, " << num_threads << " threads" << std::endl;
         const UID *senders_data = senders_.data();
         device_lib::has_sender_kernel<<<num_blocks, num_threads>>>(uid, senders_data, senders_.size(), d_result);
         cudaDeviceSynchronize();
@@ -212,10 +201,9 @@ public:
     __host__ __device__ bool is_my_message(const MessageVariant &message)
     {
         int message_type = message.index();
-        if (message_type != type_index_)
-            return false;
+        if (message_type != type_index_) return false;
 
-        UID message_sender = ::cuda::std::visit([](const auto &msg){ return msg.header_.sender_uid_; },
+        UID message_sender = ::cuda::std::visit([](const auto &msg) { return msg.header_.sender_uid_; },
                                                 message);
         return has_sender(message_sender);
     }
@@ -258,4 +246,5 @@ private:
      */
     int type_index_;
 };
+
 } // namespace knp::backends::gpu::cuda

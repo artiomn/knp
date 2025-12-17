@@ -31,10 +31,6 @@
 
 namespace knp::testing
 {
-
-
-
-
 /*
 
 TEST(CUDAMessagingSuite, SynapticImpactMessageSend)

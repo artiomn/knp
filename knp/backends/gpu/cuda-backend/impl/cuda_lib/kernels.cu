@@ -33,7 +33,6 @@
 #include "../uid.cuh"
 
 
-
 /**
  * @brief Namespace for CUDA message bus implementations.
  */

@@ -1,5 +1,5 @@
 /**
- * @file messages.h
+ * @file messaging.cuh
  * @brief Messages file for CUDA.
  * @kaspersky_support Artiom N.
  * @date 20.04.2025

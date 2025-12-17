@@ -21,8 +21,6 @@
 
 #pragma once
 
-//#include <thrust/device_vector.h>
-
 #include <knp/core/uid.h>
 #include <knp/core/message_endpoint.h>
 #include <knp/core/subscription.h>
@@ -84,7 +82,6 @@ public:
         constexpr auto type_index = boost::mp11::mp_find<MessageVariant, MessageType>();
         return subscribe_gpu(receiver, senders, type_index);
     }
-
 
     [[nodiscard]] __host__ const device_lib::CUDAVector<MessageVariant> & all_messages() const
     {
@@ -229,18 +226,13 @@ private:
     template <typename MessageType>
     __host__ __device__ ::cuda::std::vector<uint64_t> find_messages(const Subscription &subscription);
 
-
     /**
      * @brief Container that stores all the subscriptions for the current endpoint.
      */
     SubscriptionContainer subscriptions_;
-
     device_lib::CUDAVector<cuda::UID> gpu_senders_;
-
     device_lib::CUDAVector<cuda::UID> host_senders_;
-
     MessageBuffer messages_to_route_;
-
     knp::core::MessageEndpoint &cpu_endpoint_;
 };
 

@@ -156,13 +156,6 @@ public:
         #endif
     }
 
-//    static __host__ __device__ CUDAVector<T, Allocator> from_gpu_pointer(T *data_pointer, size_t data_size)
-//    {
-//        CUDAVector<T, Allocator> result;
-//        result.reserve(data_size);
-//
-//    }
-
     __host__ __device__ ~CUDAVector()
     {
         if (!data_ || !capacity_) return;
@@ -265,7 +258,6 @@ public:
         return *this;
     }
 
-
     __host__ CUDAVector& operator=(const std::vector<value_type> &vec)
     {
         SPDLOG_TRACE("Construct from std vector with size {}", vec.size());
@@ -336,7 +328,6 @@ public:
         return true;
     }
 
-
     __device__ value_type& operator[](size_type index) const
     {
         return data_[index];
@@ -374,9 +365,7 @@ public:
         Allocator::construct(data_ + size_, value);
         ++size_;
     #else
-        std::cout << "Constructing at " << data_ + size_ << " with capacity of " << capacity_ << std::endl;
         resize(size_ + 1);
-        std::cout << "Done constructing" << std::endl;
         set(size_ - 1, value);
     #endif
     }
@@ -405,7 +394,9 @@ public:
             cudaDeviceSynchronize();
             auto result = cudaGetLastError();
             if (result != cudaSuccess)
-                std::cout << cudaGetErrorString(result) << std::endl;
+            {
+                SPDLOG_WARN("Error: {}", cudaGetErrorString(result));
+            }
             SPDLOG_TRACE("Running destruct kernel with {} blocks and {} threads", num_blocks, num_threads);
             destruct_kernel<T, Allocator><<<num_blocks, num_threads>>>(data_, size_);
             cudaDeviceSynchronize();
@@ -439,7 +430,6 @@ public:
         #endif
     }
 
-
     __host__ __device__ iterator begin() { return data_; }
     __host__ __device__ const iterator begin() const { return data_; }
     __host__ __device__ const_iterator cbegin() const { return data_; }
@@ -447,14 +437,6 @@ public:
     __host__ __device__ iterator end() { return data_ + size_; }
     __host__ __device__ const iterator end() const { return data_ + size_; }
     __host__ __device__ const_iterator cend() const { return data_ + size_; }
-
-//    __host__ __device__ void erase(size_type index)
-//    {
-//        if (index >= size_) return;
-//        for (size_type i = index; i < size_ - 1; ++i)
-//            data_[i] = ::cuda::std::move(data_[i + 1]);
-//        --size_;
-//    }
 
     __host__ __device__ void erase(iterator begin_iter, iterator end_iter)
     {
@@ -616,7 +598,5 @@ __host__ device_lib::CUDAVector<T, Allocator> gpu_extract<device_lib::CUDAVector
     REGISTER_CUDA_VECTOR_NO_EXTRACT(data_type); \
     template __host__ data_type knp::backends::gpu::cuda::gpu_extract<data_type>(const data_type* );       \
     template __host__ void knp::backends::gpu::cuda::gpu_insert<data_type>(const data_type &, data_type *)
-
-
 
 } // namespace knp::backends::gpu::cuda

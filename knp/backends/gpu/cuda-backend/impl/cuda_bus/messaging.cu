@@ -1,7 +1,23 @@
-//
-// Created by vartenkov on 26.09.25.
-//
-
+/**
+ * @file messaging.cu
+ * @brief Messages file for CUDA.
+ * @kaspersky_support Artiom N.
+ * @date 26.09.2025
+ * @license Apache 2.0
+ * @copyright © 2025 AO Kaspersky Lab
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "messaging.cuh"
 #include "../cuda_lib/kernels.cuh"
@@ -35,7 +51,8 @@ template<>
 MessageVariant gpu_extract<MessageVariant>(const MessageVariant *message)
 {
     int *type_gpu;
-    const void **msg_gpu; // This is a gpu pointer to gpu pointer to gpu message.
+    // This is a gpu pointer to gpu pointer to gpu message.
+    const void **msg_gpu;
     call_and_check(cudaMalloc(&type_gpu, sizeof(int)));
     call_and_check(cudaMalloc(&msg_gpu, sizeof(void *)));
     get_message_kernel<<<1, 1>>>(message, type_gpu, msg_gpu);
@@ -138,7 +155,7 @@ cuda::SynapticImpactMessage make_gpu_message(const knp::core::messaging::Synapti
     result.is_forcing_ = host_message.is_forcing_;
     size_t data_n = host_message.impacts_.size();
 
-    if (data_n == 0) return result;
+    if (!data_n) return result;
     // Copy data if it exists.
     size_t data_size = data_n * sizeof(knp::core::messaging::SynapticImpact);
     knp::core::messaging::SynapticImpact *in_data;
@@ -162,7 +179,7 @@ knp::core::messaging::SynapticImpactMessage make_host_message(const cuda::Synapt
     result.is_forcing_ = gpu_message.is_forcing_;
     size_t data_n = gpu_message.impacts_.size();
 
-    if (data_n == 0) return result;
+    if (!data_n) return result;
 
     // Copy data if it exists.
     size_t data_size = data_n * sizeof(knp::core::messaging::SynapticImpact);
