@@ -26,8 +26,6 @@ void export_device();
 void export_message_bus();
 void export_message_endpoint();
 void export_message_header();
-void export_population();
-void export_projection();
 void export_spike_message();
 void export_subscription();
 void export_synaptic_impact();

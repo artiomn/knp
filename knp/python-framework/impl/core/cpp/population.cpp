@@ -48,11 +48,7 @@
 // "Get parameters of the specific neuron in the population.")
 // py::class_<nt::neuron_parameters<nt::neuron_type>>(BOOST_PP_STRINGIZE(BOOST_PP_CAT(neuron_type, parameters)));
 
-namespace nt = knp::neuron_traits;
-
-#define INSTANCE_PY_POPULATIONS(n, template_for_instance, neuron_type)                                                \
-    detail::register_direct_converter<nt::neuron_parameters<knp::neuron_traits::neuron_type>>();                      \
-    py::implicitly_convertible<core::Population<nt::neuron_type>, core::AllPopulationsVariant>();                     \
+#define INSTANCE_PY_POPULATION(n, template_for_instance, neuron_type)                                                \
     py::class_<core::Population<nt::neuron_type>>(                                                                    \
         BOOST_PP_STRINGIZE(BOOST_PP_CAT(neuron_type, Population)),                                                    \
                            "The Population class is a container of neurons of the same model.", py::no_init)          \
@@ -89,7 +85,8 @@ namespace nt = knp::neuron_traits;
                 "Get population UID.");
 
 
-void export_population()
+void export_populations()
 {
-    BOOST_PP_SEQ_FOR_EACH(INSTANCE_PY_POPULATIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_NEURONS))
+    BOOST_PP_SEQ_FOR_EACH(INSTANCE_PY_POPULATION, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_NEURONS))
+    instance_populations_converters();
 }

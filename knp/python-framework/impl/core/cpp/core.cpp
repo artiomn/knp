@@ -20,6 +20,10 @@
  */
 
 #include <knp/core/core.h>
+#include <knp/framework/backend_loader.h>
+
+#include <boost/python/copy_const_reference.hpp>
+#include <boost/python/return_value_policy.hpp>
 
 #include <filesystem>
 
@@ -31,25 +35,16 @@
 #include "projection.h"
 #include "tuple_converter.h"
 
-// knp::neuron_traits::neuron_parameters<knp::neuron_traits::BLIFATNeuron>
 
-// py::object my_tf(size_t index)
-//{
-//     std::cout << "Index ok = " << index << std::endl;
-//     return py::object();
-// }
-
-std::string get_py_class_name(const py::object &obj_class)
+auto load_backend(knp::framework::BackendLoader& loader, const py::object& backend_path)
 {
-    const std::string class_name = boost::python::extract<std::string>(obj_class.attr("__class__").attr("__name__"));
-    if (class_name != "class")
-    {
-        PyErr_SetString(PyExc_TypeError, "Passed object is not a class.");
-        py::throw_error_already_set();
-        throw std::runtime_error("Not a class.");
-    }
+    return loader.load(py::extract<std::string>(backend_path)());
+}
 
-    return boost::python::extract<std::string>(obj_class.attr("__name__"));
+
+auto make_loader(knp::framework::BackendLoader& self)
+{
+    return self;
 }
 
 
@@ -70,7 +65,6 @@ BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
     py::implicitly_convertible<std::string, std::filesystem::path>();
 
     // py::to_python_converter<std::optional<int>, to_python_optional<int>>();
-    //    Py_Initialize();
 
     // Need this for import.
     //    PyObject* sysPath = PySys_GetObject("path");
@@ -78,13 +72,28 @@ BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
     //
     //    boost::python::import("libknp_python_framework_neuron_traits");
 
+    py::register_ptr_to_python<std::shared_ptr<knp::core::Backend>>();
+
     export_backend();
+    py::class_<knp::framework::BackendLoader>(
+        "BackendLoader", "The BackendLoader class is a definition of a backend loader.")
+        .def(
+            "__enter__", &make_loader, py::return_self<>(),
+            "Make loader")
+        .def(
+            "__exit__",
+            make_handler([](boost::python::object &self, boost::python::object &exc_type,
+                            boost::python::object &exc_value, boost::python::object &traceback) { return false; }),
+            "Exit loader")
+        .def("load", &load_backend, "Load backend")
+        .def("is_backend", &knp::framework::BackendLoader::is_backend, "Check if the specified path points to a backend")
+        .staticmethod("is_backend");
     export_device();
     export_message_bus();
     export_message_endpoint();
     export_message_header();
-    export_population();
-    export_projection();
+    export_populations();
+    export_projections();
     export_spike_message();
     export_subscription();
     export_synaptic_impact();

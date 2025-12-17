@@ -21,17 +21,12 @@
 
 #include <knp/framework/backend_loader.h>
 
-//#include "../../core/cpp/backend_wrapper.h"
+#include "../../core/cpp/backend_wrapper.h"
+#include "../../core/cpp/population.h"
+#include "../../core/cpp/projection.h"
+#include "../../core/cpp/uid_utilities.h"
 #include "common.h"
 #include "exports.h"
-
-
-// Anonymous namespace is necessary: without it DLL loading error under Windows is happened.
-inline std::shared_ptr<knp::core::Backend> load_backend(
-    knp::framework::BackendLoader &loader, const py::object &backend_path)
-{
-    return loader.load(py::extract<std::string>(backend_path)());
-}
 
 
 template <typename T>
@@ -45,26 +40,25 @@ void register_direct_converter()
 }
 
 
+PyObject *PyInit__knp_python_framework_core();
+
 BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
 {
-    //PyImport_AppendInittab("_knp_python_framework_core", &PyInit__knp_python_framework_base_framework);
-    py::import("knp.core._knp_python_framework_core");
+    // PyImport_AppendInittab("_knp_python_framework_core", &PyInit__knp_python_framework_base_framework);
+    //PyImport_AppendInittab("_knp_python_framework_core", &PyInit__knp_python_framework_core);
+    //py::import("knp.core._knp_python_framework_core");
     // auto path_type = py::import("pathlib.Path");
+    uid_from_python();
+    py::to_python_converter<boost::uuids::uuid, uid_into_python>();
+    py::implicitly_convertible<core::UID, boost::uuids::uuid>();
 
     py::implicitly_convertible<std::string, std::filesystem::path>();
-
-    //py::implicitly_convertible<std::shared_ptr<knp::core::Backend>, BackendWrapper>();
+    instance_populations_converters();
+    instance_projections_converters();
 
     //register_direct_converter<knp::core::Backend>();
-    py::register_ptr_to_python<std::shared_ptr<knp::core::Backend>>();
-
-    py::class_<cpp_framework::BackendLoader>(
-        "BackendLoader", "The BackendLoader class is a definition of a backend loader.")
-        // // py::return_value_policy<py::manage_new_object>()
-        //.def("load", &cpp_framework::BackendLoader::load, "Load backend")
-        .def("load", &load_backend, "Load backend")
-        .def("is_backend", &cpp_framework::BackendLoader::is_backend, "Check if the specified path points to a backend")
-        .staticmethod("is_backend");
+    //py::register_ptr_to_python<std::shared_ptr<knp::core::Backend>>();
+    //py::implicitly_convertible<std::shared_ptr<knp::core::Backend>, Backend>();
 
     export_input_channel();
     export_model();

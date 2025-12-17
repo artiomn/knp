@@ -30,10 +30,7 @@
 #include <vector>
 
 #include "common.h"
-#include "tuple_converter.h"
 
-
-namespace st = knp::synapse_traits;
 
 /*
 
@@ -68,14 +65,20 @@ py::class_<core::Synapse>(
                     SharedSynapseParametersT<core::synapse_traits::STDP<Rule, SynapseT>>::ProcessingType::1);
 */
 
-// py::class_<typename core::Projection<st::synapse_type>::Synapse>(
-//    BOOST_PP_STRINGIZE(BOOST_PP_CAT(synapse_type, Parameters)));
+/*
+    py::class_<typename core::Projection<st::synapse_type>::Synapse>(
+    BOOST_PP_STRINGIZE(synapse_type))
+        .def(py::init<typename core::Projection<st::synapse_type>::SynapseParameters, size_t, size_t>())
+        .add_property(
+            "parameters",
+            make_handler(
+                [](core::Projection<st::synapse_type>::Synapse &self)
+                    -> core::Projection<st::synapse_type>::SynapseParameters { return std::get<0>(self); }),
+            "Synaptic parameters");
+*/
 
-#define INSTANCE_PY_PROJECTIONS(n, template_for_instance, synapse_type)                                                \
-    detail::register_direct_converter<st::synapse_parameters<knp::synapse_traits::synapse_type>>();                    \
-    py::implicitly_convertible<core::Projection<st::synapse_type>, core::AllProjectionsVariant>();                     \
-    py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>();                                        \
-                                                                                                                       \
+#define INSTANCE_PY_PROJECTION(n, template_for_instance, synapse_type)                                                \
+    py::register_tuple<typename core::Projection<st::synapse_type>::Synapse>(); \
     py::class_<core::Projection<st::synapse_type>>(                                                                    \
         BOOST_PP_STRINGIZE(                                                                                        \
                 BOOST_PP_CAT(synapse_type, Projection)),                                                                   \
@@ -111,8 +114,9 @@ py::class_<core::Synapse>(
                 "Get parameter values of a synapse with the given index.");  // NOLINT
 
 
-void export_projection()
+void export_projections()
 {
     BOOST_PP_SEQ_FOR_EACH(
-        INSTANCE_PY_PROJECTIONS, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_SYNAPSES))  //!OCLINT(Parameters used)
+        INSTANCE_PY_PROJECTION, "", BOOST_PP_VARIADIC_TO_SEQ(ALL_SYNAPSES))  //!OCLINT(Parameters used)
+    instance_projections_converters();
 }

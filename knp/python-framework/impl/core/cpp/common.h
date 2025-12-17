@@ -139,11 +139,16 @@ boost::python::object adapt_unique(std::unique_ptr<T> (C::*fn)(Args...))
         boost::mpl::vector<T *, C &, Args...>());
 }
 
-std::string get_py_class_name(const py::object &obj_class);
 
-// Anonymous namespace is necessary: without it DLL loading error under Windows is happened.
-inline std::shared_ptr<knp::core::Backend> load_backend(
-    knp::framework::BackendLoader &loader, const py::object &backend_path)
+inline std::string get_py_class_name(const py::object &obj_class)
 {
-    return loader.load(py::extract<std::string>(backend_path)());
+    const std::string class_name = boost::python::extract<std::string>(obj_class.attr("__class__").attr("__name__"));
+    if (class_name != "class")
+    {
+        PyErr_SetString(PyExc_TypeError, "Passed object is not a class.");
+        py::throw_error_already_set();
+        throw std::runtime_error("Not a class.");
+    }
+
+    return boost::python::extract<std::string>(obj_class.attr("__name__"));
 }
