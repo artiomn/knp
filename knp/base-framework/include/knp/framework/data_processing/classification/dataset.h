@@ -42,10 +42,10 @@ namespace classification
 {
 
 /**
- * @brief The `Dataset` class is the base class for datasets.
- * @details A dataset is supposed to be abstracted from its actual processing and characteristics, such as size.
- * The size of the dataset is not a crucial factor, as it is handled during the splitting process. The correct
- * workflow would be to first process a dataset, then split it, and finally use it for your purposes.
+ * @brief The Dataset class is the base class for datasets.
+ * @details A dataset is supposed to be abstracted from its actual processing and characteristics, such as size. 
+ * The size of the dataset is not a crucial factor, as it is handled during the splitting process. The correct 
+ * workflow would be to first process a dataset, then split it, and finally use it for your purposes. 
  * Splitting the dataset is important because it calculates the number of steps required for inference and/or training.
  */
 class KNP_DECLSPEC Dataset
