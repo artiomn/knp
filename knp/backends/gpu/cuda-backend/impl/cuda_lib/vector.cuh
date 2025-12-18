@@ -37,6 +37,7 @@
 #include "cu_alloc.cuh"
 
 #include "extraction.cuh"
+#include "printf.cuh"
 #include "vector_kernels.cuh"
 
 
@@ -499,7 +500,7 @@ public:
         T* source_data = data_;
         data_ = allocator_.allocate(capacity_);
     #ifdef __CUDA_ARCH__
-        printf("Device vector actualize\n");
+        PRINTF_TRACE("Device vector actualize\n");
         for (size_t i = 0; i < size_; ++i)
             new (data_ + i) T(*(source_data + i));
     #else
@@ -579,24 +580,5 @@ __host__ device_lib::CUDAVector<T, Allocator> gpu_extract<device_lib::CUDAVector
 }
 
 
-#define REGISTER_CUDA_VECTOR_NO_EXTRACT(data_type) \
-    template __global__ void knp::backends::gpu::cuda::device_lib::construct_kernel<data_type, \
-    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type *, size_t); \
-    template __global__ void knp::backends::gpu::cuda::device_lib::copy_construct_kernel<data_type>( \
-    data_type *, size_t, const data_type *); \
-    template __global__ void knp::backends::gpu::cuda::device_lib::copy_kernel<data_type>(     \
-    data_type *, size_t, const data_type *);                                         \
-    template __global__ void knp::backends::gpu::cuda::device_lib::move_kernel<data_type>(       \
-    data_type *, size_t, data_type*);        \
-    template __global__ void knp::backends::gpu::cuda::device_lib::move_construct_kernel<data_type>( \
-    data_type *, size_t, data_type *);                                          \
-    template __global__ void knp::backends::gpu::cuda::device_lib::destruct_kernel<data_type,    \
-    knp::backends::gpu::cuda::device_lib::CuMallocAllocator<data_type>>(data_type*, size_t)
-
-
-#define REGISTER_CUDA_VECTOR_TYPE(data_type) \
-    REGISTER_CUDA_VECTOR_NO_EXTRACT(data_type); \
-    template __host__ data_type knp::backends::gpu::cuda::gpu_extract<data_type>(const data_type* );       \
-    template __host__ void knp::backends::gpu::cuda::gpu_insert<data_type>(const data_type &, data_type *)
 
 } // namespace knp::backends::gpu::cuda

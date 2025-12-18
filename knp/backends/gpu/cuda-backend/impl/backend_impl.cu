@@ -39,6 +39,7 @@
 #include "population.cuh"
 
 #include "cuda_lib/get_blocks_config.cuh"
+#include "cuda_lib/printf.cuh"
 #include "cuda_lib/vector.cuh"
 #include "cuda_bus/messaging.cuh"
 
@@ -128,25 +129,6 @@ __global__ void get_projection_kernel(const CUDABackendImpl::ProjectionVariants 
 }
 
 
-//
-//template<>
-//CUDABackendImpl::PopulationVariants gpu_extract<CUDABackendImpl::PopulationVariants>(
-//    const CUDABackendImpl::PopulationVariants *population)
-//{
-//    static_assert(false, "Not implemented, see gpu_extract of MessageVariant");
-//    return {};
-//}
-//
-//
-//template<>
-//CUDABackendImpl::ProjectionVariants gpu_extract<CUDABackendImpl::ProjectionVariants>(
-//        const CUDABackendImpl::ProjectionVariants *projection)
-//{
-//    static_assert(false, "Not implemented, see gpu_extract of MessageVariant");
-//    return {};
-//}
-
-
 template<>
 void gpu_insert<CUDABackendImpl::PopulationVariants>(const CUDABackendImpl::PopulationVariants &cpu_source,
                                                      CUDABackendImpl::PopulationVariants *gpu_target)
@@ -220,14 +202,14 @@ __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants
 
     CUDABackendImpl::PopulationVariants &population = populations[thread_index];
     knp::backends::gpu::cuda::device_lib::CUDAVector<cuda::MessageVariant> new_messages;
-    printf("Population index: %lu\n", population.index());
+    PRINTF_TRACE("Population index: %lu\n", population.index());
 
     size_t num_messages = indices[thread_index].size();
     for (size_t n = 0; n < num_messages; ++n)
     {
         uint64_t message_index = indices[thread_index][n];
         if (message_index >= messages_size) continue;
-        printf("Messages size: %lu, message index: %lu\n", messages_size, message_index);
+        PRINTF_TRACE("Messages size: %lu, message index: %lu\n", messages_size, message_index);
         new_messages.push_back(messages[message_index]);
     }
 
@@ -243,7 +225,6 @@ __global__ void calculate_populations_kernel(CUDABackendImpl::PopulationVariants
 void CUDABackendImpl::calculate_populations(std::uint64_t step)
 {
     // Calculate populations. This is the same as inference.
-    // Calculate projections.
     using MessageVector = device_lib::CUDAVector<cuda::MessageVariant>;
     if (!device_populations_.size()) return;
 
@@ -261,11 +242,6 @@ void CUDABackendImpl::calculate_populations(std::uint64_t step)
 
     MessageVector out_messages(device_populations_.size());
     assert(device_populations_.size() == population_messages.size());
-    std::cout << "Device populations: " << device_populations_.size() << " Message bus: "
-              << device_message_bus_.all_messages().size() << " messages" << "\n Population messages: "
-              << population_messages.size() << " Step: " << step << std::endl;
-    auto indices = population_messages.to_std();
-    auto indices2 = indices[0].to_std();
     calculate_populations_kernel<<<num_blocks, num_threads>>>(device_populations_.data(), device_populations_.size(),
                                                               device_message_bus_.all_messages().data(),
                                                               device_message_bus_.all_messages().size(),
@@ -294,8 +270,7 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
 {
     // Calculate projections.
     // using namespace ::cuda::std::placeholders;
-    printf("1\n");
-    printf("prjs: %lu %p\n msgs: %lu %p\n inds: %p\n", num_projections, projections, messages_size, messages,
+    PRINTF_TRACE("prjs: %lu %p\n msgs: %lu %p\n inds: %p\n", num_projections, projections, messages_size, messages,
            indices);
     size_t thread_index = blockIdx.x * blockDim.x + threadIdx.x;
     if (thread_index >= num_projections) return;
@@ -306,10 +281,9 @@ calculate_projections_kernel(CUDABackendImpl::ProjectionVariants *projections, s
     {
         uint64_t message_index = indices[thread_index][n];
         if (message_index >= messages_size) continue;
-        printf("size %lu message_index %lu, n %lu\n", msgs.size(), message_index, n);
-        // printf("%lu", msgs[n].index());
+        PRINTF_TRACE("size %lu message_index %lu, n %lu\n", msgs.size(), message_index, n);
         msgs.push_back(messages[message_index]);
-        printf("Msgs after adding: %lu\n", msgs.size());
+        PRINTF_TRACE("Msgs after adding: %lu\n", msgs.size());
     }
     ::cuda::std::visit([&msgs, step](auto &proj)
     {
@@ -694,18 +668,18 @@ __device__ void CUDABackendImpl::calculate_projection(
     std::uint64_t step_n)
 {
     constexpr size_t spike_message_index = boost::mp11::mp_find<cuda::MessageVariant, cuda::SpikeMessage>();
-    printf("Messages size: %lu\n", messages.size());
+    PRINTF_TRACE("Messages size: %lu\n", messages.size());
     for (const knp::backends::gpu::cuda::MessageVariant &message_var : messages)
     {
         if (message_var.index() != spike_message_index) continue;
         const SpikeMessage &message = ::cuda::std::get<SpikeMessage>(message_var);
-        printf("Processing message\n");
+        PRINTF_TRACE("Processing message\n");
         const auto &message_data = message.neuron_indexes_;
         for (size_t i = 0; i < message_data.size(); ++i)
         {
-            printf("Processing message data: index %lu, value %u\n", i, message_data[i]);
+            PRINTF_TRACE("Processing message data: index %lu, value %u\n", i, message_data[i]);
             const auto &spiked_neuron_index = message_data[i];
-            printf("Projection size: %lu\n", projection.synapses_.size());
+            PRINTF_TRACE("Projection size: %lu\n", projection.synapses_.size());
             for (size_t synapse_index = 0; synapse_index < projection.synapses_.size(); ++synapse_index)
             {
                 CUDAProjection<knp::synapse_traits::DeltaSynapse>::Synapse synapse =
@@ -715,13 +689,13 @@ __device__ void CUDABackendImpl::calculate_projection(
 
                 // The message is sent on step N - 1, received on step N. Step 0 delay 1 means the message is sent on 0.
                 size_t future_step = synapse_params.delay_ + step_n - 1;
-                printf("Future step: %lu, delay: %u, weight: %f\n", future_step, synapse_params.delay_,
+                PRINTF_TRACE("Future step: %lu, delay: %u, weight: %f\n", future_step, synapse_params.delay_,
                        synapse_params.weight_);
                 knp::backends::gpu::cuda::SynapticImpact impact{
                         synapse_index, synapse_params.weight_, synapse_params.output_type_,
                         static_cast<uint32_t>(::cuda::std::get<core::source_neuron_id>(synapse)),
                         static_cast<uint32_t>(::cuda::std::get<core::target_neuron_id>(synapse))};
-                printf("Impact from neuron_%u to neuron_%u\n",
+                PRINTF_TRACE("Impact from neuron_%u to neuron_%u\n",
                        impact.presynaptic_neuron_index_,
                        impact.postsynaptic_neuron_index_);
                 auto iter = projection.messages_.begin();
@@ -730,7 +704,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                 {
                     if (iter->header_.send_time_ == future_step)
                     {
-                        printf("Adding impact to existing message at future_step %lu\n", future_step);
+                        PRINTF_TRACE("Adding impact to existing message at future_step %lu\n", future_step);
                         iter->impacts_.push_back(impact);
                         break;
                     }
@@ -746,7 +720,7 @@ __device__ void CUDABackendImpl::calculate_projection(
                             ::cuda::std::move(impacts)};
 
                     message_out.is_forcing_ = is_forcing<cuda::CUDAProjection<synapse_traits::DeltaSynapse>>();
-                    printf("Adding new_message to messages_ at step %lu\n", future_step);
+                    PRINTF_TRACE("Adding new_message to messages_ at step %lu\n", future_step);
                     projection.messages_.push_back(message_out);
                 }
             }

@@ -32,8 +32,9 @@
 #include <vector>
 
 #include <knp/backends/gpu-cuda/backend.h>
-#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/backend_impl.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/register_type.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 
 
 

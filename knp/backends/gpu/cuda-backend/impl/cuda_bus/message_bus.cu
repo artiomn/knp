@@ -29,6 +29,7 @@
 #include "message_bus.cuh"
 
 #include "../cuda_lib/vector.cuh"
+#include "../cuda_lib/register_type.cuh"
 #include "../cuda_lib/get_blocks_config.cuh"
 
 

@@ -23,6 +23,7 @@
 #include "../cuda_lib/kernels.cuh"
 #include "subscription.cuh"
 #include "../cuda_lib/extraction.cuh"
+#include "../cuda_lib/register_type.cuh"
 
 #include <type_traits>
 

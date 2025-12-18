@@ -33,6 +33,7 @@
 #include <vector>
 #include <knp/core/message_endpoint.h>
 
+#include "../cuda_lib/printf.cuh"
 #include "../cuda_lib/vector.cuh"
 #include "../cuda_lib/safe_call.cuh"
 #include "../cuda_lib/kernels.cuh"
@@ -171,16 +172,16 @@ public:
     [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
     {
 #ifdef __CUDA_ARCH__
-        printf("Using has_sender on device\n");
+        PRINTF_TRACE("Using has_sender on device\n");
         for (size_t i = 0; i < senders_.size(); ++i)
         {
             if (senders_[i] == uid)
             {
-                printf("Found sender\n");
+                PRINTF_TRACE("Found sender\n");
                 return true;
             }
         }
-        printf("No sender found\n");
+        PRINTF_TRACE("No sender found\n");
         return false;
 #else
         if (senders_.size() == 0) return false;

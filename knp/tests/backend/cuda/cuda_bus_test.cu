@@ -31,7 +31,9 @@
 #include <iostream>
 #include <vector>
 
+#include "../../../backends/gpu/cuda-backend/impl/backend_impl.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/extraction.cuh"
+#include "../../../backends/gpu/cuda-backend/impl/cuda_lib/register_type.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/safe_call.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_lib/vector.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/cuda_bus/message_bus.cuh"
@@ -39,7 +41,6 @@
 #include "../../../backends/gpu/cuda-backend/impl/uid.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/projection.cuh"
 #include "../../../backends/gpu/cuda-backend/impl/population.cuh"
-#include "../../../backends/gpu/cuda-backend/impl/backend_impl.cuh"
 
 
 REGISTER_CUDA_VECTOR_TYPE(uint64_t);
