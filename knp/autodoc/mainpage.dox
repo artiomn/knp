@@ -14,13 +14,13 @@ You can use Kaspersky Neuromorphic Platform to do the following:
 @li Implement application solutions based on neuromorphic spiking neural networks in the field of robotic manipulators, Internet of Things, unmanned systems, human-machine interaction, wearable devices, and optimization planning.
 @li Implement application solutions on devices with low power consumption using neuromorphic processors.
 
-You can use the C++ and Python languages to accomplish these tasks. The platform supports CPUs as well as the AltAI-1 neuromorphic processor unit designed for energy-efficient execution of neural networks in various types of intelligent devices.
+You can use the C++ and Python languages to accomplish these tasks. The platform supports CPUs, GPUs with CUDA support, as well as the AltAI-2 neuromorphic processing unit designed for power-efficient execution of neural networks on various classes of smart devices.
 
 @section doxygen About API Reference
 
 The API reference for Kaspersky Neuromorphic Platform is intended for specialists engaged in the C++ development of secure solutions based on the platform and in the development of the Kaspersky Neuromorphic Platform code base.
 
-For information on the platform concepts and architecture, installation instructions and platform use cases, see <a href="https://click.kaspersky.com/?hl=en-US&version=1.0&pid=KNP&link=online_help">Kaspersky Neuromorphic Platform Help</a>.
+For information on the platform concepts and architecture, installation instructions and platform use cases, see <a href="https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=index">Kaspersky Neuromorphic Platform Help</a>.
 
 @section thirdparty Information about Third-Party Code
 
@@ -37,6 +37,7 @@ TensorFlow and any associated designations are trademarks of Google LLC.\n
 Intel and Core are trademarks of Intel Corporation in the U.S. and/or other countries.\n
 Linux is the registered trademark of Linus Torvalds in the U.S. and other countries.\n
 Microsoft, Visual Studio and Windows are trademarks of the Microsoft group of companies.\n
+NVIDIA is a registered trademark of NVIDIA Corporation.\n
 JavaScript is a registered trademark of Oracle and/or its affiliates.\n
 Python is a trademark or registered trademark of the Python Software Foundation.\n
 Debian is a registered trademark of Software in the Public Interest, Inc.
