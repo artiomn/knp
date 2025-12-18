@@ -58,4 +58,4 @@ Information about third-party code is provided in the `NOTICE.txt` file located 
 
 Registered trademarks and service marks are the property of their respective owners.
 
-© 2024 AO Kaspersky Lab
+© 2025 AO Kaspersky Lab
