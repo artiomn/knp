@@ -50,7 +50,6 @@ void export_resource_stdp_delta()
             "had_contributed", &rds_rule::has_contributed_,
             "True if a postsynaptic neuron had a spike recently after this synapse got one.");
 
-
     py::class_<rds_params, py::bases<ds_params>>(
         "SynapticResourceSTDPDeltaSynapseParameters",
         "Structure for Delta synapse parameters with support of synaptic resource-based STDP.")
