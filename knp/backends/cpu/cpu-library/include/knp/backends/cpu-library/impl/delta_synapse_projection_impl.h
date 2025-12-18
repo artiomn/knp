@@ -27,6 +27,7 @@
 #include <knp/synapse-traits/stdp_synaptic_resource_rule.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/fmt.h>
 
 #include <algorithm>
 #include <mutex>
@@ -65,12 +66,12 @@ constexpr bool is_forcing<knp::core::Projection<synapse_traits::DeltaSynapse>>()
 template <typename ProjectionType>
 MessageQueue::const_iterator calculate_delta_synapse_projection_data(
     ProjectionType &projection, std::vector<core::messaging::SpikeMessage> &messages, MessageQueue &future_messages,
-    size_t step_n,
+    const size_t step_n,
     std::function<knp::synapse_traits::synapse_parameters<knp::synapse_traits::DeltaSynapse>(
         const typename ProjectionType::SynapseParameters &)>
         sp_getter = [](const typename ProjectionType::SynapseParameters &synapse_params) { return synapse_params; })
 {
-    SPDLOG_TRACE("Calculating delta synapse projection data...");
+    SPDLOG_TRACE("Calculating delta synapse projection data for the step = {}", step_n);
     using SynapseType = typename ProjectionType::ProjectionSynapseType;
     WeightUpdateSTDP<SynapseType>::init_projection(projection, messages, step_n);
 
@@ -80,6 +81,7 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
         for (const auto &spiked_neuron_index : message_data)
         {
             auto synapses = projection.find_synapses(spiked_neuron_index, ProjectionType::Search::by_presynaptic);
+            SPDLOG_TRACE("Projection synapse count for the spike = {}", synapses.size());
             for (auto synapse_index : synapses)
             {
                 auto &synapse = projection[synapse_index];
@@ -94,8 +96,13 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
                     static_cast<uint32_t>(std::get<core::target_neuron_id>(synapse))};
 
                 auto iter = future_messages.find(future_step);
+
+                SPDLOG_TRACE("Synapse index = {}, synapse delay = {}, synapse weight = {}, step = {}, future step = {}",
+                    synapse_index, synapse_params.delay_, synapse_params.weight_, step_n, future_step);
+
                 if (iter != future_messages.end())
                 {
+                    SPDLOG_TRACE("Add existing impact.");
                     iter->second.impacts_.push_back(impact);
                 }
                 else
@@ -106,11 +113,13 @@ MessageQueue::const_iterator calculate_delta_synapse_projection_data(
                         projection.get_postsynaptic(),
                         is_forcing<ProjectionType>(),
                         {impact}};
+                    SPDLOG_TRACE("Add new impact.");
                     future_messages.insert(std::make_pair(future_step, message_out));
                 }
             }
         }
     }
+
     WeightUpdateSTDP<SynapseType>::modify_weights(projection);
     return future_messages.find(step_n);
 }
@@ -208,6 +217,18 @@ void calculate_delta_synapse_projection_impl(
     SPDLOG_DEBUG("Calculating delta synapse projection...");
 
     auto messages = endpoint.unload_messages<core::messaging::SpikeMessage>(projection.get_uid());
+
+    SPDLOG_DEBUG("Messages count = {}...", messages.size());
+
+    #if (SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_TRACE)
+    for (const auto &message : messages)
+    {
+            SPDLOG_TRACE("Spike from {} with spiked neurons: {}",
+                std::string(message.header_.sender_uid_),
+                fmt::join(message.neuron_indexes_, ", "));
+    }
+    #endif
+
     auto out_iter = calculate_delta_synapse_projection_data(projection, messages, future_messages, step_n);
     if (out_iter != future_messages.end())
     {
