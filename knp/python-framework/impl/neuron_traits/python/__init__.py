@@ -24,6 +24,7 @@ limitations under the License.
 from knp.neuron_traits._knp_python_framework_neuron_traits import (
     BLIFATNeuronParameters,
     SynapticResourceSTDPBLIFATNeuronParameters,
+    AltAILIFNeuronParameters,
 )
 
-__all__ = ['BLIFATNeuronParameters', 'SynapticResourceSTDPBLIFATNeuronParameters']
+__all__ = ['BLIFATNeuronParameters', 'SynapticResourceSTDPBLIFATNeuronParameters', 'AltAILIFNeuronParameters']

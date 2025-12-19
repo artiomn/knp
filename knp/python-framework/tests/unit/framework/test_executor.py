@@ -45,12 +45,13 @@ def is_continue_execution(step_num):  # type: ignore[no-untyped-def]
 
 
 def run_model(model, input_channel_uid, input_generator, output_uid, root_path):  # type: ignore[no-untyped-def]
-    backend = BackendLoader().load(f'{root_path}/../bin/knp-cpu-single-threaded-backend')
-    input_channel_map = {input_channel_uid: input_generator}
-    model_executor = ModelExecutor(model, backend, input_channel_map)
-    model_executor.start(is_continue_execution)
-    output = model_executor.get_output_channel(output_uid).read_some_from_buffer(0, 20)
-    return output
+    with BackendLoader() as loader:
+        backend = loader.load(f'{root_path}/../bin/knp-cpu-single-threaded-backend')
+        input_channel_map = {input_channel_uid: input_generator}
+        model_executor = ModelExecutor(model, backend, input_channel_map)
+        model_executor.start(is_continue_execution)
+        output = model_executor.get_output_channel(output_uid).read_some_from_buffer(0, 20)
+        return output
 
 
 def messages_to_results(messages):  # type: ignore[no-untyped-def]

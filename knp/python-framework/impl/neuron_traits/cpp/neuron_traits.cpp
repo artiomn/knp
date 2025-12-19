@@ -20,13 +20,12 @@
  */
 
 #include "common.h"
+#include "exports.h"
+
 
 BOOST_PYTHON_MODULE(KNP_FULL_LIBRARY_NAME)
 {
-#define _KNP_IN_NEURON_TRAITS
-
-#include "blifat.cpp"                // NOLINT
-#include "resource_stdp_blifat.cpp"  // NOLINT
-
-#undef _KNP_IN_NEURON_TRAITS
+    export_altai_lif();
+    export_blifat();
+    export_resource_stdp_blifat();
 }

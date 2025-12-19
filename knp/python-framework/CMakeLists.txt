@@ -73,7 +73,7 @@ include(file-functions)
 set(KNP_PYTHON_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${PROJECT_NAME}")
 
 knp_add_python_module(core
-        LINK_LIBRARIES KNP::Core
+        LINK_LIBRARIES KNP::Core KNP::BaseFramework::Core
         PY_VER ${_KNP_PY_VER})
 knp_add_python_module(neuron_traits
         LINK_LIBRARIES KNP::Neuron::Traits
