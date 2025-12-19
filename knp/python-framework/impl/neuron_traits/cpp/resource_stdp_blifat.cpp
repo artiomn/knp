@@ -4,7 +4,7 @@
  * @kaspersky_support Vartenkov A.
  * @date 28.10.24
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2024-2025 AO Kaspersky Lab
  */
 
 
