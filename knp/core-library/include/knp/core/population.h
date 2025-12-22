@@ -65,7 +65,7 @@ public:
     using NeuronGenerator = std::function<std::optional<NeuronParameters>(size_t index)>;
 
     /**
-     * @brief Real neurons container type.
+     * @brief Type of the container that contains neurons.
      */
     using NeuronsContainer = std::vector<NeuronParameters>;
 
