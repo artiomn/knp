@@ -2,9 +2,9 @@
  * @file subscription.cuh
  * @brief Subscription class that determines message exchange between entities in the network.
  * @kaspersky_support
- * @date 15.03.2023
+ * @date 15.03.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
