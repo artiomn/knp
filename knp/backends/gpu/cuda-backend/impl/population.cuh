@@ -4,7 +4,7 @@
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ struct CUDAPopulation
      */
     using NeuronParameters = ::knp::neuron_traits::neuron_parameters<NeuronType>;
 
-    __host__ __device__ CUDAPopulation() = default;
+    CUDAPopulation() = default;
 
 //#if !defined(__CUDA_ARCH__)
     /**
@@ -67,8 +67,6 @@ struct CUDAPopulation
     {
     }
 //#endif
-
-    __host__ __device__ ~CUDAPopulation() = default;
 
     __host__ __device__ void actualize() { neurons_.actualize(); }
 

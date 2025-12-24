@@ -2,9 +2,9 @@
  * @file subscription.cuh
  * @brief Subscription class that determines message exchange between entities in the network.
  * @kaspersky_support
- * @date 15.03.2023
+ * @date 15.03.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public:
     using UidSet = device_lib::CUDAVector<UID>;
 
 public:
-    __host__ __device__ Subscription() = default;
+    Subscription() = default;
 
     /**
      * @brief Subscription constructor.
@@ -171,7 +171,7 @@ public:
      */
     [[nodiscard]] __host__ __device__ bool has_sender(const cuda::UID &uid) const
     {
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__)
         PRINTF_TRACE("Using has_sender on device\n");
         for (size_t i = 0; i < senders_.size(); ++i)
         {

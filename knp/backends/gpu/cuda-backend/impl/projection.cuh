@@ -4,7 +4,7 @@
  * @kaspersky_support Artiom N.
  * @date 24.02.2025
  * @license Apache 2.0
- * @copyright © 2024 AO Kaspersky Lab
+ * @copyright © 2025 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,10 +93,6 @@ struct CUDAProjection
                          ::cuda::std::get<0>(syn_copy).delay_);
         }
     }
-    /**
-     * @brief Destructor.
-     */
-    __host__ __device__ ~CUDAProjection() = default;
 
     __host__ __device__ void lock_weights() { is_locked_ = true; }
     __host__ __device__ void unlock_weights() { is_locked_ = false; }
