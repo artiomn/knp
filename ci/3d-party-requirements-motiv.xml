@@ -49,7 +49,7 @@
     <depend type="lib" ecosystem_name="pypi" name="zstandard" version="0.23.0" site="https://pypi.org/project/zstandard/0.22.0/" legal_type_of_use="unknown"/>
     <depend type="lib" ecosystem_name="github" name="boostorg/boost" version="1.83.0" site="https://github.com/boostorg/boost" legal_type_of_use="unknown"/>
     <depend type="lib" ecosystem_name="github" name="boostorg/python" version="1.83.0" site="https://github.com/boostorg/python/tree/boost-1.81.0" legal_type_of_use="unknown"/>
-    <depend type="lib" ecosystem_name="github" name="gabime/spdlog" version="1.12.0" site="https://github.com/gabime/spdlog/tree/v1.12.0" legal_type_of_use="unknown"/>
+    <depend type="lib" ecosystem_name="github" name="gabime/spdlog" version="1.14.1" site="https://github.com/gabime/spdlog/tree/v1.14.1" legal_type_of_use="unknown"/>
     <depend type="lib" ecosystem_name="github" name="boostorg/filesystem" version="1.83.0" site="https://github.com/boostorg/filesystem" legal_type_of_use="unknown"/>
     <depend type="lib" ecosystem_name="github" name="boostorg/dll" version="1.83.0" site="https://github.com/boostorg/dll" legal_type_of_use="unknown"/>
     <depend type="lib" ecosystem_name="github" name="boostorg/mp11" version="1.83.0" site="https://github.com/boostorg/mp11" legal_type_of_use="unknown"/>
