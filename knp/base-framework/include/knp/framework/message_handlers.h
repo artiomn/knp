@@ -144,7 +144,7 @@ public:
      * @param winners_per_group number of spikes to pass further from each group.
      * @param seed random generator seed.
      * 
-     * @details For example, we have a set of spike messages 0, 1, 2, 3, 4, 5. If @P group_borders 
+     * @details For example, we have a set of spike messages 0, 1, 2, 3, 4, 5. If @p group_borders 
      * is {2, 4}, the set of spike messages will be divided into the following groups: 
      * [0, 1], [2, 3], and [4, 5].
      */
