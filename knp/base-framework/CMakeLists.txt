@@ -66,6 +66,7 @@ knp_add_library("${PROJECT_NAME}-core"
     impl/sonata/save_network.cpp
     impl/sonata/load_network.cpp
     impl/sonata/csv_content.cpp
+    impl/sonata/types/lif_neuron.cpp
     impl/sonata/types/blifat_neuron.cpp
     impl/sonata/types/delta_synapse.cpp
     impl/sonata/types/resource_blifat_neuron.cpp
