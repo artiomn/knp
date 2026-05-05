@@ -57,7 +57,8 @@ public:
      */
     using SupportedNeurons = boost::mp11::mp_list<
         knp::neuron_traits::BLIFATNeuron, knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron,
-        knp::neuron_traits::AltAILIF, knp::neuron_traits::SynapticResourceSTDPAltAILIFNeuron>;
+        knp::neuron_traits::AltAILIF, knp::neuron_traits::SynapticResourceSTDPAltAILIFNeuron,
+        knp::neuron_traits::LIFNeuron>;
 
     /**
      * @brief List of synapse types supported by the single-threaded CPU backend.
@@ -399,8 +400,18 @@ protected:
 
 
     /**
-     * @brief Calculate a projection of delta synapses.
-     * 
+     * @brief Calculate population of LIF neurons.
+     * @note Population state will be changed during calculation.
+     * @param population population to calculate.
+     * @return spike message with indexes of spiked neurons if population is emitting one.
+     */
+    std::optional<core::messaging::SpikeMessage> calculate_population(
+        knp::core::Population<knp::neuron_traits::LIFNeuron> &population);
+
+
+    /**
+     * @brief Calculate projection of delta synapses.
+     * @note Projection will be changed during calculation.
      * @param projection projection to calculate.
      * @param message_queue message queue to send to projection for calculation.
      * 
