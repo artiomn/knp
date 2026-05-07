@@ -410,16 +410,6 @@ protected:
 
 
     /**
-     * @brief Calculate population of LIF neurons.
-     * @note Population state will be changed during calculation.
-     * @param population population to calculate.
-     * @return spike message with indexes of spiked neurons if population is emitting one.
-     */
-    std::optional<core::messaging::SpikeMessage> calculate_population(
-        knp::core::Population<knp::neuron_traits::LIFNeuron> &population);
-
-
-    /**
      * @brief Calculate a projection of delta synapses.
      *
      * @param projection projection to calculate.
