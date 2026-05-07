@@ -45,15 +45,30 @@ struct LIFNeuron;
 template <>
 struct default_values<LIFNeuron>
 {
+    /**
+     * @brief Default value for potential.
+     */
     constexpr static float potential_ = 0;
 
+    /**
+     * @brief Default value for activation threshold.
+     */
     constexpr static float activation_threshold_ = 1;
 
+    /**
+     * @brief Default value for leak coefficient.
+     */
     constexpr static float leak_coefficient_ = 1;
 
-    constexpr static uint32_t refract_counter_ = 0;
+    /**
+     * @brief Default value for refract counter.
+     */
+    constexpr static float refract_counter_ = 0;
 
-    constexpr static uint32_t refract_period_ = 0;
+    /**
+     * @brief Default value for refract period.
+     */
+    constexpr static float refract_period_ = 0;
 };
 
 
@@ -63,14 +78,30 @@ struct default_values<LIFNeuron>
 template <>
 struct neuron_parameters<LIFNeuron>
 {
+    /**
+     * @brief If neuron's potential exceeds activation_threshold, spike is produced, and potential is reset.
+     */
     float potential_ = default_values<LIFNeuron>::potential_;
 
+    /**
+     * @brief Threshold for neuron activation.
+     */
     float activation_threshold_ = default_values<LIFNeuron>::activation_threshold_;
 
+    /**
+     * @brief Multiplier of potential on each pre-impact step.
+     */
     float leak_coefficient_ = default_values<LIFNeuron>::leak_coefficient_;
 
+    /**
+     * @brief Refract counter. On neuron activation, counter is set to refract_period and decremented on each step.
+     * Incoming impacts are ignored if refract_counter > 0.
+     */
     float refract_counter_ = default_values<LIFNeuron>::refract_counter_;
 
+    /**
+     * @brief Refract period for refract counter.
+     */
     float refract_period_ = default_values<LIFNeuron>::refract_period_;
 };
 
