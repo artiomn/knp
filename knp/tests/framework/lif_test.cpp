@@ -60,12 +60,10 @@ struct NeuronLog
 
 NeuronLog run_lif_neuron(
     const knp::neuron_traits::neuron_parameters<knp::neuron_traits::LIFNeuron> &neuron, size_t steps,
-    const std::vector<float> &impacts = {}, const uint32_t num_neurons = 1, const uint32_t neuron_index = 0)
+    const std::vector<float> &impacts = {})
 {
-    assert(num_neurons > neuron_index);
     const knp::core::UID pop_uid, in_uid, out_uid;
-    knp::core::Population<knp::neuron_traits::LIFNeuron> population{
-        pop_uid, [&neuron](size_t) { return neuron; }, num_neurons};
+    knp::core::Population<knp::neuron_traits::LIFNeuron> population{pop_uid, [&neuron](size_t) { return neuron; }, 1};
     knp::testing::TestingBackendST backend;
     backend.subscribe<knp::core::messaging::SynapticImpactMessage>(pop_uid, {in_uid});
     auto endpoint = backend.get_message_bus().create_endpoint();
@@ -75,14 +73,14 @@ NeuronLog run_lif_neuron(
     backend._init();
     auto &pop = *backend.begin_populations();
     NeuronLog result;
-    const auto &neuron_ref = std::get<knp::core::Population<knp::neuron_traits::LIFNeuron>>(pop)[neuron_index];
+    const auto &neuron_ref = std::get<knp::core::Population<knp::neuron_traits::LIFNeuron>>(pop)[0];
     for (size_t step = 0; step < steps; ++step)
     {
         const knp::core::messaging::MessageHeader header{in_uid, step};
         if (step < impacts.size())
         {
             knp::core::messaging::SynapticImpact impact{
-                0, impacts[step], knp::synapse_traits::OutputType::EXCITATORY, 0, neuron_index};
+                0, impacts[step], knp::synapse_traits::OutputType::EXCITATORY, 0, 0};
             const knp::core::messaging::SynapticImpactMessage msg{
                 header, knp::core::UID{false}, pop_uid, true, {impact}};
             endpoint.send_message(msg);
@@ -93,7 +91,7 @@ NeuronLog run_lif_neuron(
         auto out_msgs = endpoint.unload_messages<knp::core::messaging::SpikeMessage>(out_uid);
         if (!out_msgs.empty() && !out_msgs[0].neuron_indexes_.empty())
         {
-            if (std::find(out_msgs[0].neuron_indexes_.begin(), out_msgs[0].neuron_indexes_.end(), neuron_index) !=
+            if (std::find(out_msgs[0].neuron_indexes_.begin(), out_msgs[0].neuron_indexes_.end(), 0) !=
                 out_msgs[0].neuron_indexes_.end())
                 result.spikes_.push_back(step);
         }
