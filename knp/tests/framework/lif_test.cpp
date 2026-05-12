@@ -35,7 +35,7 @@
 using Synapse = knp::synapse_traits::DeltaSynapse;
 
 
-namespace knp::testing
+namespace
 {
 
 class TestingBackendST : public knp::backends::single_threaded_cpu::SingleThreadedCPUBackend
@@ -62,7 +62,7 @@ NeuronLog run_lif_neuron(
 {
     const knp::core::UID pop_uid, in_uid, out_uid;
     knp::core::Population<knp::neuron_traits::LIFNeuron> population{pop_uid, [&neuron](size_t) { return neuron; }, 1};
-    knp::testing::TestingBackendST backend;
+    TestingBackendST backend;
     backend.subscribe<knp::core::messaging::SynapticImpactMessage>(pop_uid, {in_uid});
     auto endpoint = backend.get_message_bus().create_endpoint();
     endpoint.subscribe<knp::core::messaging::SpikeMessage>(out_uid, {pop_uid});
@@ -97,7 +97,7 @@ NeuronLog run_lif_neuron(
     return result;
 }
 
-}  // namespace knp::testing
+}  //namespace
 
 
 TEST(LIFNeuron, NeuronPotentialLeakRev)
