@@ -41,13 +41,12 @@
 
 /**
  * @brief Run inference on a neural network and record spike activity.
- * 
+ *
  * @details This function executes the inference process on a trained neural network, processing input data through the network 
  * and recording spike messages for analysis. It configures the network with appropriate input and output channels, sets up 
  * WTA mechanisms, initializes logging for spike monitoring, and executes the simulation.
- * 
+ *
  * @tparam Neuron neuron type template parameter for neuron model specification.
- * 
  * @param backend shared pointer to the computational backend for execution.
  * @param network annotated network structure containing the network and its annotations.
  * @param model_desc model description containing configuration parameters and paths.
