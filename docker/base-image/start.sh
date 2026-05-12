@@ -27,13 +27,14 @@ CUDA_VERSION="12.9"
 
 function install_cuda_debian() {
     export DEBIAN_VERSION=debian$(cat /etc/debian_version | sed 's/\..*//')
+
     echo "[INFO] Installing CUDA for ${DEBIAN_VERSION}..."
 
     CUDA_PKG_VERSION=$(echo ${CUDA_VERSION}|tr '.' '-')
 
     # cuda-keyring package adds correct repository.
     curl -fS https://developer.download.nvidia.com/compute/cuda/repos/${DEBIAN_VERSION}/x86_64/cuda-keyring_1.1-1_all.deb -o cuda-keyring_1.1-1_all.deb \
-    && dpkg -i cuda-keyring_1.1-1_all.deb \
+    && DEBIAN_FRONTEND=noninteractive dpkg -i cuda-keyring_1.1-1_all.deb \
     && rm -f cuda-keyring_1.1-1_all.deb \
     && curl -sSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xA4B469963BF863CC" | \
        gpg --dearmor | tee /etc/apt/keyrings/cuda.gpg > /dev/null \
