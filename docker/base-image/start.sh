@@ -40,7 +40,7 @@ function install_cuda_debian() {
        gpg --dearmor | tee /etc/apt/keyrings/cuda.gpg > /dev/null \
     && apt-get update \
     && apt-get install -y \
-       cuda-minimal-build-${CUDA_PKG_VERSION} cuda-nvcc-${CUDA_PKG_VERSION} cuda-cudart-dev-${CUDA_PKG_VERSION} cuda-nvtx-${CUDA_PKG_VERSION}
+       cuda-minimal-build-${CUDA_PKG_VERSION} cuda-nvcc-${CUDA_PKG_VERSION} cuda-cudart-dev-${CUDA_PKG_VERSION} cuda-nvtx-${CUDA_PKG_VERSION} cuda-nvml-${CUDA_PKG_VERSION}
 
     echo "[INFO] CUDA installation complete."
 }
