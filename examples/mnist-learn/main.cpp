@@ -19,6 +19,8 @@
  * limitations under the License.
  */
 
+#include <knp/framework/network_validator.h>
+
 #include <iostream>
 
 #include "dataset.h"
@@ -30,15 +32,9 @@
 
 
 /**
- * @brief Execute complete model pipeline for specified neuron type.
- * 
- * @details This template function orchestrates the entire machine learning pipeline for neural networks, including 
- * dataset processing, network construction, training, inference, and evaluation. It serves as the core execution 
- * engine for both AltAI and BLIFAT neuron models.
- * 
- * @tparam Neuron neuron type for neuron model specification.
- * 
- * @param model_desc model description containing configuration parameters and paths.
+ * @brief Run whole model.
+ * @tparam Neuron Neuron type.
+ * @param model_desc Model description.
  */
 template <typename Neuron>
 void run_model(const ModelDescription& model_desc)
@@ -47,48 +43,45 @@ void run_model(const ModelDescription& model_desc)
 
     AnnotatedNetwork network = construct_network<Neuron>(model_desc);
 
-    // Load backend loader for training and inference.
+    knp::framework::NetworkValidator validator;
+    validator.add_validator(knp::framework::network_validators::Connectivity());
+    bool validation_result = validator.run_validators(network.network_);
+    if (!validation_result)
+    {
+        throw std::runtime_error("Network validation failed.");
+    }
+
     // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=243548
     knp::framework::BackendLoader backend_loader;
-    
-    // Execute complete training pipeline.
     train_model<Neuron>(model_desc, dataset, network, backend_loader);
 
-    // Save trained network if saving path is specified.
     if (!model_desc.model_saving_path_.empty()) save_network(model_desc, network);
 
-    // Execute inference on test data.
     auto inference_spikes = infer_model<Neuron>(model_desc, dataset, network, backend_loader);
 
-    // Evaluate and report inference results.
     evaluate_results(inference_spikes, dataset);
 }
 
 
 /**
- * @brief Main application entry point.
- * 
- * @details This function serves as the primary execution point for the MNIST neural network learning application. 
- * It handles command-line argument parsing, configuration validation, user interaction, and routes execution to 
- * the appropriate neuron model.
- * 
- * @param argc argument count.
- * @param argv arguments values.
+ * @brief Main function.
+ * @param argc Argument count.
+ * @param argv Arguments value.
+ * @return Error code.
  */
 int main(int argc, char** argv)
 {
-    // Parse command-line arguments and validate configuration.
+    // Parsing command line arguments.
     std::optional<ModelDescription> model_desc_opt = parse_arguments(argc, argv);
     if (!model_desc_opt.has_value()) return EXIT_FAILURE;
     const ModelDescription& model_desc = model_desc_opt.value();
 
-    // Display configuration to user for confirmation.
     std::cout << "Model description:\n"
               << model_desc << "\nPress ENTER to accept parameters and start model." << std::endl;
     std::cin.get();
     std::cout << "Starting model." << std::endl;
 
-    // Execute model according to selected neuron type.
+    // Starting model according to selected type.
     switch (model_desc.type_)
     {
         case SupportedModelType::BLIFAT:
