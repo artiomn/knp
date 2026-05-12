@@ -51,6 +51,11 @@ struct default_values<LIFNeuron>
     constexpr static float potential_ = 0;
 
     /**
+     * @brief Default value for potential reset.
+     */
+    constexpr static float potential_reset_value_ = 0;
+
+    /**
      * @brief Default value for activation threshold.
      */
     constexpr static float activation_threshold_ = 1;
@@ -82,6 +87,11 @@ struct neuron_parameters<LIFNeuron>
      * @brief If neuron's potential exceeds activation_threshold, spike is produced, and potential is reset.
      */
     float potential_ = default_values<LIFNeuron>::potential_;
+
+    /**
+     * @brief When neuron is activated, potential is reset to this value.
+     */
+    float potential_reset_value_ = default_values<LIFNeuron>::potential_reset_value_;
 
     /**
      * @brief Threshold for neuron activation.

@@ -52,6 +52,13 @@ inline void impact_neuron_impl(
                 neuron.potential_ += impact.impact_value_;
             }
             break;
+        case knp::synapse_traits::OutputType::INHIBITORY_CURRENT:
+            if (0 == neuron.refract_counter_)
+            {
+                neuron.potential_ -= impact.impact_value_;
+            }
+            break;
+
         default:
             SPDLOG_ERROR("Unhandled synapse type.");
             throw std::runtime_error("Unhandled synapse type.");
@@ -66,7 +73,7 @@ inline bool calculate_post_impact_single_neuron_state_impl(
     {
         if (neuron.potential_ > neuron.activation_threshold_)
         {
-            neuron.potential_ = 0;
+            neuron.potential_ = neuron.potential_reset_value_;
             neuron.refract_counter_ = neuron.refract_period_;
             return true;
         }
