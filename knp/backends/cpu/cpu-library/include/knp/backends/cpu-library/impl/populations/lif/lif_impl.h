@@ -1,10 +1,10 @@
 /**
- * @file altai_impl.h
- * @brief Implementation of altai neuron population.
- * @kaspersky_support Vartenkov A.
- * @date 08.12.2025
+ * @file lif_impl.h
+ * @brief Implementation of lif neuron population.
+ * @kaspersky_support Postnikov D.
+ * @date 12.05.2026
  * @license Apache 2.0
- * @copyright © 2025 AO Kaspersky Lab
+ * @copyright © 2026 AO Kaspersky Lab
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ inline bool calculate_post_impact_single_neuron_state_impl(
     }
     else
     {
-        neuron.refract_counter_--;
+        --neuron.refract_counter_;
     }
     return false;
 }

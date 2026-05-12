@@ -48,8 +48,6 @@ public:
 using Population = knp::core::Population<knp::neuron_traits::LIFNeuron>;
 using Projection = knp::core::Projection<knp::synapse_traits::DeltaSynapse>;
 
-}  // namespace knp::testing
-
 
 struct NeuronLog
 {
@@ -98,6 +96,8 @@ NeuronLog run_lif_neuron(
     }
     return result;
 }
+
+}  // namespace knp::testing
 
 
 TEST(LIFNeuron, NeuronPotentialLeakRev)

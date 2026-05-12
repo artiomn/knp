@@ -63,12 +63,12 @@ struct default_values<LIFNeuron>
     /**
      * @brief Default value for refract counter.
      */
-    constexpr static float refract_counter_ = 0;
+    constexpr static uint32_t refract_counter_ = 0;
 
     /**
      * @brief Default value for refract period.
      */
-    constexpr static float refract_period_ = 0;
+    constexpr static uint32_t refract_period_ = 0;
 };
 
 
@@ -97,12 +97,12 @@ struct neuron_parameters<LIFNeuron>
      * @brief Refract counter. On neuron activation, counter is set to refract_period and decremented on each step.
      * Incoming impacts are ignored if refract_counter > 0.
      */
-    float refract_counter_ = default_values<LIFNeuron>::refract_counter_;
+    uint32_t refract_counter_ = default_values<LIFNeuron>::refract_counter_;
 
     /**
      * @brief Refract period for refract counter.
      */
-    float refract_period_ = default_values<LIFNeuron>::refract_period_;
+    uint32_t refract_period_ = default_values<LIFNeuron>::refract_period_;
 };
 
 }  // namespace knp::neuron_traits
