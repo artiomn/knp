@@ -33,13 +33,13 @@
 
 /**
  * @brief Execute complete model pipeline for specified neuron type.
- * 
- * @details This template function orchestrates the entire machine learning pipeline for neural networks, including 
- * dataset processing, network construction, training, inference, and evaluation. It serves as the core execution 
+ *
+ * @details This template function orchestrates the entire machine learning pipeline for neural networks, including
+ * dataset processing, network construction, training, inference, and evaluation. It serves as the core execution
  * engine for both AltAI and BLIFAT neuron models.
- * 
+ *
  * @tparam Neuron neuron type for neuron model specification.
- * 
+ *
  * @param model_desc model description containing configuration parameters and paths.
  */
 template <typename Neuron>
@@ -76,13 +76,14 @@ void run_model(const ModelDescription& model_desc)
 
 /**
  * @brief Main application entry point.
- * 
- * @details This function serves as the primary execution point for the MNIST neural network learning application. 
- * It handles command-line argument parsing, configuration validation, user interaction, and routes execution to 
+ *
+ * @details This function serves as the primary execution point for the MNIST neural network learning application.
+ * It handles command-line argument parsing, configuration validation, user interaction, and routes execution to
  * the appropriate neuron model.
- * 
+ *
  * @param argc argument count.
  * @param argv arguments values.
+ * @return ret code.
  */
 int main(int argc, char** argv)
 {
@@ -102,6 +103,7 @@ int main(int argc, char** argv)
     {
         case SupportedModelType::BLIFAT:
         {
+            // cppcheck-suppress throwInEntryPoint
             run_model<knp::neuron_traits::BLIFATNeuron>(model_desc);
             break;
         }
