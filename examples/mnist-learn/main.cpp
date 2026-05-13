@@ -97,6 +97,7 @@ int main(int argc, char** argv)
     {
         case SupportedModelType::BLIFAT:
         {
+            // cppcheck-suppress throwInEntryPoint
             run_model<knp::neuron_traits::BLIFATNeuron>(model_desc);
             break;
         }
