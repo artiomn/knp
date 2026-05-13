@@ -26,10 +26,10 @@
 #include <knp/framework/projection/wta.h>
 #include <knp/framework/tags/name.h>
 
-#include <map>
-#include <memory>
 #include <filesystem>
 #include <fstream>
+#include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,11 +42,12 @@
 /**
  * @brief Run inference on a neural network and record spike activity.
  *
- * @details This function executes the inference process on a trained neural network, processing input data through the network 
- * and recording spike messages for analysis. It configures the network with appropriate input and output channels, sets up 
- * WTA mechanisms, initializes logging for spike monitoring, and executes the simulation.
+ * @details This function executes the inference process on a trained neural network, processing input data through the
+ * network and recording spike messages for analysis. It configures the network with appropriate input and output
+ * channels, sets up WTA mechanisms, initializes logging for spike monitoring, and executes the simulation.
  *
  * @tparam Neuron neuron type template parameter for neuron model specification.
+ *
  * @param backend shared pointer to the computational backend for execution.
  * @param network annotated network structure containing the network and its annotations.
  * @param model_desc model description containing configuration parameters and paths.
@@ -87,7 +88,7 @@ std::vector<knp::core::messaging::SpikeMessage> infer_network(
     // Connect rasterized image projections to the input channel.
     for (auto image_proj_uid : network.data_.projections_from_raster_)
         model.add_input_channel(input_image_channel_uid, image_proj_uid);
-    
+
     // Initialize model executor with backend and channel mappings.
     // Online Help link: https://click.kaspersky.com/?hl=en-US&version=2.0&pid=KNP&link=online_help&helpid=251296
     knp::framework::ModelExecutor model_executor(model, backend, std::move(channel_map));
@@ -143,8 +144,7 @@ std::vector<knp::core::messaging::SpikeMessage> infer_network(
                     for (const auto& message : messages)
                     {
                         const auto name_iter = pop_names.find(message.header_.sender_uid_);
-                        const std::string sender_name =
-                            name_iter == pop_names.end() ? "UNKNOWN" : name_iter->second;
+                        const std::string sender_name = name_iter == pop_names.end() ? "UNKNOWN" : name_iter->second;
 
                         // Log each neuron index from the spike message.
                         for (const auto neuron_index : message.neuron_indexes_)
@@ -179,7 +179,7 @@ std::vector<knp::core::messaging::SpikeMessage> infer_network(
             if (step % 20 == 0) std::cout << "Inference step: " << step << std::endl;
             return step != dataset.get_steps_amount_for_inference();
         });
-    
+
     // Retrieve final spike results from output channel.
     auto spikes = out_channel.update();
 
@@ -193,12 +193,12 @@ std::vector<knp::core::messaging::SpikeMessage> infer_network(
 
 /**
  * @brief Run inference on a model and record spike activity.
- * 
- * @details This function provides a high-level interface for running inference on a trained model, handling backend loading and 
- * delegation to the lower-level inference function.
- * 
+ *
+ * @details This function provides a high-level interface for running inference on a trained model, handling backend
+ * loading and delegation to the lower-level inference function.
+ *
  * @tparam Neuron neuron type template parameter for neuron model specification.
- * 
+ *
  * @param model_desc model description containing configuration parameters and paths.
  * @param dataset dataset with inference data.
  * @param network annotated network structure containing the network and its annotations.
