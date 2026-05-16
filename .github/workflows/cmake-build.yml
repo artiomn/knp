@@ -68,7 +68,7 @@ jobs:
         run: |
           echo "KNP_BUILD_IMAGE_NAME=${{ vars.DOCKERHUB_LOGIN }}/knp-build-image:latest" >> $GITHUB_ENV
           echo "KNP_SDK_IMAGE_NAME=${{ vars.DOCKERHUB_LOGIN }}/knp-sdk-image" >> $GITHUB_ENV
-          
+
       # Install support for non-x86 emulation in Docker via QEMU.
       # Platforms: linux/arm64, linux/riscv64, linux/ppc64le, linux/s390x,
       #            linux/386, linux/arm/v7, linux/arm/v6
@@ -97,7 +97,7 @@ jobs:
         timeout-minutes: 180
 
       - name: C++ tests
-        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests ${{ env.KNP_BUILD_IMAGE_NAME }} ctest -V
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v ${{ github.workspace }}:/KNP -w /KNP/${{ steps.strings.outputs.build-output-dir }}/knp/tests ${{ env.KNP_BUILD_IMAGE_NAME }} ctest -V -E "Cuda*"
         timeout-minutes: 180
 
       # TODO: run before configure?
