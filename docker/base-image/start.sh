@@ -44,7 +44,7 @@ function install_cuda_debian() {
     && apt-get install -y \
        cuda-minimal-build-${CUDA_PKG_VERSION} cuda-nvcc-${CUDA_PKG_VERSION} cuda-cudart-dev-${CUDA_PKG_VERSION} cuda-nvtx-${CUDA_PKG_VERSION} cuda-nvml-dev-${CUDA_PKG_VERSION} \
     && echo "/usr/local/cuda-${CUDA_MAJOR_VERSION}/targets/x86_64-linux/lib/stubs" > /etc/ld.so.conf.d/988_cuda-${MAJOR_VERSION}-stubs.conf \
-    && ldconfg
+    && ldconfig
 
     echo "[INFO] CUDA installation complete."
 }
