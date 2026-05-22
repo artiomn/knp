@@ -119,7 +119,7 @@ jobs:
       - name: Copy SDK image files to build directory
         if: matrix.c_compiler == 'gcc'
         run:
-          cp -a ${{ github.workspace }}/docker/sdk-image/** ${{ steps.strings.outputs.build-output-dir }}/_packages/
+          sudo cp -a ${{ github.workspace }}/docker/sdk-image/** ${{ steps.strings.outputs.build-output-dir }}/_packages/
 
       - name: Create SDK Docker image
         if: matrix.c_compiler == 'gcc'
