@@ -118,15 +118,8 @@ jobs:
 
       - name: Copy SDK image files to build directory
         if: matrix.c_compiler == 'gcc'
-        uses: nearform-actions/github-action-copy-files@v1
-        with:
-          source: ${{ github.workspace }}/docker/sdk-image/**
-          destination: ${{ steps.strings.outputs.build-output-dir }}/_packages/
-          options: |
-            {
-              "overwrite": true,
-              "flat": false
-            }
+        run:
+          cp -a ${{ github.workspace }}/docker/sdk-image/** ${{ steps.strings.outputs.build-output-dir }}/_packages/
 
       - name: Create SDK Docker image
         if: matrix.c_compiler == 'gcc'
