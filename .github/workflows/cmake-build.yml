@@ -131,6 +131,7 @@ jobs:
           push: true
           build-args: |
             KNP_IMAGE_VERSION=latest
+            KNP_VERSION=2.0.0
 
           tags: |
             ${{ vars.DOCKERHUB_LOGIN }}/knp-sdk-image:${{ env.KNP_IMAGE_VERSION }}
