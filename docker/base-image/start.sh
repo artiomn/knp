@@ -22,7 +22,9 @@
 
 set -e
 
-CUDA_VERSION="12.9"
+CUDA_MAJOR_VERSION="12"
+CUDA_MINOR_VERSION="9"
+CUDA_VERSION="${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}"
 
 
 function install_cuda_debian() {
@@ -40,7 +42,9 @@ function install_cuda_debian() {
        gpg --dearmor | tee /etc/apt/keyrings/cuda.gpg > /dev/null \
     && apt-get update \
     && apt-get install -y \
-       cuda-minimal-build-${CUDA_PKG_VERSION} cuda-nvcc-${CUDA_PKG_VERSION} cuda-cudart-dev-${CUDA_PKG_VERSION} cuda-nvtx-${CUDA_PKG_VERSION}
+       cuda-minimal-build-${CUDA_PKG_VERSION} cuda-nvcc-${CUDA_PKG_VERSION} cuda-cudart-dev-${CUDA_PKG_VERSION} cuda-nvtx-${CUDA_PKG_VERSION} cuda-nvml-dev-${CUDA_PKG_VERSION} \
+    && echo "/usr/local/cuda-${CUDA_MAJOR_VERSION}/targets/x86_64-linux/lib/stubs" > /etc/ld.so.conf.d/988_cuda-${MAJOR_VERSION}-stubs.conf \
+    && ldconfig
 
     echo "[INFO] CUDA installation complete."
 }

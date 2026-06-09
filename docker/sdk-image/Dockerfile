@@ -15,8 +15,9 @@
 # limitations under the License.
 
 ARG KNP_IMAGE_VERSION=2.0.0
-ARG KNP_PACKAGES_DIR
+ARG KNP_VERSION=2.0.0
 ARG TARGETPLATFORM
+
 FROM kasperskydh/knp-base-image:${KNP_IMAGE_VERSION}
 
 WORKDIR /knp
@@ -37,6 +38,12 @@ RUN \
   && cd /knp
 
 COPY NOTICE.txt .
-COPY ${PACKAGES_DIR}/*.deb /knp
+COPY *.deb /knp/
 
-RUN DEBIAN_FRONTEND=noninteractive dpkg -i /knp/*.deb
+RUN DEBIAN_FRONTEND=noninteractive dpkg -i \
+  /knp/knp-cpp-framework_2.0.0_amd64.deb /knp/knp-cpp-framework-dev_2.0.0_amd64.deb \
+  /knp/knp-documentation_2.0.0_all.deb knp-examples_2.0.0_amd64.deb \
+  /knp/knp-cpu-single-threaded-backend_2.0.0_amd64.deb /knp/knp-cpu-single-threaded-backend-dev_2.0.0_amd64.deb \
+  /knp/knp-cpu-multi-threaded-backend_2.0.0_amd64.deb /knp/knp-cpu-multi-threaded-backend-dev_2.0.0_amd64.deb \
+  /knp/knp-examples_2.0.0_amd64.deb \
+  /knp/knp-python3-framework_2.0.0_amd64.deb

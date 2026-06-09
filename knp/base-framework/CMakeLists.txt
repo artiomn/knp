@@ -66,6 +66,7 @@ knp_add_library("${PROJECT_NAME}-core"
     impl/sonata/save_network.cpp
     impl/sonata/load_network.cpp
     impl/sonata/csv_content.cpp
+    impl/sonata/types/lif_neuron.cpp
     impl/sonata/types/blifat_neuron.cpp
     impl/sonata/types/delta_synapse.cpp
     impl/sonata/types/resource_blifat_neuron.cpp
@@ -143,12 +144,13 @@ if (KNP_INSTALL)
 
     knp_packaging_set_parameters(${COMPONENT_NAME} "${PROJECT_NAME}"
         DESCRIPTION "${PROJECT_DESCRIPTION}"
-        # DEPENDS "backend" "libboost-all-dev (= ${Boost_VERSION})" "libhdf5" "libzmq5"
     )
+
+	string(REGEX REPLACE "\.[0-9]*$" "" BOOST_PKG_VERSION "${Boost_VERSION}")
 
     knp_packaging_set_parameters(${COMPONENT_NAME}-dev "${PROJECT_NAME}"
             DESCRIPTION "${PROJECT_DESCRIPTION} development files: C++ headers, CMake modules, static libraries"
-            DEPENDS "libboost-all-dev (>= ${Boost_VERSION})"
+            DEPENDS "libboost-filesystem${BOOST_PKG_VERSION}-dev"
             INTERNAL_DEPENDS "${COMPONENT_NAME}"
             RECOMMENDS "cppzmq-dev (>= 4.9.0-1)" "cppzmq (= 4.9.0-1)")
 endif()
