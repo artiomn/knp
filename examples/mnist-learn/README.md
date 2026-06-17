@@ -254,7 +254,7 @@ The `model_desc.h` file defines the configuration structure and streaming interf
 
 ## network_validation.cpp program file description
 
-The `network_validation.cpp` file contains the implementtaion of the `validate_network()` function. This function is used to validate a spiking neural network. The function helps catch structural errors early, such as missing connections or isolated populations.
+The `network_validation.cpp` file contains the implementation of the `validate_network()` function. This function is used to validate a spiking neural network. The function helps catch structural errors early, such as missing connections or isolated populations.
 
 The function is typically called after network construction and before training and inference begins.  
 
