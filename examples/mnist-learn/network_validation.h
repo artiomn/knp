@@ -25,7 +25,7 @@
 
 
 /**
- * @brief Validate a constructed network.
+ * @brief Validate a network.
  * 
  * @details This function runs a set of predefined validators on the supplied network to ensure
  * that the network topology is well-formed. 
