@@ -112,7 +112,7 @@ struct neuron_parameters<LIFNeuron>
     uint32_t refract_counter_ = default_values<LIFNeuron>::refract_counter_;
 
     /**
-     * @brief Refractory period (number of steps the neuron remains refractory after a spike).
+     * @brief Refractory period.
      */
     uint32_t refract_period_ = default_values<LIFNeuron>::refract_period_;
 };
