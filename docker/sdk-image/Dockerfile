@@ -32,7 +32,7 @@ RUN \
     python3-types-requests \
     python3-wheel \
     zsh \
-  && apt-get -y --no-install-recommends --show-progress install \
+  && apt-get -y --no-install-recommends upgrade \
   && apt-get clean \
   && chsh -s $(which zsh) \
   && sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
