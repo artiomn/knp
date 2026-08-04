@@ -192,6 +192,9 @@ message(STATUS "KNP_MAINTAINER_BUILD = ${KNP_MAINTAINER_BUILD}")
 message(STATUS "KNP_PYTHON_FRAMEWORK_BUILD = ${KNP_PYTHON_FRAMEWORK_BUILD}")
 message(STATUS "KNP_PYTHON_BUILD_WHEEL = ${KNP_PYTHON_BUILD_WHEEL}")
 
+message(STATUS "Using C Compiler Version: ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "Using C++ Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
+
 
 # TODO: fix it!
 # An error has occurred: FatalError: git failed. Is it installed, and are you in a Git repository directory?
