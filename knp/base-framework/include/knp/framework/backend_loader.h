@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 
 /**
@@ -43,18 +44,28 @@ class KNP_DECLSPEC BackendLoader
 {
 public:
     /**
+     * @brief Trying to load backend from from the predefined path set.
+     *
+     * @param backend_name backend library name.
+     * @param add_paths vector of additional paths.
+     *
+     * @return shared pointer to Backend object.
+     */
+    std::shared_ptr<core::Backend> load_by_name(
+        const std::string &backend_name, const std::vector<std::filesystem::path> &add_paths = {});
+    /**
      * @brief Load backend.
-     * 
+     *
      * @param backend_path path to backend.
-     * 
+     *
      * @return shared pointer to Backend object.
      */
     std::shared_ptr<core::Backend> load(const std::filesystem::path &backend_path);
     /**
      * @brief Check if the specified path points to a backend.
-     * 
+     *
      * @param backend_path path to backend.
-     * 
+     *
      * @return `true` if the library pointed by @p backend_path is a backend.
      */
     static bool is_backend(const std::filesystem::path &backend_path);
@@ -62,7 +73,7 @@ public:
 public:
     /**
      * @brief Function type that returns a backend instance.
-     * 
+     *
      * @return shared pointer to Backend object.
      */
     typedef std::shared_ptr<core::Backend>(BackendCreateFunction)();
@@ -70,12 +81,15 @@ public:
 protected:
     /**
      * @brief Create a backend loader that will load and create a backend instance.
-     * 
+     *
      * @param backend_path path to backend.
-     * 
+     *
      * @return pointer to the backend creation function.
      */
     std::function<BackendCreateFunction> make_creator(const std::filesystem::path &backend_path);
+
+private:
+    std::shared_ptr<core::Backend> load_backend_library(const std::filesystem::path &backend_path);
 
 private:
     // std::filesystem::path doesn't work on any compilers.
