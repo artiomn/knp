@@ -176,7 +176,7 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
             boost_install_dir: /Users/runner/work/boost/knp
-            boost_version: 1.91.0
+            boost_version: 1.81.0
             boost_platform_version: 26
             boost_toolset: clang
           - os: windows-2022
