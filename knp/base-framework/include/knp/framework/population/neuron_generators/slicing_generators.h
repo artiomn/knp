@@ -26,18 +26,22 @@
 
 
 /**
- * @brief namespace for neuron generators.
+ * @brief Namespace that contains utilities for generating neuron parameters.
  */
 namespace knp::framework::population::neurons_generators
 {
 /**
- * @brief Converts parameters of a derived neuron to its base neuron by slicing.
- * @tparam BaseNeuron base neuron type, simple.
- * @tparam DerivedNeuron derived neuron type, more complex.
- * @param derived_params neuron parameters to be sliced.
- * @return base neuron parameters.
- * @note Use this generator to create non-trainable model from a trainable one, or when moving a model to non-training
- * backend.
+ * @brief Slice a derived neuron parameter set to its base neuron counterpart.
+ *
+ * @tparam BaseNeuron base neuron type (simpler).
+ * @tparam DerivedNeuron neuron type that publicly derives from the base type.
+ *
+ * @param derived_params parameters of the derived neuron that should be sliced.
+ *
+ * @return parameters of the base neuron obtained by static casting.
+ *
+ * @note This generator is useful for creating a non-trainable model from a trainable one, or when 
+ * moving a model to a backend that does not support training.
  */
 template <class BaseNeuron, class DerivedNeuron>
 neuron_traits::neuron_parameters<BaseNeuron> slice_to_base_neuron(
@@ -51,11 +55,15 @@ neuron_traits::neuron_parameters<BaseNeuron> slice_to_base_neuron(
 
 
 /**
- * @brief Make a generator of base neuron parameters from a derived population.
- * @tparam BaseNeuron base neuron type, simple.
- * @tparam DerivedNeuron derived neuron type, more complex.
- * @param derived_population a population of derived neurons.
- * @return a population of base neuron.
+ * @brief Create a neuron generator that produces base neuron parameters from a population of derived 
+ * neurons.
+ *
+ * @tparam BaseNeuron base neuron type (simpler).
+ * @tparam DerivedNeuron neuron type that publicly derives from the base type.
+ *
+ * @param derived_population population containing the derived neurons.
+ *
+ * @return a generator (`NeuronGenerator`) that yields base neuron parameters on each step.
  */
 template <class BaseNeuron, class DerivedNeuron>
 [[nodiscard]] typename knp::core::Population<BaseNeuron>::NeuronGenerator make_slicing_neuron_generator(
@@ -73,11 +81,17 @@ template <class BaseNeuron, class DerivedNeuron>
 
 
 /**
- * @brief Convert a more complex population of derived neurons to a more simple population of base neurons.
+ * @brief Convert a population of derived neurons into a population of base neurons.
+ *
+ * @tparam BaseNeuron base neuron type (simpler).
+ * @tparam DerivedNeuron neuron type that publicly derives from the base type.
+
  * @param input_population the population to be converted.
- * @tparam BaseNeuron a simple neuron type.
- * @tparam DerivedNeuron neuron derived from a more simple type.
- * @return population of base neurons.
+ *
+ * @return a new `Population<BaseNeuron>` that contains the sliced parameters of the original population.
+ * 
+ * @details The function builds a new population using the same UID as the source and the original size. 
+ * The resulting population can be passed to backends that only understand the base neuron type.
  */
 template <class BaseNeuron, class DerivedNeuron>
 [[nodiscard]] knp::core::Population<BaseNeuron> upcast_population(
