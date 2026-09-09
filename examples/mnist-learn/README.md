@@ -355,7 +355,7 @@ _Neural network training on image data and labels and classification of images f
     3. Instantiates a `BackendLoader`. 
     4. Performs inference with `infer_model()` on the supplied dataset.
 3. The `run_model_training()` function is implemented that: 
-    1. Builds an annotated network with appopriate populations, projections, and WTA configuration using `construct_network()`.
+    1. Builds an annotated network with appropriate populations, projections, and WTA configuration using `construct_network()`.
     2. Runs the complete training process with `train_model()`.
     3. Upcasts populations to the most generic neuron type.
     4. Upcasts projections to generic `DeltaSynapse` type. 

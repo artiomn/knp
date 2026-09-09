@@ -116,7 +116,7 @@ _Image classification of handwritten numbers from the MNIST database consists of
     2.  Defines `std::string` objects for task types, paths to network, a file storing data, and backend. 
     3.  Defines option values for task types, paths to network, a file storing data, and backend.
     4.  Creates an object that stores the defined options in the variable map. 
-    5.  Defines the `main` function behavior if the user calls the help option for commind line switches information.
+    5.  Defines the `main` function behavior if the user calls the help option for command line switches information.
     6.  Defines the `main` function behavior if a path to network is not provided.
     7.  Defines the `main` function behavior if it is called to show a network subgraph. If the function is called to show a network subgraph, the `main` function does the following:
         1.  Defines a path to network using a variable map.
