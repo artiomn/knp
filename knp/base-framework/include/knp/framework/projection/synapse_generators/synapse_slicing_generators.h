@@ -38,6 +38,13 @@ namespace knp::framework::projection::synapse_generators
 
  * @return parameters of the base synapse obtained by static casting.
  *
+ * @details @p BaseSynapse is a simple synapse type that contains only the core parameters needed for the 
+ * simulation. @p DerivedSynapse is a more complex synapse that inherits from the base synapse structure and 
+ * adds extra fields. For example, @ref knp::synapse_traits::SynapticResourceSTDPDeltaSynapse publicly derives 
+ * from @ref knp::synapse_traits::DeltaSynapse. Consequently, 
+ * `synapse_parameters<SynapticResourceSTDPDeltaSynapse>` can be sliced to `synapse_parameters<DeltaSynapse>`
+ * object, discarding the extra fields.
+ *
  * @note This generator is handy when a projection must be exported to a backend that does not support 
  * the extra fields of the derived synapse.
  */
@@ -61,6 +68,13 @@ constexpr synapse_traits::synapse_parameters<BaseSynapse> slice_synapse(
  * @tparam DerivedSynapse derived synapse type (more complex).
  *
  * @param projection projection that holds the derived synapse objects.
+ *
+ * @details @p BaseSynapse is a simple synapse type that contains only the core parameters needed for the 
+ * simulation. @p DerivedSynapse is a more complex synapse that inherits from the base synapse structure and 
+ * adds extra fields. For example, @ref knp::synapse_traits::SynapticResourceSTDPDeltaSynapse publicly derives 
+ * from @ref knp::synapse_traits::DeltaSynapse. Consequently, 
+ * `synapse_parameters<SynapticResourceSTDPDeltaSynapse>` can be sliced to `synapse_parameters<DeltaSynapse>`
+ * object, discarding the extra fields.
  *
  * @return a generator (`SynapseGenerator`) that yields base synapse objects for each step.
  */
@@ -91,6 +105,13 @@ typename core::Projection<BaseSynapse>::SynapseGenerator make_slicing_synapse_ge
  *
  * @return a new `core::Projection<BaseSynapse>` that references the same UID, presynaptic and postsynaptic 
  * populations, but provides a generator that yields base synapse objects.
+ *
+ * @details @p BaseSynapse is a simple synapse type that contains only the core parameters needed for the 
+ * simulation. @p DerivedSynapse is a more complex synapse that inherits from the base synapse structure and 
+ * adds extra fields. For example, @ref knp::synapse_traits::SynapticResourceSTDPDeltaSynapse publicly derives 
+ * from @ref knp::synapse_traits::DeltaSynapse. Consequently, 
+ * `synapse_parameters<SynapticResourceSTDPDeltaSynapse>` can be sliced to `synapse_parameters<DeltaSynapse>`
+ * object, discarding the extra fields.
  *
  * @note The returned projection does not own the original synapse data; it relies on the generator to produce 
  * sliced copies on demand.

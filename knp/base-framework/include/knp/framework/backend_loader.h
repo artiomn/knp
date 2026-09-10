@@ -46,12 +46,12 @@ public:
     /**
      * @brief Load a backend library by its name.
      *
-     * @param backend_name backend library name (without path). 
+     * @param backend_name backend library name without path. 
      * @param add_paths additional directories that should be searched before the standard locations.
      *
      * @return shared pointer to @ref core::Backend instance.
      *
-     * @details  The function build a list of candidate library names: 
+     * @details  The function builds a list of candidate library names: 
      *           - the exact name supplied in `backend_name`;
      *           - the same name prefixed with `knp-` (added only when the original name doesn't already 
      *             start with that prefix).

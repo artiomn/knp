@@ -40,6 +40,13 @@ namespace knp::framework::population::neurons_generators
  *
  * @return parameters of the base neuron obtained by static casting.
  *
+ * @details @p BaseNeuron is a simple neuron type that contains only the core parameters needed for the 
+ * simulation. @p DerivedNeuron is a more complex neuron that inherits from the base neuron structure and 
+ * adds extra fields. For example, @ref knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron publicly derives 
+ * from @ref knp::neuron_traits::BLIFATNeuron. Consequently, 
+ * `neuron_parameters<SynapticResourceSTDPBLIFATNeuron>` can be sliced to `neuron_parameters<BLIFATNeuron>`
+ * object, discarding the extra fields (`dopamine_value_`, `is_being_forced_`, and `resource_`).
+ *
  * @note This generator is useful for creating a non-trainable model from a trainable one, or when 
  * moving a model to a backend that does not support training.
  */
@@ -62,6 +69,13 @@ neuron_traits::neuron_parameters<BaseNeuron> slice_to_base_neuron(
  * @tparam DerivedNeuron neuron type that publicly derives from the base type.
  *
  * @param derived_population population containing the derived neurons.
+ *
+ * @details @p BaseNeuron is a simple neuron type that contains only the core parameters needed for the 
+ * simulation. @p DerivedNeuron is a more complex neuron that inherits from the base neuron structure and 
+ * adds extra fields. For example, @ref knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron publicly derives 
+ * from @ref knp::neuron_traits::BLIFATNeuron. Consequently, 
+ * `neuron_parameters<SynapticResourceSTDPBLIFATNeuron>` can be sliced to `neuron_parameters<BLIFATNeuron>`
+ * object, discarding the extra fields (`dopamine_value_`, `is_being_forced_`, and `resource_`).
  *
  * @return a generator (`NeuronGenerator`) that yields base neuron parameters on each step.
  */
@@ -90,7 +104,14 @@ template <class BaseNeuron, class DerivedNeuron>
  *
  * @return a new `Population<BaseNeuron>` that contains the sliced parameters of the original population.
  * 
- * @details The function builds a new population using the same UID as the source and the original size. 
+ * @details @p BaseNeuron is a simple neuron type that contains only the core parameters needed for the 
+ * simulation. @p DerivedNeuron is a more complex neuron that inherits from the base neuron structure and 
+ * adds extra fields. For example, @ref knp::neuron_traits::SynapticResourceSTDPBLIFATNeuron publicly derives 
+ * from @ref knp::neuron_traits::BLIFATNeuron. Consequently, 
+ * `neuron_parameters<SynapticResourceSTDPBLIFATNeuron>` can be sliced to `neuron_parameters<BLIFATNeuron>`
+ * object, discarding the extra fields (`dopamine_value_`, `is_being_forced_`, and `resource_`).
+ *
+ * @note The function builds a new population using the same UID as the source and the original size. 
  * The resulting population can be passed to backends that only understand the base neuron type.
  */
 template <class BaseNeuron, class DerivedNeuron>
