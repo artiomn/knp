@@ -113,18 +113,17 @@ _Image classification of handwritten numbers from the MNIST database consists of
     The `main` function implements the following:
     
     1.  Creates an output ID.
-    2.  Defines `std::string` objects for task types, paths to network, a file storing data, and backend. 
-    3.  Defines option values for task types, paths to network, a file storing data, and backend.
-    4.  Creates an object that stores the defined options in the variable map. 
-    5.  Defines the `main` function behavior if the user calls the help option for command line switches information.
-    6.  Defines the `main` function behavior if a path to network is not provided.
-    7.  Defines the `main` function behavior if it is called to show a network subgraph. If the function is called to show a network subgraph, the `main` function does the following:
+    2.  Defines option values for task types, paths to network, a file storing data, and backend.
+    3.  Creates an object that stores the defined options in the variable map. 
+    4.  Defines the `main` function behavior if the user calls the help option for command line switches information.
+    5.  Defines the `main` function behavior if a path to network is not provided.
+    6.  Defines the `main` function behavior if it is called to show a network subgraph. If the function is called to show a network subgraph, the `main` function does the following:
         1.  Defines a path to network using a variable map.
         2.  Creates a network object and loads it from the defined path using the `sonata` namespace functions.
         3.  Creates a network graph using the `NetworkGraph` structure.
         4.  Prints descriptions of graph connections using the `print_network_description` function. 
         5.  Draws a subgraph using the `position_network_test` function.
-    8. Defines the `main` function behavior if it is called to run inference (classify images). If the function is called to run inference, the `main` function does the following:
+    7. Defines the `main` function behavior if it is called to run inference (classify images). If the function is called to run inference, the `main` function does the following:
         1.  Defines a path to backend.
         2.  Runs model inference using the `do_inference` function.
 
