@@ -33,7 +33,7 @@ Minimum hardware requirements:
 
 - CPU: Intel Core i5 or higher compatible processor
 - GPU with CUDA support: NVIDIA GPU using Pascal or higher
-- Neuromorphic backend which is developed by Motiv-NT
+- NPU using neuromorphic backend developed by Motiv-NT (if needed)
 - 8 GB of RAM
 - Available hard drive space:
   - 1 GB for installing Kaspersky Neuromorphic Platform.
